@@ -1,0 +1,6 @@
+[submodule "blocks"]
+	path = blocks
+	url = https://github.com/shickey/scratch-blocks-steina.git
+[submodule "vm"]
+	path = vm
+	url = https://github.com/shickey/scratch-vm-steina.git
