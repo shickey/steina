@@ -107,30 +107,6 @@
         // Run threads
         vm.start();
 
-        // DOM event handlers
-        var greenFlag = document.querySelector('#greenflag');
-        var stop = document.querySelector('#stop');
-
-        greenFlag.addEventListener('click', function () {
-            vm.greenFlag();
-        });
-        greenFlag.addEventListener('touchmove', function (e) {
-            e.preventDefault();
-        });
-        stop.addEventListener('click', function () {
-            vm.stopAll();
-            if (typeof window.ext !== 'undefined') {
-                window.ext.postMessage({
-                    extension: 'video',
-                    method: 'stopAll',
-                    args: []
-                });
-            }
-        });
-        stop.addEventListener('touchmove', function (e) {
-            e.preventDefault();
-        });
-
         // Extension event handlers
         bindExtensionHandler();
 
@@ -157,31 +133,6 @@
         console.log("hello from common!");
     }
 
-
-    // window.updateVideoMenus = function(videoInfo) {
-    //     var menuItems = videoInfo.map((v, idx) => {
-    //         return [v.title, idx.toString()];
-    //     })
-
-    //     window.Blockly.Blocks.video_videos_menu.init = function() {
-    //         this.jsonInit({
-    //             "message0": "%1",
-    //             "args0": [
-    //                 {
-    //                     "type": "field_dropdown",
-    //                     "name": "VIDEO_MENU",
-    //                     "options": menuItems
-    //                 }
-    //             ],
-    //             "colour": Blockly.Colours.more.secondary,
-    //             "colourSecondary": Blockly.Colours.more.secondary,
-    //             "colourTertiary": Blockly.Colours.more.tertiary,
-    //             "extensions": ["output_string"]
-    //         });
-    //     }
-    //     var tree = window.Blockly.getMainWorkspace().options.languageTree;
-    //     window.Blockly.getMainWorkspace().updateToolbox(tree);
-    // }
 
     /**
      * Bind event handlers.
