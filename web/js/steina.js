@@ -8,6 +8,8 @@
         // Instantiate the VM and create an empty project
         var vm = new window.VirtualMachine();
         window.vm = vm;
+        
+        vm.extensionManager.loadExtensionURL('video');
 
         var defaultProject = {
           "targets": [
