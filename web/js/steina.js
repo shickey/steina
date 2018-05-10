@@ -8,8 +8,6 @@
         // Instantiate the VM and create an empty project
         var vm = new window.VirtualMachine();
         window.vm = vm;
-        
-        vm.extensionManager.loadExtensionURL('video');
 
         var defaultProject = {
           "targets": [
@@ -43,10 +41,6 @@
           }
         }
         vm.loadProject(defaultProject);
-        
-        // Get XML toolbox definition
-        var toolbox = document.getElementById('toolbox');
-        window.toolbox = toolbox;
 
         // Instantiate scratch-blocks and attach it to the DOM.
         var workspace = Blockly.inject('blocks', {
@@ -54,7 +48,6 @@
             scrollbars: false,
             trashcan: false,
             horizontalLayout: false,
-            toolbox: toolbox,
             sounds: false,
             zoom: {
                 controls: false,
@@ -73,6 +66,18 @@
             }
         });
         window.workspace = workspace;
+
+        // Get XML toolbox definition
+        var toolbox = document.getElementById('toolbox');
+        window.toolbox = toolbox;
+
+        vm.addListener('EXTENSION_ADDED', (blocksInfo) => {
+            // Generate the proper blocks and refresh the toolbox
+            Blockly.defineBlocksWithJsonArray(blocksInfo.map(blockInfo => blockInfo.json));
+            workspace.updateToolbox(toolbox);
+        });
+
+        vm.extensionManager.loadExtensionURL('video');
 
         // // Disable long-press
         Blockly.longStart_ = function() {};
@@ -153,30 +158,30 @@
     }
 
 
-    window.updateVideoMenus = function(videoInfo) {
-        var menuItems = videoInfo.map((v, idx) => {
-            return [v.title, idx.toString()];
-        })
+    // window.updateVideoMenus = function(videoInfo) {
+    //     var menuItems = videoInfo.map((v, idx) => {
+    //         return [v.title, idx.toString()];
+    //     })
 
-        window.Blockly.Blocks.video_videos_menu.init = function() {
-            this.jsonInit({
-                "message0": "%1",
-                "args0": [
-                    {
-                        "type": "field_dropdown",
-                        "name": "VIDEO_MENU",
-                        "options": menuItems
-                    }
-                ],
-                "colour": Blockly.Colours.more.secondary,
-                "colourSecondary": Blockly.Colours.more.secondary,
-                "colourTertiary": Blockly.Colours.more.tertiary,
-                "extensions": ["output_string"]
-            });
-        }
-        var tree = window.Blockly.getMainWorkspace().options.languageTree;
-        window.Blockly.getMainWorkspace().updateToolbox(tree);
-    }
+    //     window.Blockly.Blocks.video_videos_menu.init = function() {
+    //         this.jsonInit({
+    //             "message0": "%1",
+    //             "args0": [
+    //                 {
+    //                     "type": "field_dropdown",
+    //                     "name": "VIDEO_MENU",
+    //                     "options": menuItems
+    //                 }
+    //             ],
+    //             "colour": Blockly.Colours.more.secondary,
+    //             "colourSecondary": Blockly.Colours.more.secondary,
+    //             "colourTertiary": Blockly.Colours.more.tertiary,
+    //             "extensions": ["output_string"]
+    //         });
+    //     }
+    //     var tree = window.Blockly.getMainWorkspace().options.languageTree;
+    //     window.Blockly.getMainWorkspace().updateToolbox(tree);
+    // }
 
     /**
      * Bind event handlers.
