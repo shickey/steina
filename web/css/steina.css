@@ -37,6 +37,14 @@ button:focus {
     font-family: "Helvetica Neue", Helvetica, sans-serif;
 }
 
+.blocklyToolboxDiv {
+    display: none;
+}
+
+.blocklyFlyout {
+    transform: none !important;
+}
+
 .blocklyMainBackground {
     stroke: none !important;
 }
@@ -61,43 +69,6 @@ button:focus {
     height: 200px;
     z-index: 2147483647;
     pointer-events: none;
-}
-
-#navigation .device {
-    display: block;
-    position: absolute;
-    top: 100px;
-}
-
-#navigation .device button {
-    width: 36px;
-    height: 58px;
-    border: 1px solid #334B68;
-    margin-left: -1px;
-    border-radius: 0 16px 16px 0;
-    background-color: #EC5858;
-    background-image: url('../images/ui/bluetooth-off.svg');
-    background-repeat: no-repeat;
-    background-position: 50% 50%;
-    background-size: 75%;
-    transition: background-color 100ms;
-    pointer-events: auto;
-}
-
-#navigation .device button.scanning {
-    animation-name: scanningAnimation;
-    animation-duration: 0.5s;
-    animation-iteration-count: infinite;
-}
-
-@keyframes scanningAnimation {
-    0%   {background-color: gray;}
-    100%   {background-color: black;}
-}
-
-#navigation .device button.connected {
-    background-color: #009900;
-    background-image: url('../images/ui/bluetooth-on.svg');
 }
 
 #navigation .primary {
