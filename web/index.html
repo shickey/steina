@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>Steina</title>
+
+  <!-- Scratch Blocks -->
+  <script type="text/javascript" src="./lib/blockly_vertical.js"></script>
+  <script type="text/javascript" src="./lib/messages.js"></script>
+  <script type="text/javascript" src="./lib/blocks.js"></script>
+  <script type="text/javascript" src="./lib/blocks_vertical.js"></script>
+
+  <!-- CSS -->
+  <link rel="stylesheet" type="text/css" href="./css/normalize.css">
+  <link rel="stylesheet" type="text/css" href="./css/steina.css">
+</head>
+<body>
+  <!-- Toolbox -->
+  <xml id="toolbox">
+    <category name="Video" colour="#FF6680" secondaryColour="#FF4D6A">
+      <block type="video_playuntildone">
+        <value name="VIDEO_MENU">
+          <shadow type="video_videos_menu" />
+        </value>
+      </block>
+
+      <block type="video_start">
+        <value name="VIDEO_MENU">
+          <shadow type="video_videos_menu" />
+        </value>
+      </block>
+
+      <block type="video_rotaterightby">
+        <value name="DEGREES">
+          <shadow type="math_number">
+            <field name="NUM">5</field>
+          </shadow>
+        </value>
+      </block>
+
+      <block type="video_rotateleftby">
+        <value name="DEGREES">
+          <shadow type="math_number">
+            <field name="NUM">5</field>
+          </shadow>
+        </value>
+      </block>
+
+      <block type="video_setrotation">
+        <value name="DEGREES">
+          <shadow type="math_number">
+            <field name="NUM">0</field>
+          </shadow>
+        </value>
+      </block>
+
+      <block type="video_changesizeby">
+        <value name="PERCENTAGE">
+          <shadow type="math_number">
+            <field name="NUM">10</field>
+          </shadow>
+        </value>
+      </block>
+
+      <block type="video_setsize">
+        <value name="PERCENTAGE">
+          <shadow type="math_number">
+            <field name="NUM">100</field>
+          </shadow>
+        </value>
+      </block>
+
+      <block type="video_changeeffectby">
+        <value name="EFFECT">
+          <shadow type="video_effect_menu_options" />
+        </value>
+        <value name="CHANGE">
+          <shadow type="math_number">
+            <field name="NUM">5</field>
+          </shadow>
+        </value>
+      </block>
+
+      <block type="video_seteffectto">
+        <value name="EFFECT">
+          <shadow type="video_effect_menu_options" />
+        </value>
+        <value name="VALUE">
+          <shadow type="math_number">
+            <field name="NUM">5</field>
+          </shadow>
+        </value>
+      </block>
+
+      <block type="video_clearvideoeffects">
+      </block>
+    </category>
+    <category name="Control" colour="#FFAB19" secondaryColour="#CF8B17">
+
+      <block type="control_repeat">
+        <value name="TIMES">
+          <shadow type="math_whole_number">
+            <field name="NUM">4</field>
+          </shadow>
+        </value>
+      </block>
+
+      <block type="control_forever"></block>
+
+      <block type="control_wait">
+        <value name="DURATION">
+          <shadow type="math_positive_number">
+            <field name="NUM">1</field>
+          </shadow>
+        </value>
+      </block>
+
+    </category>
+    <category name="Operators" colour="#40BF4A" secondaryColour="#389438">
+
+      <block type="operator_add">
+        <value name="NUM1">
+          <shadow type="math_number">
+            <field name="NUM"></field>
+          </shadow>
+        </value>
+        <value name="NUM2">
+          <shadow type="math_number">
+            <field name="NUM"></field>
+          </shadow>
+        </value>
+      </block>
+
+      <block type="operator_subtract">
+        <value name="NUM1">
+          <shadow type="math_number">
+            <field name="NUM"></field>
+          </shadow>
+        </value>
+        <value name="NUM2">
+          <shadow type="math_number">
+            <field name="NUM"></field>
+          </shadow>
+        </value>
+      </block>
+
+      <block type="operator_multiply">
+        <value name="NUM1">
+          <shadow type="math_number">
+            <field name="NUM"></field>
+          </shadow>
+        </value>
+        <value name="NUM2">
+          <shadow type="math_number">
+            <field name="NUM"></field>
+          </shadow>
+        </value>
+      </block>
+
+      <block type="operator_random">
+        <value name="FROM">
+          <shadow type="math_number">
+            <field name="NUM">1</field>
+          </shadow>
+        </value>
+        <value name="TO">
+          <shadow type="math_number">
+            <field name="NUM">100</field>
+          </shadow>
+        </value>
+      </block>
+    </category>
+  </xml>
+
+  <!-- Blocks -->
+  <div id="blocks"></div>
+
+  <!-- Navigation -->
+  <div id="navigation">
+      <div class="primary">
+          <button id="greenflag">
+              <img src="./img/greenflag.svg" />
+          </button>
+          <button id="stop">
+              <img src="./img/stop.svg" />
+          </button>
+      </div>
+  </div>
+
+  <!-- Scratch VM -->
+  <script src="./lib/scratch-vm.min.js"></script>
+
+  <!-- Steina JS -->
+  <script src="./js/steina.js"></script>
+</body>
+</html>

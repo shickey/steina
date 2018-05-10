@@ -1,0 +1,130 @@
+/**
+ * Global
+ */
+html {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+body {
+    background: #334771;
+}
+
+button {
+    -webkit-tap-highlight-color: rgba(0,0,0,0);
+    -webkit-tap-highlight-color: transparent;
+}
+
+button:focus {
+    outline: none;
+}
+
+/**
+ * Toolbox
+ */
+#toolbox {
+    display: none;
+}
+
+/**
+ * Blockly
+ */
+#blocks {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    font-family: "Helvetica Neue", Helvetica, sans-serif;
+}
+
+.blocklyMainBackground {
+    stroke: none !important;
+}
+
+.blocklyScrollbarHorizontal {
+    display: none !important;
+}
+
+.blocklyScrollbarVertical {
+    display: none !important;
+}
+
+/**
+ * Navigation
+ */
+#navigation {
+    display: block;
+    position: absolute;
+    top: calc(100% - 200px);
+    left: 0;
+    width: 100%;
+    height: 200px;
+    z-index: 2147483647;
+    pointer-events: none;
+}
+
+#navigation .device {
+    display: block;
+    position: absolute;
+    top: 100px;
+}
+
+#navigation .device button {
+    width: 36px;
+    height: 58px;
+    border: 1px solid #334B68;
+    margin-left: -1px;
+    border-radius: 0 16px 16px 0;
+    background-color: #EC5858;
+    background-image: url('../images/ui/bluetooth-off.svg');
+    background-repeat: no-repeat;
+    background-position: 50% 50%;
+    background-size: 75%;
+    transition: background-color 100ms;
+    pointer-events: auto;
+}
+
+#navigation .device button.scanning {
+    animation-name: scanningAnimation;
+    animation-duration: 0.5s;
+    animation-iteration-count: infinite;
+}
+
+@keyframes scanningAnimation {
+    0%   {background-color: gray;}
+    100%   {background-color: black;}
+}
+
+#navigation .device button.connected {
+    background-color: #009900;
+    background-image: url('../images/ui/bluetooth-on.svg');
+}
+
+#navigation .primary {
+    display: block;
+    position: absolute;
+    left: calc(100% - 70px);
+    top: calc(100% - 125px);
+}
+
+#navigation .primary button {
+    display: block;
+    position: relative;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    margin-bottom: 10px;
+    background-color: #BECDE5;
+    border: 1px solid #334B68;
+    pointer-events: auto;
+}
+
+#navigation .primary button:active {
+    background-color: #768CA5;
+}
+
+#navigation .primary button img {
+    width: 100%;
+    height: 100%;
+    margin: 0px 0 0 1px;
+}
