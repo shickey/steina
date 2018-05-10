@@ -8,24 +8,24 @@
 
 /* Begin PBXBuildFile section */
 		A398F79820A346BB00C60946 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A398F79720A346BB00C60946 /* AppDelegate.swift */; };
-		A398F79A20A346BB00C60946 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A398F79920A346BB00C60946 /* ViewController.swift */; };
 		A398F79D20A346BB00C60946 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = A398F79B20A346BB00C60946 /* Main.storyboard */; };
 		A398F7A020A346BB00C60946 /* Steina.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = A398F79E20A346BB00C60946 /* Steina.xcdatamodeld */; };
 		A398F7A220A346BC00C60946 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A398F7A120A346BC00C60946 /* Assets.xcassets */; };
 		A398F7A520A346BC00C60946 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = A398F7A320A346BC00C60946 /* LaunchScreen.storyboard */; };
 		A398F7AD20A4CD1C00C60946 /* web in Resources */ = {isa = PBXBuildFile; fileRef = A398F7AC20A4CD1C00C60946 /* web */; };
+		A398F7B020A4D6C700C60946 /* EditorViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A398F7AF20A4D6C700C60946 /* EditorViewController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		A398F79420A346BB00C60946 /* Steina.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Steina.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A398F79720A346BB00C60946 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
-		A398F79920A346BB00C60946 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
 		A398F79C20A346BB00C60946 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		A398F79F20A346BB00C60946 /* Steina.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = Steina.xcdatamodel; sourceTree = "<group>"; };
 		A398F7A120A346BC00C60946 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A398F7A420A346BC00C60946 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		A398F7A620A346BC00C60946 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A398F7AC20A4CD1C00C60946 /* web */ = {isa = PBXFileReference; lastKnownFileType = folder; name = web; path = ../web; sourceTree = "<group>"; };
+		A398F7AF20A4D6C700C60946 /* EditorViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorViewController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -59,8 +59,8 @@
 		A398F79620A346BB00C60946 /* Steina */ = {
 			isa = PBXGroup;
 			children = (
+				A398F7AE20A4D69700C60946 /* ViewControllers */,
 				A398F79720A346BB00C60946 /* AppDelegate.swift */,
-				A398F79920A346BB00C60946 /* ViewController.swift */,
 				A398F79B20A346BB00C60946 /* Main.storyboard */,
 				A398F7A120A346BC00C60946 /* Assets.xcassets */,
 				A398F7A320A346BC00C60946 /* LaunchScreen.storyboard */,
@@ -68,6 +68,14 @@
 				A398F79E20A346BB00C60946 /* Steina.xcdatamodeld */,
 			);
 			path = Steina;
+			sourceTree = "<group>";
+		};
+		A398F7AE20A4D69700C60946 /* ViewControllers */ = {
+			isa = PBXGroup;
+			children = (
+				A398F7AF20A4D6C700C60946 /* EditorViewController.swift */,
+			);
+			path = ViewControllers;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -142,8 +150,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A398F79A20A346BB00C60946 /* ViewController.swift in Sources */,
 				A398F7A020A346BB00C60946 /* Steina.xcdatamodeld in Sources */,
+				A398F7B020A4D6C700C60946 /* EditorViewController.swift in Sources */,
 				A398F79820A346BB00C60946 /* AppDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

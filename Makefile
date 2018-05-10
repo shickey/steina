@@ -11,6 +11,6 @@ web:
 	cp ./blocks/msg/messages.js ./web/lib/messages.js
 	cp ./blocks/blocks_compressed.js ./web/lib/blocks.js
 	cp ./blocks/blocks_compressed_vertical.js ./web/lib/blocks_vertical.js
-	cp -r ./blocks/media ./web/lib
+	cp -r ./blocks/media ./web
 
 .PHONY: web

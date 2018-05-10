@@ -5,6 +5,8 @@
      * @return {void}
      */
     function onLoad () {
+        Blockly.VerticalFlyout.prototype.DEFAULT_WIDTH = 300;
+
         // Instantiate the VM and create an empty project
         var vm = new window.VirtualMachine();
         window.vm = vm;
@@ -44,7 +46,7 @@
 
         // Instantiate scratch-blocks and attach it to the DOM.
         var workspace = Blockly.inject('blocks', {
-            media: '../lib/media/',
+            media: './media/',
             scrollbars: false,
             trashcan: false,
             horizontalLayout: false,
