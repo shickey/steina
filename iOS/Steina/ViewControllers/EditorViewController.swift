@@ -11,6 +11,7 @@ import WebKit
 
 class EditorViewController: UIViewController {
 
+    @IBOutlet weak var metalView: MetalView!
     @IBOutlet weak var webView: WKWebView!
     
     override func viewDidLoad() {
@@ -19,6 +20,12 @@ class EditorViewController: UIViewController {
         let webFolder = Bundle.main.url(forResource: "web", withExtension: nil)!
         let indexPage = Bundle.main.url(forResource: "web/index", withExtension: "html")!
         webView.loadFileURL(indexPage, allowingReadAccessTo: webFolder)
+        
+        initMetal(metalView)
+    }
+    
+    override func viewDidAppear(_ animated: Bool) {
+        render()
     }
 
     override func didReceiveMemoryWarning() {
@@ -26,6 +33,7 @@ class EditorViewController: UIViewController {
         // Dispose of any resources that can be recreated.
     }
     
+    @inline(__always)
     func runJavascript(_ js: String) {
         webView!.evaluateJavaScript(js, completionHandler: nil)
     }

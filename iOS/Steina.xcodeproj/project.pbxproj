@@ -14,6 +14,10 @@
 		A398F7A520A346BC00C60946 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = A398F7A320A346BC00C60946 /* LaunchScreen.storyboard */; };
 		A398F7AD20A4CD1C00C60946 /* web in Resources */ = {isa = PBXBuildFile; fileRef = A398F7AC20A4CD1C00C60946 /* web */; };
 		A398F7B020A4D6C700C60946 /* EditorViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A398F7AF20A4D6C700C60946 /* EditorViewController.swift */; };
+		A398F7BB20AA4DC100C60946 /* ClipsCollectionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A398F7BA20AA4DC100C60946 /* ClipsCollectionViewController.swift */; };
+		A398F7BD20AA4FDE00C60946 /* ClipsCollectionViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A398F7BC20AA4FDE00C60946 /* ClipsCollectionViewCell.swift */; };
+		A398F7BF20B3210500C60946 /* MetalWorker.swift in Sources */ = {isa = PBXBuildFile; fileRef = A398F7BE20B3210500C60946 /* MetalWorker.swift */; };
+		A398F7C120B3266200C60946 /* Shaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = A398F7C020B3266200C60946 /* Shaders.metal */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -26,6 +30,10 @@
 		A398F7A620A346BC00C60946 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A398F7AC20A4CD1C00C60946 /* web */ = {isa = PBXFileReference; lastKnownFileType = folder; name = web; path = ../web; sourceTree = "<group>"; };
 		A398F7AF20A4D6C700C60946 /* EditorViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorViewController.swift; sourceTree = "<group>"; };
+		A398F7BA20AA4DC100C60946 /* ClipsCollectionViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipsCollectionViewController.swift; sourceTree = "<group>"; };
+		A398F7BC20AA4FDE00C60946 /* ClipsCollectionViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipsCollectionViewCell.swift; sourceTree = "<group>"; };
+		A398F7BE20B3210500C60946 /* MetalWorker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetalWorker.swift; sourceTree = "<group>"; };
+		A398F7C020B3266200C60946 /* Shaders.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Shaders.metal; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -62,6 +70,8 @@
 				A398F7AE20A4D69700C60946 /* ViewControllers */,
 				A398F79720A346BB00C60946 /* AppDelegate.swift */,
 				A398F79B20A346BB00C60946 /* Main.storyboard */,
+				A398F7BE20B3210500C60946 /* MetalWorker.swift */,
+				A398F7C020B3266200C60946 /* Shaders.metal */,
 				A398F7A120A346BC00C60946 /* Assets.xcassets */,
 				A398F7A320A346BC00C60946 /* LaunchScreen.storyboard */,
 				A398F7A620A346BC00C60946 /* Info.plist */,
@@ -74,6 +84,8 @@
 			isa = PBXGroup;
 			children = (
 				A398F7AF20A4D6C700C60946 /* EditorViewController.swift */,
+				A398F7BA20AA4DC100C60946 /* ClipsCollectionViewController.swift */,
+				A398F7BC20AA4FDE00C60946 /* ClipsCollectionViewCell.swift */,
 			);
 			path = ViewControllers;
 			sourceTree = "<group>";
@@ -150,7 +162,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A398F7BB20AA4DC100C60946 /* ClipsCollectionViewController.swift in Sources */,
+				A398F7C120B3266200C60946 /* Shaders.metal in Sources */,
 				A398F7A020A346BB00C60946 /* Steina.xcdatamodeld in Sources */,
+				A398F7BD20AA4FDE00C60946 /* ClipsCollectionViewCell.swift in Sources */,
+				A398F7BF20B3210500C60946 /* MetalWorker.swift in Sources */,
 				A398F7B020A4D6C700C60946 /* EditorViewController.swift in Sources */,
 				A398F79820A346BB00C60946 /* AppDelegate.swift in Sources */,
 			);
