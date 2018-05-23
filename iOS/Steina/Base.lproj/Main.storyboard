@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="14109" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="BYZ-38-t0r">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="14109" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="vvR-aU-9rN">
     <device id="ipad9_7" orientation="landscape">
         <adaptation id="fullscreen"/>
     </device>
@@ -60,6 +60,7 @@
                                         <state key="normal" image="video-cam"/>
                                         <connections>
                                             <action selector="cameraButtonTapped:" destination="BYZ-38-t0r" eventType="touchUpInside" id="1Hr-ZV-pks"/>
+                                            <segue destination="vvR-aU-9rN" kind="show" id="P4Z-w3-g5O"/>
                                         </connections>
                                     </button>
                                     <containerView opaque="NO" contentMode="scaleToFill" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="jDq-cp-7oN">
@@ -118,6 +119,41 @@
                 <placeholder placeholderIdentifier="IBFirstResponder" id="qb0-AZ-Y5u" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
             <point key="canvasLocation" x="589.74609375" y="-182.421875"/>
+        </scene>
+        <!--Capture View Controller-->
+        <scene sceneID="Ta3-cP-QYb">
+            <objects>
+                <viewController id="vvR-aU-9rN" customClass="CaptureViewController" customModule="Steina" customModuleProvider="target" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" insetsLayoutMarginsFromSafeArea="NO" id="TTD-NQ-xy4">
+                        <rect key="frame" x="0.0" y="0.0" width="1024" height="768"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <view contentMode="scaleToFill" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="cvb-YC-Fs6" customClass="VideoPreviewView" customModule="Steina" customModuleProvider="target">
+                                <rect key="frame" x="0.0" y="0.0" width="1024" height="768"/>
+                                <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                <subviews>
+                                    <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="dy3-vT-Csp">
+                                        <rect key="frame" x="902" y="369" width="49" height="30"/>
+                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                        <state key="normal" title="Record"/>
+                                        <connections>
+                                            <action selector="recordPressed:" destination="vvR-aU-9rN" eventType="touchDown" id="GAD-Qb-pGq"/>
+                                            <action selector="recordReleased:" destination="vvR-aU-9rN" eventType="touchUpInside" id="LEL-bg-Z8g"/>
+                                        </connections>
+                                    </button>
+                                </subviews>
+                                <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                            </view>
+                        </subviews>
+                        <color key="backgroundColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                    </view>
+                    <connections>
+                        <outlet property="previewView" destination="cvb-YC-Fs6" id="1Zb-ol-BFg"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="yEX-Ov-bfU" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="808.59375" y="281.25"/>
         </scene>
     </scenes>
     <resources>

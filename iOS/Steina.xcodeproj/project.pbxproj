@@ -18,6 +18,10 @@
 		A398F7BD20AA4FDE00C60946 /* ClipsCollectionViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A398F7BC20AA4FDE00C60946 /* ClipsCollectionViewCell.swift */; };
 		A398F7BF20B3210500C60946 /* MetalWorker.swift in Sources */ = {isa = PBXBuildFile; fileRef = A398F7BE20B3210500C60946 /* MetalWorker.swift */; };
 		A398F7C120B3266200C60946 /* Shaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = A398F7C020B3266200C60946 /* Shaders.metal */; };
+		A398F7C320B4582900C60946 /* CaptureViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A398F7C220B4582900C60946 /* CaptureViewController.swift */; };
+		A398F7C820B45C6100C60946 /* libturbojpeg.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A398F7C720B45C6100C60946 /* libturbojpeg.a */; };
+		A398F7CD20B5A8E900C60946 /* DataTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = A398F7CC20B5A8E900C60946 /* DataTypes.swift */; };
+		A398F7CF20B5B89D00C60946 /* VideoClip.swift in Sources */ = {isa = PBXBuildFile; fileRef = A398F7CE20B5B89D00C60946 /* VideoClip.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -34,6 +38,13 @@
 		A398F7BC20AA4FDE00C60946 /* ClipsCollectionViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipsCollectionViewCell.swift; sourceTree = "<group>"; };
 		A398F7BE20B3210500C60946 /* MetalWorker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetalWorker.swift; sourceTree = "<group>"; };
 		A398F7C020B3266200C60946 /* Shaders.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Shaders.metal; sourceTree = "<group>"; };
+		A398F7C220B4582900C60946 /* CaptureViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureViewController.swift; sourceTree = "<group>"; };
+		A398F7C520B45C6100C60946 /* jpeglib.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = jpeglib.h; sourceTree = "<group>"; };
+		A398F7C620B45C6100C60946 /* turbojpeg.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = turbojpeg.h; sourceTree = "<group>"; };
+		A398F7C720B45C6100C60946 /* libturbojpeg.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libturbojpeg.a; sourceTree = "<group>"; };
+		A398F7C920B45C9600C60946 /* Steina-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Steina-Bridging-Header.h"; sourceTree = "<group>"; };
+		A398F7CC20B5A8E900C60946 /* DataTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataTypes.swift; sourceTree = "<group>"; };
+		A398F7CE20B5B89D00C60946 /* VideoClip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoClip.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -41,6 +52,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A398F7C820B45C6100C60946 /* libturbojpeg.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -76,6 +88,10 @@
 				A398F7A320A346BC00C60946 /* LaunchScreen.storyboard */,
 				A398F7A620A346BC00C60946 /* Info.plist */,
 				A398F79E20A346BB00C60946 /* Steina.xcdatamodeld */,
+				A398F7C420B45C3F00C60946 /* lib */,
+				A398F7C920B45C9600C60946 /* Steina-Bridging-Header.h */,
+				A398F7CC20B5A8E900C60946 /* DataTypes.swift */,
+				A398F7CE20B5B89D00C60946 /* VideoClip.swift */,
 			);
 			path = Steina;
 			sourceTree = "<group>";
@@ -86,8 +102,19 @@
 				A398F7AF20A4D6C700C60946 /* EditorViewController.swift */,
 				A398F7BA20AA4DC100C60946 /* ClipsCollectionViewController.swift */,
 				A398F7BC20AA4FDE00C60946 /* ClipsCollectionViewCell.swift */,
+				A398F7C220B4582900C60946 /* CaptureViewController.swift */,
 			);
 			path = ViewControllers;
+			sourceTree = "<group>";
+		};
+		A398F7C420B45C3F00C60946 /* lib */ = {
+			isa = PBXGroup;
+			children = (
+				A398F7C520B45C6100C60946 /* jpeglib.h */,
+				A398F7C720B45C6100C60946 /* libturbojpeg.a */,
+				A398F7C620B45C6100C60946 /* turbojpeg.h */,
+			);
+			path = lib;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -122,6 +149,7 @@
 				TargetAttributes = {
 					A398F79320A346BB00C60946 = {
 						CreatedOnToolsVersion = 9.3;
+						LastSwiftMigration = 0930;
 					};
 				};
 			};
@@ -163,7 +191,10 @@
 			buildActionMask = 2147483647;
 			files = (
 				A398F7BB20AA4DC100C60946 /* ClipsCollectionViewController.swift in Sources */,
+				A398F7CF20B5B89D00C60946 /* VideoClip.swift in Sources */,
+				A398F7C320B4582900C60946 /* CaptureViewController.swift in Sources */,
 				A398F7C120B3266200C60946 /* Shaders.metal in Sources */,
+				A398F7CD20B5A8E900C60946 /* DataTypes.swift in Sources */,
 				A398F7A020A346BB00C60946 /* Steina.xcdatamodeld in Sources */,
 				A398F7BD20AA4FDE00C60946 /* ClipsCollectionViewCell.swift in Sources */,
 				A398F7BF20B3210500C60946 /* MetalWorker.swift in Sources */,
@@ -312,6 +343,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 38HK43T9W4;
 				INFOPLIST_FILE = Steina/Info.plist;
@@ -319,8 +351,14 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Steina/lib",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = edu.mit.media.llk.Steina;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_OBJC_BRIDGING_HEADER = "Steina/Steina-Bridging-Header.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 4.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -330,6 +368,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 38HK43T9W4;
 				INFOPLIST_FILE = Steina/Info.plist;
@@ -337,8 +376,13 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Steina/lib",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = edu.mit.media.llk.Steina;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_OBJC_BRIDGING_HEADER = "Steina/Steina-Bridging-Header.h";
 				SWIFT_VERSION = 4.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
