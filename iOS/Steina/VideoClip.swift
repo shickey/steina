@@ -22,14 +22,14 @@ import Foundation
 let VIDEO_FILE_MAGIC_NUMBER : U32 = 0x000F1DE0
 
 struct VideoClipFrameHeader {
-    var nextFrameOffset : U32 = 0     // Positive offset from the base address of this frame header to the next one
-                                      //   (if it exists, otherwise 0)
-                                      // Note: we keep this value first so that it's easy to replace by accessing
-                                      //    it directly from the base address of the frame header
+    var nextFrameOffset : U32 = 0xFFFFFFFF     // Positive offset from the base address of this frame header to
+                                               //   the next one (if it exists, otherwise 0xFFFFFFFF)
+                                               // Note: we keep this value first so that it's easy to replace by 
+                                               //    accessing it directly from the base address of the frame header
     
-    var prevFrameOffset : U32 = 0     // Negative offset from the base address of this frame header to the previous one
-                                      //   (if it exists, otherwise 0)
-    var frameLength : U32 = 0         // Length in bytes of the frame's JPEG data
+    var prevFrameOffset : U32 = 0xFFFFFFFF     // Negative offset from the base address of this frame header to
+                                               //   the previous one (if it exists, otherwise 0xFFFFFFFF)
+    var frameLength : U32 = 0xFFFFFFFF         // Length in bytes of the frame's JPEG data
 }
 
 class VideoClip {
@@ -40,7 +40,7 @@ class VideoClip {
                                                                   // 0 seconds, 1 second, 2 seconds, etc.
                                                                   // (0xFFFFFFFF indicates no frame)
     
-    var lastFrameOffset : U32 = 0 // Offset into frameData bytes to final frame of the clip
+    var lastFrameOffset : U32 = 0xFFFFFFFF // Offset into frameData bytes to final frame of the clip
 }
 
 
@@ -70,13 +70,16 @@ func appendFrame(_ clip: VideoClip, jpegData: U8Ptr, length: Int) {
     // Append the JPEG data
     clip.data.append(jpegData, count: length)
     
-    // Set the nextFrameOffset pointer on the second to last frame
-    withUnsafeBytes(of: &newFrameOffset) { (ptr) in
-        let bytes = ptr.bindMemory(to: U8.self)
-        let start = clip.data.startIndex.advanced(by: Int(prevFrameOffset))
-        let range = start..<start.advanced(by: MemoryLayout<U32>.size)
-        clip.data.replaceSubrange(range, with: bytes)
-    } 
+    
+    if clip.frames != 0 {
+        // Set the nextFrameOffset pointer on the second to last frame
+        withUnsafeBytes(of: &newFrameOffset) { (ptr) in
+            let bytes = ptr.bindMemory(to: U8.self)
+            let start = clip.data.startIndex.advanced(by: Int(prevFrameOffset))
+            let range = start..<start.advanced(by: MemoryLayout<U32>.size)
+            clip.data.replaceSubrange(range, with: bytes)
+        }
+    }
     
     
     clip.lastFrameOffset = newFrameOffset
@@ -121,3 +124,27 @@ func serializeClip(_ clip: VideoClip) -> Data {
     return out
 }
 
+
+func deserializeClip(_ data: Data) -> VideoClip {
+    let clip = VideoClip()
+    
+    data.withUnsafeBytes { (bytes : UnsafePointer<U8>) in
+        // @TODO: Fragile. This will break if the length of the file header changes
+        bytes.withMemoryRebound(to: U32.self, capacity: 12, { (ptr) in
+            assert(ptr[0] == VIDEO_FILE_MAGIC_NUMBER)
+            clip.frames = ptr[1]
+            for i in 0..<10 {
+                clip.offsets[i] = ptr[i + 2]
+            }
+        })
+    }
+    
+    // @TODO: Fragile. This will break if the length of the file header changes
+    let jpegDataStart = data.startIndex.advanced(by: (12 * MemoryLayout<U32>.size))
+    clip.data = data.subdata(in: jpegDataStart..<data.endIndex)
+    
+    // @TODO: Should the lastFrameOffset actually be a part of the VideoClip structure?
+    //        It seems weird to deserialize it without a real use? Holding off for now.
+    
+    return clip
+}

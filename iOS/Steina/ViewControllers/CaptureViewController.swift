@@ -126,10 +126,6 @@ class CaptureViewController: UIViewController, AVCaptureVideoDataOutputSampleBuf
             print("stop")
             print("\(self.framesWritten) frames written")
             
-//            try! self.videoData.write(to: self.outputDirectoryPath.appendingPathComponent("video.out"))
-//            finishClipMaker(self.clipMaker)
-//            writeClipToUrl(self.clipMaker, url: self.outputDirectoryPath.appendingPathComponent("video.out"))
-            
             let clipData = serializeClip(self.clip)
             try! clipData.write(to: self.outputDirectoryPath.appendingPathComponent("clip.out"))
             
@@ -170,8 +166,6 @@ class CaptureViewController: UIViewController, AVCaptureVideoDataOutputSampleBuf
         tjCompress2(compressor, typedBase, width.s32, bytesPerRow.s32, height.s32, S32(TJPF_BGRA.rawValue), &compressedBuffer, &jpegSize, S32(TJSAMP_420.rawValue), JPEG_QUALITY, JPEG_FLAGS)
         
         // Copy compressed data to in-memory video file representation
-//        videoData.append(compressedBuffer!, count: Int(jpegSize))
-        
         appendFrame(clip, jpegData: compressedBuffer!, length: Int(jpegSize))
         
         CVPixelBufferUnlockBaseAddress(buffer, [])
