@@ -29,17 +29,16 @@ class VideoPreviewView: UIView {
 
 class CaptureViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDelegate {
     
+    var project : Project! = nil
+    
     var recordingQueue : DispatchQueue! = nil
     
     var session : AVCaptureSession! = nil
     var frameOutput : AVCaptureVideoDataOutput! = nil
-    var recording = false // Should only be set through the dispatch queue
     var framesWritten = 0
     var compressor : tjhandle! = nil
     var jpegBuffer : U8Ptr! = nil
-    var videoData : Data! = nil
     var clip : VideoClip! = nil
-    var outputDirectoryPath : URL! = nil
     
     @IBOutlet weak var previewView: VideoPreviewView!
     
@@ -71,9 +70,13 @@ class CaptureViewController: UIViewController, AVCaptureVideoDataOutputSampleBuf
         // Dispose of any resources that can be recreated.
     }
     
+    
+    
     func setupCaptureSession() {
         
-        outputDirectoryPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).last!
+        // @TODO @TEMP: Remove this once we're done testing the capture controller
+        let appDelegate = UIApplication.shared.delegate as! AppDelegate
+        project = Project.create(context: appDelegate.persistentContainer.viewContext)
         
         // Set up JPEG compression
         compressor = tjInitCompress()
@@ -101,14 +104,23 @@ class CaptureViewController: UIViewController, AVCaptureVideoDataOutputSampleBuf
         recordingQueue = DispatchQueue(label: "edu.mit.media.llk.Steina")
         
         previewView.videoPreviewLayer.session = self.session
+        
+        NotificationCenter.default.addObserver(self, selector: #selector(deviceOrientationDidChange(_:)), name: .UIDeviceOrientationDidChange, object: nil)
+        
         session.startRunning()
         
+    }
+    
+    @objc func deviceOrientationDidChange(_ notification: NSNotification) {
+        if let videoConnection = previewView.videoPreviewLayer.connection {
+            let orientation = UIDevice.current.orientation
+            videoConnection.videoOrientation = AVCaptureVideoOrientation(rawValue: orientation.rawValue)!
+        }
     }
     
     func startRecording() {
         print("start")
         framesWritten = 0
-        videoData = Data(capacity: 1.megabytes)
         
         clip = VideoClip()
         
@@ -126,9 +138,18 @@ class CaptureViewController: UIViewController, AVCaptureVideoDataOutputSampleBuf
             print("stop")
             print("\(self.framesWritten) frames written")
             
-            let clipData = serializeClip(self.clip)
-            try! clipData.write(to: self.outputDirectoryPath.appendingPathComponent("clip.out"))
-            
+            // Write the data on the main queue since the MOC
+            // belongs to the main thread
+            DispatchQueue.main.async {
+                
+                // Create Clip entity
+                let clip = self.project.createClip()
+                
+                let clipData = serializeClip(self.clip)
+                try! clipData.write(to: clip.assetUrl)
+                
+                try! clip.managedObjectContext!.save()
+            }
         }
     }
     
@@ -157,6 +178,8 @@ class CaptureViewController: UIViewController, AVCaptureVideoDataOutputSampleBuf
         let bytesPerRow = CVPixelBufferGetBytesPerRow(buffer)
         let width = CVPixelBufferGetWidth(buffer)
         let height = CVPixelBufferGetHeight(buffer)
+        
+        print("w: \(width)   h: \(height)")
         
         // Compress
         var jpegSize : UInt = 0

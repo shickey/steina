@@ -129,10 +129,10 @@ func render() {
     clip.data.withUnsafeBytes { (ptr : UnsafePointer<U8>) in
         let (offset, length) = clip.offsets[frameNumber]
         let jpegBase = ptr + Int(offset)
-        let t0 = CACurrentMediaTime()
+//        let t0 = CACurrentMediaTime()
         tjDecompress2(decoder, jpegBase, UInt(length), pixels, 640, 640 * 4, 480, S32(TJPF_BGRA.rawValue), 0)
-        let t1 = CACurrentMediaTime()
-        print(String(format: "Decode time: %.3fms", (t1 - t0) * 1000.0))
+//        let t1 = CACurrentMediaTime()
+//        print(String(format: "Decode time: %.3fms", (t1 - t0) * 1000.0))
     }
     
     

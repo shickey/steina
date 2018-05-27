@@ -18,23 +18,30 @@ extension Project {
         return project
     }
     
-    func createClip(context moc: NSManagedObjectContext) -> Clip {
-        let clip = Clip(context: moc)
+    func createClip() -> Clip {
+        let clip = Clip(context: self.managedObjectContext!)
+        clip.id = UUID()
         self.addToClips(clip)
         return clip
     }
     
-    var mediaDirectory : URL {
+    var assetsDirectory : URL {
         get {
             let docsDirectoryUrl = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).last!
-            let mediaUrl = docsDirectoryUrl.appendingPathComponent(self.id!.uuidString, isDirectory: true)
-            try! FileManager.default.createDirectory(at: mediaUrl, withIntermediateDirectories: true, attributes: nil)
-            return mediaUrl
+            let assetsUrl = docsDirectoryUrl.appendingPathComponent(self.id!.uuidString, isDirectory: true)
+            try! FileManager.default.createDirectory(at: assetsUrl, withIntermediateDirectories: true, attributes: nil)
+            return assetsUrl
         }
     }
     
 }
 
 extension Clip {
+    
+    var assetUrl : URL {
+        get {
+            return project!.assetsDirectory.appendingPathComponent("\(self.id!.uuidString).svc")
+        }
+    }
     
 }

@@ -10,6 +10,8 @@ import UIKit
 import WebKit
 
 class EditorViewController: UIViewController {
+    
+    var project : Project! = nil
 
     @IBOutlet weak var metalView: MetalView!
     @IBOutlet weak var webView: WKWebView!
@@ -46,18 +48,10 @@ class EditorViewController: UIViewController {
         runJavascript("vm.stopAll()")
     }
     
-    @IBAction func cameraButtonTapped(_ sender: Any) {
-        
-    }
-    
-    /*
-    // MARK: - Navigation
-
-    // In a storyboard-based application, you will often want to do a little preparation before navigation
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        // Get the new view controller using segue.destinationViewController.
-        // Pass the selected object to the new view controller.
+        if let captureVC = segue.destination as? CaptureViewController {
+            captureVC.project = project
+        }
     }
-    */
 
 }

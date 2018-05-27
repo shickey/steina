@@ -23,6 +23,7 @@
 		A398F7CD20B5A8E900C60946 /* DataTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = A398F7CC20B5A8E900C60946 /* DataTypes.swift */; };
 		A398F7CF20B5B89D00C60946 /* VideoClip.swift in Sources */ = {isa = PBXBuildFile; fileRef = A398F7CE20B5B89D00C60946 /* VideoClip.swift */; };
 		A398F7D320BB03BF00C60946 /* CoreDataEntities.swift in Sources */ = {isa = PBXBuildFile; fileRef = A398F7D220BB03BF00C60946 /* CoreDataEntities.swift */; };
+		A398F7D720BB05D800C60946 /* ProjectCollectionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A398F7D620BB05D800C60946 /* ProjectCollectionViewController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -47,6 +48,7 @@
 		A398F7CC20B5A8E900C60946 /* DataTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataTypes.swift; sourceTree = "<group>"; };
 		A398F7CE20B5B89D00C60946 /* VideoClip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoClip.swift; sourceTree = "<group>"; };
 		A398F7D220BB03BF00C60946 /* CoreDataEntities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreDataEntities.swift; sourceTree = "<group>"; };
+		A398F7D620BB05D800C60946 /* ProjectCollectionViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectCollectionViewController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -106,6 +108,7 @@
 				A398F7BA20AA4DC100C60946 /* ClipsCollectionViewController.swift */,
 				A398F7BC20AA4FDE00C60946 /* ClipsCollectionViewCell.swift */,
 				A398F7C220B4582900C60946 /* CaptureViewController.swift */,
+				A398F7D620BB05D800C60946 /* ProjectCollectionViewController.swift */,
 			);
 			path = ViewControllers;
 			sourceTree = "<group>";
@@ -199,6 +202,7 @@
 				A398F7C320B4582900C60946 /* CaptureViewController.swift in Sources */,
 				A398F7C120B3266200C60946 /* Shaders.metal in Sources */,
 				A398F7CD20B5A8E900C60946 /* DataTypes.swift in Sources */,
+				A398F7D720BB05D800C60946 /* ProjectCollectionViewController.swift in Sources */,
 				A398F7A020A346BB00C60946 /* Steina.xcdatamodeld in Sources */,
 				A398F7BD20AA4FDE00C60946 /* ClipsCollectionViewCell.swift in Sources */,
 				A398F7BF20B3210500C60946 /* MetalWorker.swift in Sources */,

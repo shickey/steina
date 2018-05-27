@@ -105,7 +105,7 @@ func deserializeClip(_ data: Data) -> VideoClip {
         bytes.withMemoryRebound(to: U32.self, capacity: headerLength, { (ptr) in
             
             for i in 0..<(frames - 1) { // Handle the last frame differently since we need to use the data length
-                                             // to calculate the frame length
+                                        // to calculate the frame length
                 let thisOffset = ptr[Int(4 + i)]
                 let nextOffset = ptr[Int(4 + i + 1)]
                 let thisLength = nextOffset - thisOffset
