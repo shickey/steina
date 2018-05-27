@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<VariablesViewState
+   version = "1.0">
+   <ContextStates>
+      <ContextState
+         contextName = "videoClipMakerAlloc():VideoClip.swift">
+      </ContextState>
+      <ContextState
+         contextName = "render():MetalWorker.swift">
+         <PersistentStrings>
+            <PersistentString
+               value = "clip">
+            </PersistentString>
+         </PersistentStrings>
+      </ContextState>
+      <ContextState
+         contextName = "closure #1 in CaptureViewController.stopRecording():CaptureViewController.swift">
+      </ContextState>
+   </ContextStates>
+</VariablesViewState>

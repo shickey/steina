@@ -123,8 +123,7 @@ func deserializeClip(_ data: Data) -> VideoClip {
     clip.frames = frames
     
     let headerLength = U32(4 * MemoryLayout<U32>.size + (Int(clip.frames) * MemoryLayout<U32>.size))
-    let dataOffsetInBytes = Int(headerLength) * MemoryLayout<U32>.size
-    let jpegDataStart = data.startIndex.advanced(by: dataOffsetInBytes)
+    let jpegDataStart = data.startIndex.advanced(by: Int(headerLength))
     clip.data = data.subdata(in: jpegDataStart..<data.endIndex)
     
     return clip

@@ -21,11 +21,11 @@ class EditorViewController: UIViewController {
         let indexPage = Bundle.main.url(forResource: "web/index", withExtension: "html")!
         webView.loadFileURL(indexPage, allowingReadAccessTo: webFolder)
         
-        initMetal(metalView)
+        
     }
     
     override func viewDidAppear(_ animated: Bool) {
-        render()
+        initMetal(metalView)
     }
 
     override func didReceiveMemoryWarning() {
