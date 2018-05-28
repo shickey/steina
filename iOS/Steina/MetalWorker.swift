@@ -22,42 +22,21 @@ let commandQueue : MTLCommandQueue! = device.makeCommandQueue()
 var pipeline : MTLRenderPipelineState! = nil
 
 let verts : [Float] = [
-    -0.5,  0.5, 1.0, 1.0,   1.0, 0.0, 0.0, 1.0,   0.0, 0.0, 0.0, 0.0,
-    -0.5, -0.5, 1.0, 1.0,   0.0, 1.0, 0.0, 1.0,   0.0, 1.0, 0.0, 0.0,
-     0.5, -0.5, 1.0, 1.0,   0.0, 0.0, 1.0, 1.0,   1.0, 1.0, 0.0, 0.0,
-    -0.5,  0.5, 1.0, 1.0,   1.0, 0.0, 0.0, 1.0,   0.0, 0.0, 0.0, 0.0,
-     0.5, -0.5, 1.0, 1.0,   0.0, 0.0, 1.0, 1.0,   1.0, 1.0, 0.0, 0.0,
-     0.5,  0.5, 1.0, 1.0,   0.0, 0.0, 1.0, 1.0,   1.0, 0.0, 0.0, 0.0, 
+    -1.0,  1.0, 1.0, 1.0,   1.0, 0.0, 0.0, 1.0,   1.0, 1.0, 0.0, 0.0,
+    -1.0, -1.0, 1.0, 1.0,   0.0, 1.0, 0.0, 1.0,   1.0, 0.0, 0.0, 0.0,
+     1.0, -1.0, 1.0, 1.0,   0.0, 0.0, 1.0, 1.0,   0.0, 0.0, 0.0, 0.0,
+    -1.0,  1.0, 1.0, 1.0,   1.0, 0.0, 0.0, 1.0,   1.0, 1.0, 0.0, 0.0,
+     1.0, -1.0, 1.0, 1.0,   0.0, 0.0, 1.0, 1.0,   0.0, 0.0, 0.0, 0.0,
+     1.0,  1.0, 1.0, 1.0,   0.0, 0.0, 1.0, 1.0,   0.0, 1.0, 0.0, 0.0,
 ]
 
 var tex : MTLTexture! = nil
 
 var vertBuffer : MTLBuffer! = nil
 
-// @TODO: Rename this
-class DisplayLinkThunk {
-    var displayLink : CADisplayLink! = nil
-    
-    func startDisplayLink() {
-        displayLink = CADisplayLink(target: self, selector: #selector(linkFired))
-        displayLink.preferredFramesPerSecond = 30
-        displayLink.add(to: .current, forMode: .defaultRunLoopMode)
-    }
-    
-    @objc func linkFired(_ sender: CADisplayLink) {
-//        let t0 = CACurrentMediaTime()
-        render()
-//        let t1 = CACurrentMediaTime()
-//        print(String(format: "Frame time: %.3f    Render time: %.3f", (sender.targetTimestamp - sender.timestamp) * 1000.0, (t1 - t0) * 1000.0))
-    }
-}
-
 var decoder : tjhandle! = nil
 var rawPixels : UnsafeMutableRawPointer! = nil
 var pixels : U8Ptr! = nil
-var clip : VideoClip! = nil
-
-var thunk : DisplayLinkThunk! = nil
 
 func initMetal(_ hostView: MetalView) {
     
@@ -93,20 +72,25 @@ func initMetal(_ hostView: MetalView) {
     rawPixels = malloc(pitch * height)!
     pixels = rawPixels.bindMemory(to: U8.self, capacity: pitch * height)
     
-    // Test clip
-    // @TODO: Remove
-    let clipUrl = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).last!.appendingPathComponent("clip.out")
-    let clipData = try! Data(contentsOf: clipUrl)
-    clip = deserializeClip(clipData)
-    
     let texDescriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .bgra8Unorm, width: width, height: height, mipmapped: false)
     tex = device.makeTexture(descriptor: texDescriptor)!
-    
-    thunk = DisplayLinkThunk()
-    thunk.startDisplayLink()
 }
 
-var frameNumber = 0
+func clearRenderList() {
+    
+}
+
+func pushRenderFrame(_ clip: VideoClip, _ frameNumber: Int) {
+    // Decode and set up texture
+    clip.data.withUnsafeBytes { (ptr : UnsafePointer<U8>) in
+        let (offset, length) = clip.offsets[frameNumber]
+        let jpegBase = ptr + Int(offset)
+        tjDecompress2(decoder, jpegBase, UInt(length), pixels, 640, 640 * 4, 480, S32(TJPF_BGRA.rawValue), 0)
+    }
+    
+    
+    tex.replace(region: MTLRegionMake2D(0, 0, 640, 480), mipmapLevel: 0, withBytes: rawPixels, bytesPerRow: 640 * 4)
+}
 
 func render() {
     assert(metalLayer != nil)
@@ -125,28 +109,10 @@ func render() {
     renderEncoder.setRenderPipelineState(pipeline)
     renderEncoder.setVertexBuffer(vertBuffer, offset: 0, index: 0)
     
-    // Decode and set up texture
-    clip.data.withUnsafeBytes { (ptr : UnsafePointer<U8>) in
-        let (offset, length) = clip.offsets[frameNumber]
-        let jpegBase = ptr + Int(offset)
-//        let t0 = CACurrentMediaTime()
-        tjDecompress2(decoder, jpegBase, UInt(length), pixels, 640, 640 * 4, 480, S32(TJPF_BGRA.rawValue), 0)
-//        let t1 = CACurrentMediaTime()
-//        print(String(format: "Decode time: %.3fms", (t1 - t0) * 1000.0))
-    }
-    
-    
-    tex.replace(region: MTLRegionMake2D(0, 0, 640, 480), mipmapLevel: 0, withBytes: rawPixels, bytesPerRow: 640 * 4)
-    
     renderEncoder.setFragmentTexture(tex, index: 0)
     renderEncoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 6)
     
     renderEncoder.endEncoding()
     commandBuffer.present(drawable, afterMinimumDuration: 1.0 / 30.0)
     commandBuffer.commit()
-    
-    frameNumber += 1
-    if frameNumber >= clip.frames {
-        frameNumber = 0
-    }
 }

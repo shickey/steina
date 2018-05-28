@@ -10,7 +10,13 @@ import UIKit
 
 private let reuseIdentifier = "ClipCell"
 
+class ClipsCollectionViewCell: UICollectionViewCell {
+    
+}
+
 class ClipsCollectionViewController: UICollectionViewController {
+    
+    var clips : [Clip] = []
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -18,10 +24,6 @@ class ClipsCollectionViewController: UICollectionViewController {
         // Uncomment the following line to preserve selection between presentations
         // self.clearsSelectionOnViewWillAppear = false
 
-        // Register cell classes
-        self.collectionView!.register(ClipsCollectionViewCell.self, forCellWithReuseIdentifier: reuseIdentifier)
-
-        // Do any additional setup after loading the view.
     }
 
     override func didReceiveMemoryWarning() {
@@ -42,14 +44,12 @@ class ClipsCollectionViewController: UICollectionViewController {
     // MARK: UICollectionViewDataSource
 
     override func numberOfSections(in collectionView: UICollectionView) -> Int {
-        // #warning Incomplete implementation, return the number of sections
         return 1
     }
 
 
     override func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        // #warning Incomplete implementation, return the number of items
-        return 3
+        return clips.count
     }
 
     override func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
@@ -58,6 +58,14 @@ class ClipsCollectionViewController: UICollectionViewController {
         // Configure the cell
     
         return cell
+    }
+    
+    override func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        print("selected clip at \(indexPath)")
+//        let clip = clips[indexPath.item]
+//        let clipData = try! Data(contentsOf: clip.assetUrl)
+//        let videoClip = deserializeClip(clipData)
+//        playClip(videoClip)
     }
 
     // MARK: UICollectionViewDelegate

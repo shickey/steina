@@ -14,6 +14,13 @@ let FORMAT_420v_CODE : UInt32 = 0x34323076   // '420v' in ascii
 let JPEG_QUALITY : S32 = 75 // Value from 1-100 (1 - worst, 100 - best)
 let JPEG_FLAGS   : S32 = 0
 
+enum ClipOrientation : S32 {
+    case portrait = 0
+    case portraitUpsideDown = 1
+    case landscapeLeft = 2
+    case landscapeRight = 3
+}
+
 class VideoPreviewView: UIView {
     
     override class var layerClass: AnyClass {
@@ -35,7 +42,9 @@ class CaptureViewController: UIViewController, AVCaptureVideoDataOutputSampleBuf
     
     var session : AVCaptureSession! = nil
     var frameOutput : AVCaptureVideoDataOutput! = nil
+    var recordingOrientation : ClipOrientation = .portrait
     var framesWritten = 0
+    var recording = false
     var compressor : tjhandle! = nil
     var jpegBuffer : U8Ptr! = nil
     var clip : VideoClip! = nil
@@ -65,18 +74,17 @@ class CaptureViewController: UIViewController, AVCaptureVideoDataOutputSampleBuf
         }
     }
     
+    override func viewWillAppear(_ animated: Bool) {
+        updateOrientation()
+    }
+    
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
     }
     
     
-    
     func setupCaptureSession() {
-        
-        // @TODO @TEMP: Remove this once we're done testing the capture controller
-        let appDelegate = UIApplication.shared.delegate as! AppDelegate
-        project = Project.create(context: appDelegate.persistentContainer.viewContext)
         
         // Set up JPEG compression
         compressor = tjInitCompress()
@@ -112,20 +120,43 @@ class CaptureViewController: UIViewController, AVCaptureVideoDataOutputSampleBuf
     }
     
     @objc func deviceOrientationDidChange(_ notification: NSNotification) {
+        updateOrientation()
+    }
+    
+    func updateOrientation() {
+        let orientation = UIDevice.current.orientation
+        
+        if !orientation.isPortrait && !orientation.isLandscape { return }
+        
         if let videoConnection = previewView.videoPreviewLayer.connection {
-            let orientation = UIDevice.current.orientation
             videoConnection.videoOrientation = AVCaptureVideoOrientation(rawValue: orientation.rawValue)!
+        }
+        
+        if recording { return } // Don't update the orientation while recording so that we can store it
+        // alongside the rest of the clip info
+        
+        switch orientation {
+        case .portrait:
+            recordingOrientation = .portrait
+        case .portraitUpsideDown:
+            recordingOrientation = .portraitUpsideDown
+        case .landscapeLeft:
+            recordingOrientation = .landscapeLeft
+        case .landscapeRight:
+            recordingOrientation = .landscapeRight
+        default: break // Ignore orientations like faceUp/faceDown and just keep the previous orientation value
         }
     }
     
+    
     func startRecording() {
         print("start")
+        recording = true
         framesWritten = 0
         
         clip = VideoClip()
         
-        // Begin recording by setting up the delegate methods
-        // on the background queue
+        // Begin recording by setting up the delegate methods on the background queue
         frameOutput.setSampleBufferDelegate(self, queue: recordingQueue)
     }
     
@@ -149,6 +180,10 @@ class CaptureViewController: UIViewController, AVCaptureVideoDataOutputSampleBuf
                 try! clipData.write(to: clip.assetUrl)
                 
                 try! clip.managedObjectContext!.save()
+                
+                clip.orientation = self.recordingOrientation.rawValue 
+                
+                self.recording = false
             }
         }
     }

@@ -2,6 +2,7 @@
 <model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="14133" systemVersion="17C88" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="">
     <entity name="Clip" representedClassName="Clip" syncable="YES" codeGenerationType="class">
         <attribute name="id" attributeType="UUID" usesScalarValueType="NO" syncable="YES"/>
+        <attribute name="orientation" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES" syncable="YES"/>
         <attribute name="title" optional="YES" attributeType="String" syncable="YES"/>
         <relationship name="project" maxCount="1" deletionRule="Nullify" destinationEntity="Project" inverseName="clips" inverseEntity="Project" syncable="YES"/>
     </entity>
@@ -11,6 +12,6 @@
     </entity>
     <elements>
         <element name="Project" positionX="-63" positionY="-18" width="128" height="75"/>
-        <element name="Clip" positionX="-54" positionY="0" width="128" height="90"/>
+        <element name="Clip" positionX="-54" positionY="0" width="128" height="105"/>
     </elements>
 </model>

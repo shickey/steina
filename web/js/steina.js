@@ -42,75 +42,126 @@
             "agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.181 Safari/537.36"
           }
         }
-        vm.loadProject(defaultProject);
+        vm.loadProject(defaultProject).then(() => {
+            // Instantiate scratch-blocks and attach it to the DOM.
+            var workspace = Blockly.inject('blocks', {
+                media: './media/',
+                scrollbars: false,
+                trashcan: false,
+                horizontalLayout: false,
+                sounds: false,
+                zoom: {
+                    controls: false,
+                    wheel: false,
+                    startScale: 1.0
+                },
+                colours: {
+                    workspace: '#334771',
+                    flyout: '#283856',
+                    scrollbar: '#24324D',
+                    scrollbarHover: '#0C111A',
+                    insertionMarker: '#FFFFFF',
+                    insertionMarkerOpacity: 0.3,
+                    fieldShadow: 'rgba(255, 255, 255, 0.3)',
+                    dragShadowOpacity: 0.6
+                }
+            });
+            window.workspace = workspace;
 
-        // Instantiate scratch-blocks and attach it to the DOM.
-        var workspace = Blockly.inject('blocks', {
-            media: './media/',
-            scrollbars: false,
-            trashcan: false,
-            horizontalLayout: false,
-            sounds: false,
-            zoom: {
-                controls: false,
-                wheel: false,
-                startScale: 1.0
-            },
-            colours: {
-                workspace: '#334771',
-                flyout: '#283856',
-                scrollbar: '#24324D',
-                scrollbarHover: '#0C111A',
-                insertionMarker: '#FFFFFF',
-                insertionMarkerOpacity: 0.3,
-                fieldShadow: 'rgba(255, 255, 255, 0.3)',
-                dragShadowOpacity: 0.6
+            // Get XML toolbox definition
+            var toolbox = document.getElementById('toolbox');
+            window.toolbox = toolbox;
+
+            vm.addListener('EXTENSION_ADDED', (blocksInfo) => {
+                // Generate the proper blocks and refresh the toolbox
+                Blockly.defineBlocksWithJsonArray(blocksInfo.map(blockInfo => blockInfo.json));
+                workspace.updateToolbox(toolbox);
+            });
+
+            vm.extensionManager.loadExtensionURL('video');
+
+            // // Disable long-press
+            Blockly.longStart_ = function() {};
+
+            // Attach blocks to the VM
+            workspace.addChangeListener(vm.blockListener);
+            var flyoutWorkspace = workspace.getFlyout().getWorkspace();
+            flyoutWorkspace.addChangeListener(vm.flyoutBlockListener);
+
+            // Handle VM events
+            vm.on('SCRIPT_GLOW_ON', function(data) {
+                workspace.glowStack(data.id, true);
+            });
+            vm.on('SCRIPT_GLOW_OFF', function(data) {
+                workspace.glowStack(data.id, false);
+            });
+            vm.on('BLOCK_GLOW_ON', function(data) {
+                workspace.glowBlock(data.id, true);
+            });
+            vm.on('BLOCK_GLOW_OFF', function(data) {
+                workspace.glowBlock(data.id, false);
+            });
+            vm.on('VISUAL_REPORT', function(data) {
+                workspace.reportValue(data.id, data.value);
+            });
+
+            vm.on('workspaceUpdate', (data) => {
+                workspace.removeChangeListener(vm.blockListener);
+                const dom = Blockly.Xml.textToDom(data.xml);
+                Blockly.Xml.clearWorkspaceAndLoadFromXml(dom, workspace);
+                workspace.addChangeListener(vm.blockListener);
+            })
+
+            // Extension event handlers
+            bindExtensionHandler();
+
+            vm.runtime.currentStepTime = 1000.0 / 30.0;
+            /*******************************************************************
+             *******************************************************************
+             *
+             * NOTE:
+             *
+             * We purposefully do NOT start the vm here (or in fact, at all).
+             * Instead, we leave it up to iOS to manually drive the VM run loop
+             * so that we can lock it to the vertical blink on the display.
+             *
+             *******************************************************************
+             *******************************************************************/
+
+            // Create external interface so iOS can call into JS
+            function tick() {
+                vm.getVideoTargets().forEach(t => {
+                    t.waitForNextTick = false;
+                })
+                vm.runtime._step();
             }
-        });
-        window.workspace = workspace;
 
-        // Get XML toolbox definition
-        var toolbox = document.getElementById('toolbox');
-        window.toolbox = toolbox;
+            function createVideoTarget(id, fps, frames) {
+                vm.createVideoTarget(id, {
+                    fps,
+                    frames
+                })
+            }
 
-        vm.addListener('EXTENSION_ADDED', (blocksInfo) => {
-            // Generate the proper blocks and refresh the toolbox
-            Blockly.defineBlocksWithJsonArray(blocksInfo.map(blockInfo => blockInfo.json));
-            workspace.updateToolbox(toolbox);
-        });
+            function getVideoTargets() {
+                return vm.getVideoTargets().map(t => t.toJSON());
+            }
 
-        vm.extensionManager.loadExtensionURL('video');
+            window.Steina = {
+                tick,
+                createVideoTarget,
+                getVideoTargets
+            }
 
-        // // Disable long-press
-        Blockly.longStart_ = function() {};
+            if (window.steinaMsg) {
+                window.steinaMsg.postMessage({
+                    message: 'READY'
+                });
+            }
 
-        // Attach blocks to the VM
-        workspace.addChangeListener(vm.blockListener);
-        var flyoutWorkspace = workspace.getFlyout().getWorkspace();
-        flyoutWorkspace.addChangeListener(vm.flyoutBlockListener);
-
-        // Handle VM events
-        vm.on('SCRIPT_GLOW_ON', function(data) {
-            workspace.glowStack(data.id, true);
-        });
-        vm.on('SCRIPT_GLOW_OFF', function(data) {
-            workspace.glowStack(data.id, false);
-        });
-        vm.on('BLOCK_GLOW_ON', function(data) {
-            workspace.glowBlock(data.id, true);
-        });
-        vm.on('BLOCK_GLOW_OFF', function(data) {
-            workspace.glowBlock(data.id, false);
-        });
-        vm.on('VISUAL_REPORT', function(data) {
-            workspace.reportValue(data.id, data.value);
         });
 
-        // Run threads
-        vm.start();
-
-        // Extension event handlers
-        bindExtensionHandler();
+        
 
     }
 
@@ -121,18 +172,16 @@
     function bindExtensionHandler () {
         if (typeof webkit === 'undefined') return;
         if (typeof webkit.messageHandlers === 'undefined') return;
-        if (typeof webkit.messageHandlers.ext === 'undefined') return;
-        window.ext = webkit.messageHandlers.ext;
+        if (typeof webkit.messageHandlers.steinaMsg === 'undefined') return;
+        window.steinaMsg = webkit.messageHandlers.steinaMsg;
 
         // if (typeof webkit.messageHandlers.cons === 'undefined') return;
-        window.cons = webkit.messageHandlers.cons;
-        window.console.log = window.console.error = window.console.warn = window.console.info = (message) => {
-            window.cons.postMessage({
-                message: message
-            });
-        };
-
-        console.log("hello from common!");
+        // window.cons = webkit.messageHandlers.cons;
+        // window.console.log = window.console.error = window.console.warn = window.console.info = (message) => {
+        //     window.cons.postMessage({
+        //         message: message
+        //     });
+        // };
     }
 
 
