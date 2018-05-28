@@ -10,6 +10,8 @@ import Foundation
 import UIKit
 import Metal
 
+let MAX_RENDERED_ENTITIES = 100
+
 class MetalView : UIView {
     override class var layerClass : AnyClass {
         return CAMetalLayer.self
@@ -22,12 +24,12 @@ let commandQueue : MTLCommandQueue! = device.makeCommandQueue()
 var pipeline : MTLRenderPipelineState! = nil
 
 let verts : [Float] = [
-    -1.0,  1.0, 1.0, 1.0,   1.0, 0.0, 0.0, 1.0,   1.0, 1.0, 0.0, 0.0,
-    -1.0, -1.0, 1.0, 1.0,   0.0, 1.0, 0.0, 1.0,   1.0, 0.0, 0.0, 0.0,
-     1.0, -1.0, 1.0, 1.0,   0.0, 0.0, 1.0, 1.0,   0.0, 0.0, 0.0, 0.0,
-    -1.0,  1.0, 1.0, 1.0,   1.0, 0.0, 0.0, 1.0,   1.0, 1.0, 0.0, 0.0,
-     1.0, -1.0, 1.0, 1.0,   0.0, 0.0, 1.0, 1.0,   0.0, 0.0, 0.0, 0.0,
-     1.0,  1.0, 1.0, 1.0,   0.0, 0.0, 1.0, 1.0,   0.0, 1.0, 0.0, 0.0,
+    -1.0,  1.0, 1.0, 1.0,   1.0, 1.0,
+    -1.0, -1.0, 1.0, 1.0,   1.0, 0.0,
+     1.0, -1.0, 1.0, 1.0,   0.0, 0.0,
+    -1.0,  1.0, 1.0, 1.0,   1.0, 1.0,
+     1.0, -1.0, 1.0, 1.0,   0.0, 0.0,
+     1.0,  1.0, 1.0, 1.0,   0.0, 1.0
 ]
 
 var tex : MTLTexture! = nil
@@ -51,8 +53,26 @@ func initMetal(_ hostView: MetalView) {
     let vertexShader = shaderLibrary.makeFunction(name: "passthrough_vertex")
     let fragmentShader = shaderLibrary.makeFunction(name: "passthrough_fragment")
     
+    // Set up vertex descriptor
+    let vertexDescriptor = MTLVertexDescriptor()
+    
+        // Position
+    vertexDescriptor.attributes[0].format = .float4
+    vertexDescriptor.attributes[0].bufferIndex = 0
+    vertexDescriptor.attributes[0].offset = 0
+    
+        // UV tex data
+    vertexDescriptor.attributes[1].format = .float2
+    vertexDescriptor.attributes[1].bufferIndex = 0
+    vertexDescriptor.attributes[1].offset = 4 * MemoryLayout<Float>.size
+    
+    vertexDescriptor.layouts[0].stride = 6 * MemoryLayout<Float>.size
+    vertexDescriptor.layouts[0].stepFunction = .perVertex
+    
+    
     // Create rendering pipeline
     let pipelineDescriptor = MTLRenderPipelineDescriptor()
+    pipelineDescriptor.vertexDescriptor = vertexDescriptor
     pipelineDescriptor.vertexFunction = vertexShader
     pipelineDescriptor.fragmentFunction = fragmentShader
     pipelineDescriptor.colorAttachments[0].pixelFormat = .bgra8Unorm
@@ -60,7 +80,7 @@ func initMetal(_ hostView: MetalView) {
     pipeline = try! device.makeRenderPipelineState(descriptor: pipelineDescriptor)
     
     // Set up vertex buffer
-    vertBuffer = device.makeBuffer(bytes: verts, length: verts.count * MemoryLayout<Float>.size, options: [])
+    vertBuffer = device.makeBuffer(length: (verts.count * MemoryLayout<Float>.size) * MAX_RENDERED_ENTITIES, options: [])
     
     // Set up jpeg decompression
     decoder = tjInitDecompress()
@@ -72,15 +92,27 @@ func initMetal(_ hostView: MetalView) {
     rawPixels = malloc(pitch * height)!
     pixels = rawPixels.bindMemory(to: U8.self, capacity: pitch * height)
     
-    let texDescriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .bgra8Unorm, width: width, height: height, mipmapped: false)
+    let texDescriptor = MTLTextureDescriptor()
+    texDescriptor.textureType = .type2DArray
+    texDescriptor.pixelFormat = .bgra8Unorm
+    texDescriptor.width = 640
+    texDescriptor.height = 480
+    texDescriptor.arrayLength = MAX_RENDERED_ENTITIES
+    
     tex = device.makeTexture(descriptor: texDescriptor)!
 }
 
+var entitiesToRender = 0;
+
 func clearRenderList() {
-    
+    entitiesToRender = 0;
 }
 
 func pushRenderFrame(_ clip: VideoClip, _ frameNumber: Int) {
+    
+    let vertDest = vertBuffer.contents() + (verts.count * MemoryLayout<Float>.size * entitiesToRender)
+    memcpy(vertDest, verts, verts.count * MemoryLayout<Float>.size)
+    
     // Decode and set up texture
     clip.data.withUnsafeBytes { (ptr : UnsafePointer<U8>) in
         let (offset, length) = clip.offsets[frameNumber]
@@ -88,8 +120,9 @@ func pushRenderFrame(_ clip: VideoClip, _ frameNumber: Int) {
         tjDecompress2(decoder, jpegBase, UInt(length), pixels, 640, 640 * 4, 480, S32(TJPF_BGRA.rawValue), 0)
     }
     
+    tex.replace(region: MTLRegionMake2D(0, 0, 640, 480), mipmapLevel: 0, slice: entitiesToRender, withBytes: rawPixels, bytesPerRow: 640 * 4, bytesPerImage: 640 * 480 * 4)
     
-    tex.replace(region: MTLRegionMake2D(0, 0, 640, 480), mipmapLevel: 0, withBytes: rawPixels, bytesPerRow: 640 * 4)
+    entitiesToRender += 1
 }
 
 func render() {
