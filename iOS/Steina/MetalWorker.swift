@@ -165,7 +165,7 @@ func render() {
     
     let pass = MTLRenderPassDescriptor()
     pass.colorAttachments[0].texture = drawable.texture
-    pass.colorAttachments[0].clearColor = MTLClearColor(red: 1.0, green: 0.0, blue: 0.0, alpha: 1.0)
+    pass.colorAttachments[0].clearColor = MTLClearColor(red: 0.0, green: 0.0, blue: 0.0, alpha: 1.0)
     pass.colorAttachments[0].loadAction = .clear
     pass.colorAttachments[0].storeAction = .store
     

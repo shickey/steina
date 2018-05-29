@@ -196,6 +196,10 @@ class CaptureViewController: UIViewController, AVCaptureVideoDataOutputSampleBuf
         stopRecording()
     }
     
+    @IBAction func closePressed(_ sender: Any) {
+        self.presentingViewController!.dismiss(animated: true, completion: nil)
+    }
+    
     /*******************************************************************************
      *
      * Capture delegate methods

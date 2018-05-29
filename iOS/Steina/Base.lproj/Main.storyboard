@@ -205,6 +205,15 @@
                                         <connections>
                                             <action selector="recordPressed:" destination="vvR-aU-9rN" eventType="touchDown" id="GAD-Qb-pGq"/>
                                             <action selector="recordReleased:" destination="vvR-aU-9rN" eventType="touchUpInside" id="LEL-bg-Z8g"/>
+                                            <action selector="recordReleased:" destination="vvR-aU-9rN" eventType="touchUpOutside" id="YqW-HN-k6Z"/>
+                                        </connections>
+                                    </button>
+                                    <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Gm8-6q-9ZZ">
+                                        <rect key="frame" x="27" y="28" width="50" height="50"/>
+                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                        <state key="normal" image="close"/>
+                                        <connections>
+                                            <action selector="closePressed:" destination="vvR-aU-9rN" eventType="touchUpInside" id="ATU-r6-wZy"/>
                                         </connections>
                                     </button>
                                 </subviews>
@@ -224,6 +233,7 @@
         </scene>
     </scenes>
     <resources>
+        <image name="close" width="50" height="50"/>
         <image name="green-flag" width="112" height="112"/>
         <image name="record" width="50" height="50"/>
         <image name="stop" width="112" height="112"/>

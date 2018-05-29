@@ -92,7 +92,7 @@ class EditorViewController: UIViewController, WKScriptMessageHandler, ClipsColle
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         if let clipsCollectionVC = segue.destination as? ClipsCollectionViewController {
             clipsCollectionVC.delegate = self
-            clipsCollectionVC.clips = project.clips!.array as! [Clip]
+            clipsCollectionVC.project = project
         }
         if let captureVC = segue.destination as? CaptureViewController {
             captureVC.project = project
@@ -114,10 +114,9 @@ class EditorViewController: UIViewController, WKScriptMessageHandler, ClipsColle
                     if !visible { continue; } // Don't render anything if the video isn't visible
                     
                     let clipId = target["id"] as! String
-                    let time = (target["currentTime"] as! NSNumber).floatValue
-                    let fps = (target["fps"] as! NSNumber).intValue
+                    let frame = (target["currentFrame"] as! NSNumber).floatValue
                     
-                    var frameNumber = Int(round(Float(fps) * time))
+                    var frameNumber = Int(round(frame))
                 
                     let clip = self.videoClips[clipId]!
                     if frameNumber >= clip.frames {

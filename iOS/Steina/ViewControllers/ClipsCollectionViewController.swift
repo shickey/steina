@@ -22,6 +22,7 @@ class ClipsCollectionViewController: UICollectionViewController {
     
     var delegate : ClipsCollectionViewControllerDelegate? = nil
     
+    var project : Project! = nil
     var clips : [Clip] = []
 
     override func viewDidLoad() {
@@ -30,6 +31,11 @@ class ClipsCollectionViewController: UICollectionViewController {
         // Uncomment the following line to preserve selection between presentations
         // self.clearsSelectionOnViewWillAppear = false
 
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        clips = project.clips!.array as! [Clip]
+        collectionView?.reloadData()
     }
 
     override func didReceiveMemoryWarning() {
