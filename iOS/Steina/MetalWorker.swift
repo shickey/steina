@@ -9,6 +9,7 @@
 import Foundation
 import UIKit
 import Metal
+import simd
 
 let MAX_RENDERED_ENTITIES = 100
 
@@ -23,18 +24,40 @@ let device : MTLDevice! = MTLCreateSystemDefaultDevice()
 let commandQueue : MTLCommandQueue! = device.makeCommandQueue()
 var pipeline : MTLRenderPipelineState! = nil
 
-let verts : [Float] = [
-    -1.0,  1.0, 1.0, 1.0,   1.0, 1.0,
-    -1.0, -1.0, 1.0, 1.0,   1.0, 0.0,
-     1.0, -1.0, 1.0, 1.0,   0.0, 0.0,
-    -1.0,  1.0, 1.0, 1.0,   1.0, 1.0,
-     1.0, -1.0, 1.0, 1.0,   0.0, 0.0,
-     1.0,  1.0, 1.0, 1.0,   0.0, 1.0
-]
+func genVerts(_ offset: Int) -> [Float] {
+    return [
+        // X     Y    Z    W       U    V       0          EntityIdx
+        -1.0,  1.0, 1.0, 1.0,    1.0, 1.0,    0.0, Float(offset.u32),
+        -1.0, -1.0, 1.0, 1.0,    1.0, 0.0,    0.0, Float(offset.u32),
+         1.0, -1.0, 1.0, 1.0,    0.0, 0.0,    0.0, Float(offset.u32),
+        -1.0,  1.0, 1.0, 1.0,    1.0, 1.0,    0.0, Float(offset.u32),
+         1.0, -1.0, 1.0, 1.0,    0.0, 0.0,    0.0, Float(offset.u32),
+         1.0,  1.0, 1.0, 1.0,    0.0, 1.0,    0.0, Float(offset.u32)
+    ]
+}
+
+func entityTransform(scale: Float, rotate: Float, translateX: Float, translateY: Float) -> float4x4 {
+    var translation = float4x4(1)
+    translation[3][0] = translateX
+    translation[3][1] = translateY
+    
+    var rotation = float4x4(1)
+    rotation[0][0] =  cos(rotate)
+    rotation[0][1] = -sin(rotate)
+    rotation[1][0] =  sin(rotate)
+    rotation[1][1] =  cos(rotate)
+    
+    var scaling = float4x4(1)
+    scaling[0][0] = scale
+    scaling[1][1] = scale
+    
+    return translation * rotation * scaling
+}
 
 var tex : MTLTexture! = nil
 
 var vertBuffer : MTLBuffer! = nil
+var matBuffer : MTLBuffer! = nil
 
 var decoder : tjhandle! = nil
 var rawPixels : UnsafeMutableRawPointer! = nil
@@ -66,7 +89,12 @@ func initMetal(_ hostView: MetalView) {
     vertexDescriptor.attributes[1].bufferIndex = 0
     vertexDescriptor.attributes[1].offset = 4 * MemoryLayout<Float>.size
     
-    vertexDescriptor.layouts[0].stride = 6 * MemoryLayout<Float>.size
+        // Entity Index
+    vertexDescriptor.attributes[2].format = .float2
+    vertexDescriptor.attributes[2].bufferIndex = 0
+    vertexDescriptor.attributes[2].offset = 6 * MemoryLayout<Float>.size
+    
+    vertexDescriptor.layouts[0].stride = 8 * MemoryLayout<Float>.size
     vertexDescriptor.layouts[0].stepFunction = .perVertex
     
     
@@ -79,8 +107,9 @@ func initMetal(_ hostView: MetalView) {
     
     pipeline = try! device.makeRenderPipelineState(descriptor: pipelineDescriptor)
     
-    // Set up vertex buffer
-    vertBuffer = device.makeBuffer(length: (verts.count * MemoryLayout<Float>.size) * MAX_RENDERED_ENTITIES, options: [])
+    // Set up buffers
+    vertBuffer = device.makeBuffer(length: (genVerts(0).count * MemoryLayout<Float>.size) * MAX_RENDERED_ENTITIES, options: [])
+    matBuffer = device.makeBuffer(length: MemoryLayout<float4x4>.size * MAX_RENDERED_ENTITIES, options: [])
     
     // Set up jpeg decompression
     decoder = tjInitDecompress()
@@ -108,10 +137,14 @@ func clearRenderList() {
     entitiesToRender = 0;
 }
 
-func pushRenderFrame(_ clip: VideoClip, _ frameNumber: Int) {
-    
+func pushRenderFrame(_ clip: VideoClip, _ frameNumber: Int, _ transform: float4x4) {
+    let verts = genVerts(entitiesToRender)
     let vertDest = vertBuffer.contents() + (verts.count * MemoryLayout<Float>.size * entitiesToRender)
     memcpy(vertDest, verts, verts.count * MemoryLayout<Float>.size)
+    
+    let transformDest = matBuffer.contents() + (MemoryLayout<float4x4>.size * entitiesToRender)
+    var mutableTransform = transform
+    memcpy(transformDest, &mutableTransform, MemoryLayout<float4x4>.size)
     
     // Decode and set up texture
     clip.data.withUnsafeBytes { (ptr : UnsafePointer<U8>) in
@@ -141,11 +174,14 @@ func render() {
     
     renderEncoder.setRenderPipelineState(pipeline)
     renderEncoder.setVertexBuffer(vertBuffer, offset: 0, index: 0)
+    renderEncoder.setVertexBuffer(matBuffer, offset: 0, index: 1)
     
     renderEncoder.setFragmentTexture(tex, index: 0)
-    renderEncoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 6)
+    renderEncoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 6 * entitiesToRender)
     
     renderEncoder.endEncoding()
     commandBuffer.present(drawable, afterMinimumDuration: 1.0 / 30.0)
     commandBuffer.commit()
+    
+    clearRenderList()
 }

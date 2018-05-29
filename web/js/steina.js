@@ -130,9 +130,6 @@
 
             // Create external interface so iOS can call into JS
             function tick() {
-                vm.getVideoTargets().forEach(t => {
-                    t.waitForNextTick = false;
-                })
                 vm.runtime._step();
             }
 

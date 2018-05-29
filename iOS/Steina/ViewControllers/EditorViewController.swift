@@ -99,7 +99,6 @@ class EditorViewController: UIViewController, WKScriptMessageHandler {
     }
     
     @objc func tick(_ sender: CADisplayLink) {
-        clearRenderList()
         
         // @TODO: The step rate is hard coded in JS to be 1000 / 30
         //        but maybe we should pass the dt each time here?
@@ -109,10 +108,9 @@ class EditorViewController: UIViewController, WKScriptMessageHandler {
                 return;
             }
             if let targets = res as? Array<Dictionary<String, Any>> {
-//                for target in targets {
-                let target = targets[0]
-//                    let visible = target["visible"] as! Bool
-//                    if !visible { continue; } // Don't render anything if the video isn't visible
+                for target in targets {
+                    let visible = target["visible"] as! Bool
+                    if !visible { continue; } // Don't render anything if the video isn't visible
                     
                     let clipId = target["id"] as! String
                     let time = (target["currentTime"] as! NSNumber).floatValue
@@ -121,14 +119,21 @@ class EditorViewController: UIViewController, WKScriptMessageHandler {
                     var frameNumber = Int(round(Float(fps) * time))
                 
                     let clip = self.videoClips[clipId]!
-                if frameNumber >= clip.frames {
-                    frameNumber = Int(clip.frames) - 1;
-                }
-                
-                print(time)
+                    if frameNumber >= clip.frames {
+                        frameNumber = Int(clip.frames) - 1;
+                    }
                     
-                    pushRenderFrame(clip, frameNumber)
-//                }
+                    let x         = (target["x"] as! NSNumber).floatValue
+                    let y         = (target["y"] as! NSNumber).floatValue
+                    let size      = (target["size"] as! NSNumber).floatValue
+                    let direction = (target["direction"] as! NSNumber).floatValue
+                    
+                    let scale = (size / 100.0)
+                    let theta = (direction - 90.0) * (.pi / 180.0)
+                    
+                    let transform = entityTransform(scale: scale, rotate: theta, translateX: x, translateY: y)
+                    pushRenderFrame(clip, frameNumber, transform)
+                }
             }
             render()
         }
