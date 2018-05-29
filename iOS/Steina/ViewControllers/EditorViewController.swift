@@ -11,7 +11,7 @@ import WebKit
 
 typealias VideoClipId = String
 
-class EditorViewController: UIViewController, WKScriptMessageHandler {
+class EditorViewController: UIViewController, WKScriptMessageHandler, ClipsCollectionViewControllerDelegate {
     
     var project : Project! = nil
     
@@ -91,6 +91,7 @@ class EditorViewController: UIViewController, WKScriptMessageHandler {
     
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         if let clipsCollectionVC = segue.destination as? ClipsCollectionViewController {
+            clipsCollectionVC.delegate = self
             clipsCollectionVC.clips = project.clips!.array as! [Clip]
         }
         if let captureVC = segue.destination as? CaptureViewController {
@@ -151,6 +152,13 @@ class EditorViewController: UIViewController, WKScriptMessageHandler {
                 }
             }
         }
+    }
+    
+    // ClipsCollectionViewControllerDelegate
+    
+    func clipsControllerDidSelect(clipsController: ClipsCollectionViewController, clip: Clip) {
+        let id = clip.id!.uuidString
+        runJavascript("vm.setEditingTarget(\"\(id)\")")
     }
 
 }

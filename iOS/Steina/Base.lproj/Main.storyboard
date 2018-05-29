@@ -125,7 +125,7 @@
                                     </button>
                                     <containerView opaque="NO" contentMode="scaleToFill" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="jDq-cp-7oN">
                                         <rect key="frame" x="0.0" y="0.0" width="641" height="225"/>
-                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES"/>
+                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxY="YES"/>
                                         <connections>
                                             <segue destination="8zF-0t-HXv" kind="embed" id="Btv-vD-wek"/>
                                         </connections>

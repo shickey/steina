@@ -10,11 +10,17 @@ import UIKit
 
 private let reuseIdentifier = "ClipCell"
 
+protocol ClipsCollectionViewControllerDelegate {
+    func clipsControllerDidSelect(clipsController: ClipsCollectionViewController, clip: Clip)
+}
+
 class ClipsCollectionViewCell: UICollectionViewCell {
     
 }
 
 class ClipsCollectionViewController: UICollectionViewController {
+    
+    var delegate : ClipsCollectionViewControllerDelegate? = nil
     
     var clips : [Clip] = []
 
@@ -61,11 +67,10 @@ class ClipsCollectionViewController: UICollectionViewController {
     }
     
     override func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        print("selected clip at \(indexPath)")
-//        let clip = clips[indexPath.item]
-//        let clipData = try! Data(contentsOf: clip.assetUrl)
-//        let videoClip = deserializeClip(clipData)
-//        playClip(videoClip)
+        if let d = delegate {
+            let clip = clips[indexPath.item]
+            d.clipsControllerDidSelect(clipsController: self, clip: clip)
+        }
     }
 
     // MARK: UICollectionViewDelegate
