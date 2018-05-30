@@ -133,10 +133,11 @@
                 vm.runtime._step();
             }
 
-            function createVideoTarget(id, fps, frames) {
+            function createVideoTarget(id, fps, frames, blocksJson) {
                 vm.createVideoTarget(id, {
                     fps,
-                    frames
+                    frames,
+                    blocksJson
                 })
             }
 

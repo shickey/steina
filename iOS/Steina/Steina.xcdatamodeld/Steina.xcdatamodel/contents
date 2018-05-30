@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="14133" systemVersion="17C88" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="">
     <entity name="Clip" representedClassName="Clip" syncable="YES" codeGenerationType="class">
-        <attribute name="blocksJson" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="blocksJson" attributeType="String" defaultValueString="{&quot;_blocks&quot;:{},&quot;_scripts&quot;:[],&quot;_cache&quot;:{&quot;inputs&quot;:{},&quot;procedureParamNames&quot;:{},&quot;procedureDefinitions&quot;:{},&quot;_executeCached&quot;:{}}}" syncable="YES"/>
         <attribute name="id" attributeType="UUID" usesScalarValueType="NO" syncable="YES"/>
         <attribute name="orientation" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES" syncable="YES"/>
         <attribute name="title" optional="YES" attributeType="String" syncable="YES"/>

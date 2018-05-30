@@ -11,6 +11,11 @@ import WebKit
 
 typealias VideoClipId = String
 
+struct InMemoryClip {
+    let clip : Clip
+    let videoClip : VideoClip
+}
+
 class EditorViewController: UIViewController, WKScriptMessageHandler, ClipsCollectionViewControllerDelegate {
     
     var project : Project! = nil
@@ -22,7 +27,7 @@ class EditorViewController: UIViewController, WKScriptMessageHandler, ClipsColle
     
     var webView: WKWebView! = nil
     
-    var videoClips : [VideoClipId: VideoClip] = [:]
+    var videoClips : [VideoClipId: InMemoryClip] = [:]
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -31,7 +36,7 @@ class EditorViewController: UIViewController, WKScriptMessageHandler, ClipsColle
             let clip = untypedClip as! Clip
             let clipData = try! Data(contentsOf: clip.assetUrl)
             let videoClip = deserializeClip(clipData)
-            videoClips[clip.id!.uuidString] = videoClip
+            videoClips[clip.id!.uuidString] = InMemoryClip(clip: clip, videoClip: videoClip)
         }
         
         // Create web view controller and bind to "steinaMsg" namespace
@@ -56,6 +61,10 @@ class EditorViewController: UIViewController, WKScriptMessageHandler, ClipsColle
         let indexPage = Bundle.main.url(forResource: "web/index", withExtension: "html")!
         webView.loadFileURL(indexPage, allowingReadAccessTo: webFolder)
     }
+    
+    override func viewWillDisappear(_ animated: Bool) {
+        try! project.managedObjectContext!.save()
+    }
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
@@ -63,8 +72,11 @@ class EditorViewController: UIViewController, WKScriptMessageHandler, ClipsColle
     }
     
     func onReady() {
-        for (clipId, clip) in videoClips {
-            runJavascript("Steina.createVideoTarget(\"\(clipId)\", 30, \(clip.frames))")
+        for (clipId, inMemoryClip) in videoClips {
+            runJavascript("Steina.createVideoTarget(\"\(clipId)\", 30, \(inMemoryClip.videoClip.frames), \'\(inMemoryClip.clip.blocksJson!)\')") { ( res , err ) in
+                print(res)
+                print(err)
+            }
         }
         initMetal(metalView)
         startDisplayLink()
@@ -87,6 +99,7 @@ class EditorViewController: UIViewController, WKScriptMessageHandler, ClipsColle
     
     @IBAction func stopButtonTapped(_ sender: Any) {
         runJavascript("vm.stopAll()")
+        try! project.managedObjectContext!.save()
     }
     
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
@@ -116,11 +129,16 @@ class EditorViewController: UIViewController, WKScriptMessageHandler, ClipsColle
                     let clipId = target["id"] as! String
                     let frame = (target["currentFrame"] as! NSNumber).floatValue
                     
+                    let blocks = target["blocks"] as! String
+                    
                     var frameNumber = Int(round(frame))
                 
-                    let clip = self.videoClips[clipId]!
-                    if frameNumber >= clip.frames {
-                        frameNumber = Int(clip.frames) - 1;
+                    let inMemoryClip = self.videoClips[clipId]!
+                    inMemoryClip.clip.blocksJson = blocks
+                    
+                    let videoClip = inMemoryClip.videoClip
+                    if frameNumber >= videoClip.frames {
+                        frameNumber = Int(videoClip.frames) - 1;
                     }
                     
                     let x         = (target["x"] as! NSNumber).floatValue
@@ -132,7 +150,7 @@ class EditorViewController: UIViewController, WKScriptMessageHandler, ClipsColle
                     let theta = (direction - 90.0) * (.pi / 180.0)
                     
                     let transform = entityTransform(scale: scale, rotate: theta, translateX: x, translateY: y)
-                    pushRenderFrame(clip, frameNumber, transform)
+                    pushRenderFrame(videoClip, frameNumber, transform)
                 }
             }
             render()
