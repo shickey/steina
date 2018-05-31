@@ -8,6 +8,7 @@
 
 import UIKit
 import WebKit
+import CoreData
 
 typealias VideoClipId = String
 
@@ -19,18 +20,22 @@ struct InMemoryClip {
 class EditorViewController: UIViewController, WKScriptMessageHandler, ClipsCollectionViewControllerDelegate {
     
     var project : Project! = nil
-    
     var displayLink : CADisplayLink! = nil
+    var ready = false
+    var videoClips : [VideoClipId: InMemoryClip] = [:]
 
     @IBOutlet weak var metalView: MetalView!
     @IBOutlet weak var webViewContainer: UIView!
-    
+    @IBOutlet weak var loadingView: UIView!
     var webView: WKWebView! = nil
-    
-    var videoClips : [VideoClipId: InMemoryClip] = [:]
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        initMetal(metalView)
+        
+        
+        NotificationCenter.default.addObserver(self, selector: #selector(handleInsertedClips(_:)), name: Notification.Name.NSManagedObjectContextObjectsDidChange, object: nil)
         
         for untypedClip in project.clips! {
             let clip = untypedClip as! Clip
@@ -62,23 +67,38 @@ class EditorViewController: UIViewController, WKScriptMessageHandler, ClipsColle
         webView.loadFileURL(indexPage, allowingReadAccessTo: webFolder)
     }
     
-    override func viewWillDisappear(_ animated: Bool) {
-        try! project.managedObjectContext!.save()
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        if ready {
+            onReady()
+        }
     }
-
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
+    
+    override func viewWillDisappear(_ animated: Bool) {
+        runJavascript("vm.stopAll()")
+        stopDisplayLink()
+        try! project.managedObjectContext!.save()
+        super.viewWillDisappear(animated)
+    }
+    
+    func onScratchLoaded() {
+        var js : String = ""
+        for (clipId, inMemoryClip) in videoClips {
+            js += "Steina.createVideoTarget(\"\(clipId)\", 30, \(inMemoryClip.videoClip.frames), \'\(inMemoryClip.clip.blocksJson!)\');"
+        }
+        runJavascript(js) { (_, _) in
+            self.ready = true
+            self.onReady()
+            UIView.animate(withDuration: 0.5, animations: { 
+                self.loadingView.alpha = 0.0
+            }, completion: { (_) in
+                self.loadingView.isHidden = true
+            })
+            
+        }
     }
     
     func onReady() {
-        for (clipId, inMemoryClip) in videoClips {
-            runJavascript("Steina.createVideoTarget(\"\(clipId)\", 30, \(inMemoryClip.videoClip.frames), \'\(inMemoryClip.clip.blocksJson!)\')") { ( res , err ) in
-                print(res)
-                print(err)
-            }
-        }
-        initMetal(metalView)
         startDisplayLink()
     }
     
@@ -88,9 +108,18 @@ class EditorViewController: UIViewController, WKScriptMessageHandler, ClipsColle
         displayLink.add(to: .current, forMode: .defaultRunLoopMode)
     }
     
+    func stopDisplayLink() {
+        displayLink.remove(from: .current, forMode: .defaultRunLoopMode)
+    }
+    
     @inline(__always)
     func runJavascript(_ js: String, _ completion: ((Any?, Error?) -> Void)? = nil) {
         webView!.evaluateJavaScript(js, completionHandler: completion)
+    }
+    
+    @IBAction func backButtonTapped(_ sender: Any) {
+        try! project.managedObjectContext!.save()
+        self.presentingViewController!.dismiss(animated: true, completion: nil)
     }
     
     @IBAction func greenFlagButtonTapped(_ sender: Any) {
@@ -158,13 +187,28 @@ class EditorViewController: UIViewController, WKScriptMessageHandler, ClipsColle
         
     }
     
+    @objc func handleInsertedClips(_ notification: Notification) {
+        if let insertedObjects = notification.userInfo?[NSInsertedObjectsKey] as? Set<NSManagedObject> {
+            for managedObject in insertedObjects {
+                if let newClip = managedObject as? Clip {
+                    let clipData = try! Data(contentsOf: newClip.assetUrl)
+                    let videoClip = deserializeClip(clipData)
+                    let clipId = newClip.id!.uuidString
+                    let inMemoryClip = InMemoryClip(clip: newClip, videoClip: videoClip)
+                    videoClips[clipId] = inMemoryClip
+                    runJavascript("Steina.createVideoTarget(\"\(clipId)\", 30, \(inMemoryClip.videoClip.frames));")
+                }
+            }
+        }
+    }
+    
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
         // @TODO: Ewwwwwwwwww. Clean this mess up.
         if message.name == "steinaMsg" {
             if let body = message.body as? NSDictionary {
                 if let message = body.object(forKey: "message") as? String {
                     if message == "READY" {
-                        onReady()
+                        onScratchLoaded()
                     }
                 }
             }
