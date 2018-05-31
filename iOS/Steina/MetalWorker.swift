@@ -54,14 +54,19 @@ func entityTransform(scale: Float, rotate: Float, translateX: Float, translateY:
     return translation * rotation * scaling
 }
 
-var tex : MTLTexture! = nil
+var pixelTex : MTLTexture! = nil
+var maskTex : MTLTexture! = nil
 
 var vertBuffer : MTLBuffer! = nil
 var matBuffer : MTLBuffer! = nil
 
-var decoder : tjhandle! = nil
+var pixelDecoder : tjhandle! = nil
 var rawPixels : UnsafeMutableRawPointer! = nil
 var pixels : U8Ptr! = nil
+
+var maskDecoder : tjhandle! = nil
+var rawMask : UnsafeMutableRawPointer! = nil
+var mask : U8Ptr! = nil
 
 func initMetal(_ hostView: MetalView) {
     
@@ -104,6 +109,13 @@ func initMetal(_ hostView: MetalView) {
     pipelineDescriptor.vertexFunction = vertexShader
     pipelineDescriptor.fragmentFunction = fragmentShader
     pipelineDescriptor.colorAttachments[0].pixelFormat = .bgra8Unorm
+    pipelineDescriptor.colorAttachments[0].isBlendingEnabled = true
+    pipelineDescriptor.colorAttachments[0].rgbBlendOperation = .add
+    pipelineDescriptor.colorAttachments[0].alphaBlendOperation = .add
+    pipelineDescriptor.colorAttachments[0].sourceRGBBlendFactor = .sourceAlpha
+    pipelineDescriptor.colorAttachments[0].sourceAlphaBlendFactor = .sourceAlpha
+    pipelineDescriptor.colorAttachments[0].destinationRGBBlendFactor = .oneMinusSourceAlpha
+    pipelineDescriptor.colorAttachments[0].destinationAlphaBlendFactor = .oneMinusSourceAlpha
     
     pipeline = try! device.makeRenderPipelineState(descriptor: pipelineDescriptor)
     
@@ -112,7 +124,7 @@ func initMetal(_ hostView: MetalView) {
     matBuffer = device.makeBuffer(length: MemoryLayout<float4x4>.size * MAX_RENDERED_ENTITIES, options: [])
     
     // Set up jpeg decompression
-    decoder = tjInitDecompress()
+    pixelDecoder = tjInitDecompress()
     let width = 640
     let height = 480
     let bytesPerPixel = 4
@@ -128,7 +140,22 @@ func initMetal(_ hostView: MetalView) {
     texDescriptor.height = 480
     texDescriptor.arrayLength = MAX_RENDERED_ENTITIES
     
-    tex = device.makeTexture(descriptor: texDescriptor)!
+    pixelTex = device.makeTexture(descriptor: texDescriptor)!
+    
+    // Set up mask decompression
+    maskDecoder = tjInitDecompress()
+    
+    rawMask = malloc(width * height)!
+    mask = rawMask.bindMemory(to: U8.self, capacity: width * height)
+    
+    let maskTexDescriptor = MTLTextureDescriptor()
+    maskTexDescriptor.textureType = .type2DArray
+    maskTexDescriptor.pixelFormat = .r8Unorm
+    maskTexDescriptor.width = 640
+    maskTexDescriptor.height = 480
+    maskTexDescriptor.arrayLength = MAX_RENDERED_ENTITIES
+    
+    maskTex = device.makeTexture(descriptor: maskTexDescriptor)!
 }
 
 var entitiesToRender = 0;
@@ -150,10 +177,18 @@ func pushRenderFrame(_ clip: VideoClip, _ frameNumber: Int, _ transform: float4x
     clip.data.withUnsafeBytes { (ptr : UnsafePointer<U8>) in
         let (offset, length) = clip.offsets[frameNumber]
         let jpegBase = ptr + Int(offset)
-        tjDecompress2(decoder, jpegBase, UInt(length), pixels, 640, 640 * 4, 480, S32(TJPF_BGRA.rawValue), 0)
+        tjDecompress2(pixelDecoder, jpegBase, UInt(length), pixels, 640, 640 * 4, 480, S32(TJPF_BGRA.rawValue), 0)
     }
     
-    tex.replace(region: MTLRegionMake2D(0, 0, 640, 480), mipmapLevel: 0, slice: entitiesToRender, withBytes: rawPixels, bytesPerRow: 640 * 4, bytesPerImage: 640 * 480 * 4)
+    pixelTex.replace(region: MTLRegionMake2D(0, 0, 640, 480), mipmapLevel: 0, slice: entitiesToRender, withBytes: rawPixels, bytesPerRow: 640 * 4, bytesPerImage: 640 * 480 * 4)
+    
+    // Decode and set up mask
+    clip.mask.withUnsafeBytes { (ptr : UnsafePointer<U8>) in
+        let maskBase = ptr
+        tjDecompress2(maskDecoder, maskBase, UInt(640 * 480), mask, 640, 640, 480, S32(TJPF_GRAY.rawValue), 0)
+    }
+    
+    maskTex.replace(region: MTLRegionMake2D(0, 0, 640, 480), mipmapLevel: 0, slice: entitiesToRender, withBytes: rawMask, bytesPerRow: 640, bytesPerImage: 640 * 480)
     
     entitiesToRender += 1
 }
@@ -176,7 +211,8 @@ func render() {
     renderEncoder.setVertexBuffer(vertBuffer, offset: 0, index: 0)
     renderEncoder.setVertexBuffer(matBuffer, offset: 0, index: 1)
     
-    renderEncoder.setFragmentTexture(tex, index: 0)
+    renderEncoder.setFragmentTexture(pixelTex, index: 0)
+    renderEncoder.setFragmentTexture(maskTex, index: 1)
     renderEncoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 6 * entitiesToRender)
     
     renderEncoder.endEncoding()
