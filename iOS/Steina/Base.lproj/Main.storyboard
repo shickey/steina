@@ -160,6 +160,7 @@
                             </view>
                         </subviews>
                         <color key="backgroundColor" red="0.22876701497318708" green="0.24216694341046363" blue="0.29431132254205217" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
+                        <viewLayoutGuide key="safeArea" id="MRZ-ib-WKK"/>
                     </view>
                     <connections>
                         <outlet property="loadingView" destination="r7b-w5-iT2" id="utK-KH-5J9"/>
@@ -218,6 +219,11 @@
                                 <rect key="frame" x="0.0" y="0.0" width="768" height="1024"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <subviews>
+                                    <view contentMode="scaleToFill" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="WlG-9b-7JO" customClass="DrawMaskView" customModule="Steina" customModuleProvider="target">
+                                        <rect key="frame" x="0.0" y="0.0" width="768" height="1024"/>
+                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                        <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                    </view>
                                     <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="dy3-vT-Csp">
                                         <rect key="frame" x="664" y="482" width="60" height="60"/>
                                         <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMinY="YES" flexibleMaxY="YES"/>
@@ -244,6 +250,7 @@
                         <viewLayoutGuide key="safeArea" id="amO-uh-Wj7"/>
                     </view>
                     <connections>
+                        <outlet property="drawMaskView" destination="WlG-9b-7JO" id="CjX-kJ-xqM"/>
                         <outlet property="previewView" destination="cvb-YC-Fs6" id="1Zb-ol-BFg"/>
                     </connections>
                 </viewController>

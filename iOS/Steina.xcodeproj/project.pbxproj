@@ -23,6 +23,8 @@
 		A398F7CF20B5B89D00C60946 /* VideoClip.swift in Sources */ = {isa = PBXBuildFile; fileRef = A398F7CE20B5B89D00C60946 /* VideoClip.swift */; };
 		A398F7D320BB03BF00C60946 /* CoreDataEntities.swift in Sources */ = {isa = PBXBuildFile; fileRef = A398F7D220BB03BF00C60946 /* CoreDataEntities.swift */; };
 		A398F7D720BB05D800C60946 /* ProjectCollectionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A398F7D620BB05D800C60946 /* ProjectCollectionViewController.swift */; };
+		A3C7C6F820C0488E009E08EF /* DrawMaskView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3C7C6F720C0488E009E08EF /* DrawMaskView.swift */; };
+		A3C7C6FE20C04C75009E08EF /* Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3C7C6FD20C04C75009E08EF /* Utils.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -47,6 +49,8 @@
 		A398F7CE20B5B89D00C60946 /* VideoClip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoClip.swift; sourceTree = "<group>"; };
 		A398F7D220BB03BF00C60946 /* CoreDataEntities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreDataEntities.swift; sourceTree = "<group>"; };
 		A398F7D620BB05D800C60946 /* ProjectCollectionViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectCollectionViewController.swift; sourceTree = "<group>"; };
+		A3C7C6F720C0488E009E08EF /* DrawMaskView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DrawMaskView.swift; sourceTree = "<group>"; };
+		A3C7C6FD20C04C75009E08EF /* Utils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utils.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -82,6 +86,7 @@
 			isa = PBXGroup;
 			children = (
 				A398F7AE20A4D69700C60946 /* ViewControllers */,
+				A3C7C6F720C0488E009E08EF /* DrawMaskView.swift */,
 				A398F79720A346BB00C60946 /* AppDelegate.swift */,
 				A398F79B20A346BB00C60946 /* Main.storyboard */,
 				A398F7BE20B3210500C60946 /* MetalWorker.swift */,
@@ -95,6 +100,7 @@
 				A398F7CC20B5A8E900C60946 /* DataTypes.swift */,
 				A398F7CE20B5B89D00C60946 /* VideoClip.swift */,
 				A398F7D220BB03BF00C60946 /* CoreDataEntities.swift */,
+				A3C7C6FD20C04C75009E08EF /* Utils.swift */,
 			);
 			path = Steina;
 			sourceTree = "<group>";
@@ -195,11 +201,13 @@
 			files = (
 				A398F7D320BB03BF00C60946 /* CoreDataEntities.swift in Sources */,
 				A398F7BB20AA4DC100C60946 /* ClipsCollectionViewController.swift in Sources */,
+				A3C7C6F820C0488E009E08EF /* DrawMaskView.swift in Sources */,
 				A398F7CF20B5B89D00C60946 /* VideoClip.swift in Sources */,
 				A398F7C320B4582900C60946 /* CaptureViewController.swift in Sources */,
 				A398F7C120B3266200C60946 /* Shaders.metal in Sources */,
 				A398F7CD20B5A8E900C60946 /* DataTypes.swift in Sources */,
 				A398F7D720BB05D800C60946 /* ProjectCollectionViewController.swift in Sources */,
+				A3C7C6FE20C04C75009E08EF /* Utils.swift in Sources */,
 				A398F7A020A346BB00C60946 /* Steina.xcdatamodeld in Sources */,
 				A398F7BF20B3210500C60946 /* MetalWorker.swift in Sources */,
 				A398F7B020A4D6C700C60946 /* EditorViewController.swift in Sources */,

@@ -8,6 +8,7 @@
 
 import UIKit
 import AVFoundation
+import QuartzCore
 
 let FORMAT_420v_CODE : UInt32 = 0x34323076   // '420v' in ascii
 
@@ -21,7 +22,7 @@ enum ClipOrientation : S32 {
     case landscapeRight = 3
 }
 
-class VideoPreviewView: UIView {
+class VideoPreviewView : UIView {
     
     override class var layerClass: AnyClass {
         return AVCaptureVideoPreviewLayer.self
@@ -34,7 +35,7 @@ class VideoPreviewView: UIView {
 }
 
 
-class CaptureViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDelegate {
+class CaptureViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDelegate, DrawMaskViewDelegate {
     
     var project : Project! = nil
     
@@ -48,11 +49,15 @@ class CaptureViewController: UIViewController, AVCaptureVideoDataOutputSampleBuf
     var compressor : tjhandle! = nil
     var jpegBuffer : U8Ptr! = nil
     var clip : VideoClip! = nil
+    var maskData : Data! = nil
     
     @IBOutlet weak var previewView: VideoPreviewView!
+    @IBOutlet weak var drawMaskView: DrawMaskView!
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        drawMaskView.delegate = self
         
         switch AVCaptureDevice.authorizationStatus(for: .video) {
         case .authorized: // The user has previously granted access to the camera.
@@ -83,6 +88,10 @@ class CaptureViewController: UIViewController, AVCaptureVideoDataOutputSampleBuf
         // Dispose of any resources that can be recreated.
     }
     
+    override var shouldAutorotate: Bool {
+        if recording { return false }
+        return super.shouldAutorotate
+    }
     
     func setupCaptureSession() {
         
@@ -124,6 +133,7 @@ class CaptureViewController: UIViewController, AVCaptureVideoDataOutputSampleBuf
     }
     
     func updateOrientation() {
+        if recording { return }
         let orientation = UIDevice.current.orientation
         
         if !orientation.isPortrait && !orientation.isLandscape { return }
@@ -155,6 +165,7 @@ class CaptureViewController: UIViewController, AVCaptureVideoDataOutputSampleBuf
         framesWritten = 0
         
         clip = VideoClip()
+        clip.mask = maskData
         
         // Begin recording by setting up the delegate methods on the background queue
         frameOutput.setSampleBufferDelegate(self, queue: recordingQueue)
@@ -174,14 +185,14 @@ class CaptureViewController: UIViewController, AVCaptureVideoDataOutputSampleBuf
             DispatchQueue.main.async {
                 
                 // Create Clip entity
-                let clip = self.project.createClip()
+                let newClip = self.project.createClip()
                 
                 let clipData = serializeClip(self.clip)
-                try! clipData.write(to: clip.assetUrl)
+                try! clipData.write(to: newClip.assetUrl)
                 
-                try! clip.managedObjectContext!.save()
+                newClip.orientation = self.recordingOrientation.rawValue
                 
-                clip.orientation = self.recordingOrientation.rawValue 
+                try! newClip.managedObjectContext!.save()
                 
                 self.recording = false
             }
@@ -237,6 +248,12 @@ class CaptureViewController: UIViewController, AVCaptureVideoDataOutputSampleBuf
     
     func captureOutput(_ output: AVCaptureOutput, didDrop sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
         print("frame dropped")
+    }
+    
+    // DrawMaskViewDelegate
+    
+    func drawMaskViewCreatedMaskImage(_ maskView: DrawMaskView, maskJpegData: Data) {
+        maskData = maskJpegData
     }
     
 }

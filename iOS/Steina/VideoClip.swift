@@ -22,6 +22,9 @@ class VideoClip {
     //   Offsets are calculated from the base of the data bytes pointer
     var offsets : [(FrameOffset, FrameLength)] = []
     
+    // JPEG compositing mask data
+    var mask : Data = Data()
+    
     // JPEG frame data bytes
     var data : Data = Data(capacity: 10.megabytes)
 }
@@ -51,8 +54,22 @@ func serializeClip(_ clip: VideoClip) -> Data {
         out.append(bytes)
     }
     
-    // U32 -> Data offset from top of file (4 U32s for the first 4 values in this header + (frame count * size of U32))
-    var dataOffset : U32 = U32(4 * MemoryLayout<U32>.size + (Int(frames) * MemoryLayout<U32>.size))
+    // U32 -> Mask data offset from top of file (24 bytes for the header + length of frame offset data)
+    var maskOffset : U32 = U32(6 * MemoryLayout<U32>.size + (Int(frames) * MemoryLayout<U32>.size))
+    withUnsafeBytes(of: &maskOffset) { (ptr) in
+        let bytes = ptr.bindMemory(to: U8.self)
+        out.append(bytes)
+    }
+    
+    // U32 -> Mask length in bytes
+    var maskLength = clip.mask.count.u32
+    withUnsafeBytes(of: &maskLength) { (ptr) in
+        let bytes = ptr.bindMemory(to: U8.self)
+        out.append(bytes)
+    }
+    
+    // U32 -> Data offset from top of file
+    var dataOffset : U32 = maskOffset + maskLength
     withUnsafeBytes(of: &dataOffset) { (ptr) in
         let bytes = ptr.bindMemory(to: U8.self)
         out.append(bytes)
@@ -75,7 +92,8 @@ func serializeClip(_ clip: VideoClip) -> Data {
         }
     }
     
-    out.reserveCapacity(clip.data.count)
+    out.reserveCapacity(clip.mask.count + clip.data.count)
+    out.append(clip.mask)
     out.append(clip.data)
     
     return out
@@ -86,34 +104,38 @@ func deserializeClip(_ data: Data) -> VideoClip {
     let clip = VideoClip()
     
     var frames : U32 = 0
+    var maskOffset : U32 = 0
+    var maskLength : U32 = 0
     var dataOffset : U32 = 0
     var dataLength : U32 = 0
     
     data.withUnsafeBytes { (bytes : UnsafePointer<U8>) in
         
         // Parse the first 4 fields of the header
-        bytes.withMemoryRebound(to: U32.self, capacity: 2, { (ptr) in
+        bytes.withMemoryRebound(to: U32.self, capacity: 6, { (ptr) in
             assert(ptr[0] == VIDEO_FILE_MAGIC_NUMBER)
             frames = ptr[1]
-            dataOffset = ptr[2]
-            dataLength = ptr[3]
+            maskOffset = ptr[2]
+            maskLength = ptr[3]
+            dataOffset = ptr[4]
+            dataLength = ptr[5]
         })
         
         
         // Calculate frame offset tuples
-        let headerLength = Int(dataOffset)
+        let headerLength = Int(maskOffset)
         bytes.withMemoryRebound(to: U32.self, capacity: headerLength, { (ptr) in
             
             for i in 0..<(frames - 1) { // Handle the last frame differently since we need to use the data length
                                         // to calculate the frame length
-                let thisOffset = ptr[Int(4 + i)]
-                let nextOffset = ptr[Int(4 + i + 1)]
+                let thisOffset = ptr[Int(6 + i)]
+                let nextOffset = ptr[Int(6 + i + 1)]
                 let thisLength = nextOffset - thisOffset
                 clip.offsets.append((thisOffset, thisLength))
             }
             
             // Last frame
-            let lastOffset = ptr[Int(4 + (frames - 1))]
+            let lastOffset = ptr[Int(6 + (frames - 1))]
             let lastLength = dataLength - lastOffset
             clip.offsets.append((lastOffset, lastLength))
         })
@@ -122,8 +144,10 @@ func deserializeClip(_ data: Data) -> VideoClip {
     
     clip.frames = frames
     
-    let headerLength = U32(4 * MemoryLayout<U32>.size + (Int(clip.frames) * MemoryLayout<U32>.size))
-    let jpegDataStart = data.startIndex.advanced(by: Int(headerLength))
+    let maskDataStart = data.startIndex.advanced(by: Int(maskOffset))
+    clip.mask = data.subdata(in: maskDataStart..<(maskDataStart + Int(maskLength))) 
+    
+    let jpegDataStart = data.startIndex.advanced(by: Int(dataOffset))
     clip.data = data.subdata(in: jpegDataStart..<data.endIndex)
     
     return clip
