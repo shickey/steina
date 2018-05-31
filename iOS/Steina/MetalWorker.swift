@@ -24,15 +24,15 @@ let device : MTLDevice! = MTLCreateSystemDefaultDevice()
 let commandQueue : MTLCommandQueue! = device.makeCommandQueue()
 var pipeline : MTLRenderPipelineState! = nil
 
-func genVerts(_ offset: Int) -> [Float] {
+func genVerts(_ entityIndex: Int, z: Float) -> [Float] {
     return [
         // X     Y    Z    W       U    V       0          EntityIdx
-        -1.0,  1.0, 1.0, 1.0,    1.0, 1.0,    0.0, Float(offset.u32),
-        -1.0, -1.0, 1.0, 1.0,    1.0, 0.0,    0.0, Float(offset.u32),
-         1.0, -1.0, 1.0, 1.0,    0.0, 0.0,    0.0, Float(offset.u32),
-        -1.0,  1.0, 1.0, 1.0,    1.0, 1.0,    0.0, Float(offset.u32),
-         1.0, -1.0, 1.0, 1.0,    0.0, 0.0,    0.0, Float(offset.u32),
-         1.0,  1.0, 1.0, 1.0,    0.0, 1.0,    0.0, Float(offset.u32)
+        -1.0,  1.0,   z, 1.0,    1.0, 1.0,    0.0, Float(entityIndex.u32),
+        -1.0, -1.0,   z, 1.0,    1.0, 0.0,    0.0, Float(entityIndex.u32),
+         1.0, -1.0,   z, 1.0,    0.0, 0.0,    0.0, Float(entityIndex.u32),
+        -1.0,  1.0,   z, 1.0,    1.0, 1.0,    0.0, Float(entityIndex.u32),
+         1.0, -1.0,   z, 1.0,    0.0, 0.0,    0.0, Float(entityIndex.u32),
+         1.0,  1.0,   z, 1.0,    0.0, 1.0,    0.0, Float(entityIndex.u32)
     ]
 }
 
@@ -56,6 +56,7 @@ func entityTransform(scale: Float, rotate: Float, translateX: Float, translateY:
 
 var pixelTex : MTLTexture! = nil
 var maskTex : MTLTexture! = nil
+var depthTex : MTLTexture! = nil
 
 var vertBuffer : MTLBuffer! = nil
 var matBuffer : MTLBuffer! = nil
@@ -102,6 +103,10 @@ func initMetal(_ hostView: MetalView) {
     vertexDescriptor.layouts[0].stride = 8 * MemoryLayout<Float>.size
     vertexDescriptor.layouts[0].stepFunction = .perVertex
     
+    // Set up depth buffer
+    let depthDescriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .depth32Float, width: 640, height: 480, mipmapped: false)
+    depthDescriptor.usage = .renderTarget
+    depthTex = device.makeTexture(descriptor: depthDescriptor)!
     
     // Create rendering pipeline
     let pipelineDescriptor = MTLRenderPipelineDescriptor()
@@ -116,11 +121,13 @@ func initMetal(_ hostView: MetalView) {
     pipelineDescriptor.colorAttachments[0].sourceAlphaBlendFactor = .sourceAlpha
     pipelineDescriptor.colorAttachments[0].destinationRGBBlendFactor = .oneMinusSourceAlpha
     pipelineDescriptor.colorAttachments[0].destinationAlphaBlendFactor = .oneMinusSourceAlpha
+    pipelineDescriptor.depthAttachmentPixelFormat = .depth32Float
+    
     
     pipeline = try! device.makeRenderPipelineState(descriptor: pipelineDescriptor)
     
     // Set up buffers
-    vertBuffer = device.makeBuffer(length: (genVerts(0).count * MemoryLayout<Float>.size) * MAX_RENDERED_ENTITIES, options: [])
+    vertBuffer = device.makeBuffer(length: (genVerts(0, z: 0).count * MemoryLayout<Float>.size) * MAX_RENDERED_ENTITIES, options: [])
     matBuffer = device.makeBuffer(length: MemoryLayout<float4x4>.size * MAX_RENDERED_ENTITIES, options: [])
     
     // Set up jpeg decompression
@@ -165,7 +172,7 @@ func clearRenderList() {
 }
 
 func pushRenderFrame(_ clip: VideoClip, _ frameNumber: Int, _ transform: float4x4) {
-    let verts = genVerts(entitiesToRender)
+    let verts = genVerts(entitiesToRender, z: (Float(entitiesToRender) / 10.0) + 0.1 )
     let vertDest = vertBuffer.contents() + (verts.count * MemoryLayout<Float>.size * entitiesToRender)
     memcpy(vertDest, verts, verts.count * MemoryLayout<Float>.size)
     
@@ -203,6 +210,10 @@ func render() {
     pass.colorAttachments[0].clearColor = MTLClearColor(red: 0.0, green: 0.0, blue: 0.0, alpha: 1.0)
     pass.colorAttachments[0].loadAction = .clear
     pass.colorAttachments[0].storeAction = .store
+    pass.depthAttachment.texture = depthTex
+    pass.depthAttachment.loadAction = .clear
+    pass.depthAttachment.storeAction = .store
+    pass.depthAttachment.clearDepth = 0.0
     
     let commandBuffer = commandQueue.makeCommandBuffer()!
     let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: pass)!
