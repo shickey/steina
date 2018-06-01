@@ -23,6 +23,7 @@ var metalLayer : CAMetalLayer! = nil
 let device : MTLDevice! = MTLCreateSystemDefaultDevice()
 let commandQueue : MTLCommandQueue! = device.makeCommandQueue()
 var pipeline : MTLRenderPipelineState! = nil
+var depthState : MTLDepthStencilState! = nil
 
 func genVerts(_ entityIndex: Int, z: Float) -> [Float] {
     return [
@@ -104,9 +105,9 @@ func initMetal(_ hostView: MetalView) {
     vertexDescriptor.layouts[0].stepFunction = .perVertex
     
     // Set up depth buffer
-    let depthDescriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .depth32Float, width: 640, height: 480, mipmapped: false)
-    depthDescriptor.usage = .renderTarget
-    depthTex = device.makeTexture(descriptor: depthDescriptor)!
+    let depthTexDescriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .depth32Float, width: 640, height: 480, mipmapped: false)
+    depthTexDescriptor.usage = .renderTarget
+    depthTex = device.makeTexture(descriptor: depthTexDescriptor)!
     
     // Create rendering pipeline
     let pipelineDescriptor = MTLRenderPipelineDescriptor()
@@ -163,6 +164,12 @@ func initMetal(_ hostView: MetalView) {
     maskTexDescriptor.arrayLength = MAX_RENDERED_ENTITIES
     
     maskTex = device.makeTexture(descriptor: maskTexDescriptor)!
+    
+    // Set up depth test
+    let depthTestDescriptor = MTLDepthStencilDescriptor()
+    depthTestDescriptor.depthCompareFunction = .less
+    depthTestDescriptor.isDepthWriteEnabled = true
+    depthState = device.makeDepthStencilState(descriptor: depthTestDescriptor)
 }
 
 var entitiesToRender = 0;
@@ -172,7 +179,7 @@ func clearRenderList() {
 }
 
 func pushRenderFrame(_ clip: VideoClip, _ frameNumber: Int, _ transform: float4x4) {
-    let verts = genVerts(entitiesToRender, z: (Float(entitiesToRender) / 10.0) + 0.1 )
+    let verts = genVerts(entitiesToRender, z: 1.0 - (Float(entitiesToRender + 1) / 10.0))
     let vertDest = vertBuffer.contents() + (verts.count * MemoryLayout<Float>.size * entitiesToRender)
     memcpy(vertDest, verts, verts.count * MemoryLayout<Float>.size)
     
@@ -213,12 +220,13 @@ func render() {
     pass.depthAttachment.texture = depthTex
     pass.depthAttachment.loadAction = .clear
     pass.depthAttachment.storeAction = .store
-    pass.depthAttachment.clearDepth = 0.0
+    pass.depthAttachment.clearDepth = 1.0
     
     let commandBuffer = commandQueue.makeCommandBuffer()!
     let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: pass)!
     
     renderEncoder.setRenderPipelineState(pipeline)
+    renderEncoder.setDepthStencilState(depthState)
     renderEncoder.setVertexBuffer(vertBuffer, offset: 0, index: 0)
     renderEncoder.setVertexBuffer(matBuffer, offset: 0, index: 1)
     

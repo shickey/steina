@@ -5,6 +5,7 @@
      * @return {void}
      */
     function onLoad () {
+
         Blockly.VerticalFlyout.prototype.DEFAULT_WIDTH = 300;
 
         // Instantiate the VM and create an empty project
