@@ -229,8 +229,6 @@ class CaptureViewController: UIViewController, AVCaptureVideoDataOutputSampleBuf
         let width = CVPixelBufferGetWidth(buffer)
         let height = CVPixelBufferGetHeight(buffer)
         
-        print("w: \(width)   h: \(height)")
-        
         // Compress
         var jpegSize : UInt = 0
         let typedBase = baseRawPointer!.bindMemory(to: U8.self, capacity: width * height)
@@ -252,8 +250,8 @@ class CaptureViewController: UIViewController, AVCaptureVideoDataOutputSampleBuf
     
     // DrawMaskViewDelegate
     
-    func drawMaskViewCreatedMaskImage(_ maskView: DrawMaskView, maskJpegData: Data) {
-        maskData = maskJpegData
+    func drawMaskViewUpdatedMask(_ maskView: DrawMaskView) {
+        maskData = maskView.createGreyscaleMaskJpeg()
     }
     
 }

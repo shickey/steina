@@ -40,6 +40,6 @@ fragment float4 passthrough_fragment(VertexOut v [[ stage_in ]],
     constexpr sampler s(coord::normalized, filter::linear);
     
     float4 color = texture.sample(s, v.uv, v.entityIndex);
-    float maskVal = mask.sample(s, v.uv, v.entityIndex).r;
+    float maskVal = mask.sample(s, v.uv, v.entityIndex).a;
     return float4(color.rgb, maskVal);
 }

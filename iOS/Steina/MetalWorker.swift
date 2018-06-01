@@ -157,7 +157,7 @@ func initMetal(_ hostView: MetalView) {
     
     let maskTexDescriptor = MTLTextureDescriptor()
     maskTexDescriptor.textureType = .type2DArray
-    maskTexDescriptor.pixelFormat = .r8Unorm
+    maskTexDescriptor.pixelFormat = .a8Unorm
     maskTexDescriptor.width = 640
     maskTexDescriptor.height = 480
     maskTexDescriptor.arrayLength = MAX_RENDERED_ENTITIES
