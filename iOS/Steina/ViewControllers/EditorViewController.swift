@@ -9,6 +9,7 @@
 import UIKit
 import WebKit
 import CoreData
+import Dispatch
 
 typealias VideoClipId = String
 
@@ -26,7 +27,9 @@ class EditorViewController: UIViewController, WKScriptMessageHandler, MetalViewD
     var draggingVideoId : VideoClipId! = nil
     var previousRenderedIds : [VideoClipId] = []
     var renderedIds : [VideoClipId] = []
-
+    var renderingQueue : DispatchQueue = DispatchQueue(label: "edu.mit.media.llk.Steina.Render", qos: .default, attributes: .concurrent, autoreleaseFrequency: DispatchQueue.AutoreleaseFrequency.workItem, target: nil)
+    let renderDispatchGroup = DispatchGroup()
+    
     @IBOutlet weak var metalView: MetalView!
     @IBOutlet weak var webViewContainer: UIView!
     @IBOutlet weak var loadingView: UIView!
@@ -38,7 +41,6 @@ class EditorViewController: UIViewController, WKScriptMessageHandler, MetalViewD
         metalView.delegate = self
         
         initMetal(metalView)
-        
         
         NotificationCenter.default.addObserver(self, selector: #selector(handleInsertedClips(_:)), name: Notification.Name.NSManagedObjectContextObjectsDidChange, object: nil)
         
@@ -158,6 +160,8 @@ class EditorViewController: UIViewController, WKScriptMessageHandler, MetalViewD
                 print("JS ERROR: \(realError)")
                 return;
             }
+            self.renderDispatchGroup.wait()
+            var numEntitiesToRender = 0
             if let targets = res as? Array<Dictionary<String, Any>> {
                 for target in targets {
                     let visible = target["visible"] as! Bool
@@ -186,12 +190,22 @@ class EditorViewController: UIViewController, WKScriptMessageHandler, MetalViewD
                     let scale = (size / 100.0)
                     let theta = (direction - 90.0) * (.pi / 180.0)
                     
-                    let transform = entityTransform(scale: scale, rotate: theta, translateX: x, translateY: y)
-                    pushRenderFrame(videoClip, frameNumber, transform)
                     self.renderedIds.append(clipId)
+                    
+                    self.renderDispatchGroup.enter()
+                    let entityIndex = numEntitiesToRender
+                    self.renderingQueue.async {
+                        let transform = entityTransform(scale: scale, rotate: theta, translateX: x, translateY: y)
+                        pushRenderFrame(videoClip, entityIndex, frameNumber, transform)
+                        self.renderDispatchGroup.leave()
+                    }
+                    
+                    numEntitiesToRender += 1
                 }
             }
-            render()
+            self.renderDispatchGroup.notify(queue: self.renderingQueue) {
+                render(numEntitiesToRender)
+            }
         }
         
     }
