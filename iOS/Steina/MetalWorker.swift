@@ -242,10 +242,10 @@ func pushRenderFrame(_ clip: VideoClip, _ renderingIndex: Int, _ frameNumber: In
     
     // Decode and set up texture
     clip.data.withUnsafeBytes { (ptr : UnsafePointer<U8>) in
-        let (offset, length) = clip.offsets[frameNumber]
-        let jpegBase = ptr + Int(offset)
+        let frameInfo = clip.offsets[frameNumber]
+        let jpegBase = ptr + Int(frameInfo.offset)
         let pixelsOffset = pixels + (640 * 480 * 4 * renderingIndex)
-        tjDecompress2(decompressor, jpegBase, UInt(length), pixelsOffset, 640, 640 * 4, 480, S32(TJPF_BGRA.rawValue), TJFLAG_FASTDCT | TJFLAG_FASTUPSAMPLE)
+        tjDecompress2(decompressor, jpegBase, UInt(frameInfo.length), pixelsOffset, 640, 640 * 4, 480, S32(TJPF_BGRA.rawValue), TJFLAG_FASTDCT | TJFLAG_FASTUPSAMPLE)
     }
     
     let rawPixelsOffset = rawPixels + (640 * 480 * 4 * renderingIndex)

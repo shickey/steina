@@ -20,9 +20,22 @@ struct InMemoryClip {
 
 class EditorViewController: UIViewController, WKScriptMessageHandler, MetalViewDelegate, ClipsCollectionViewControllerDelegate {
     
-    var project : Project! = nil
+    var project : Project! = nil {
+        didSet {
+            if let p = project {
+                for untypedClip in p.clips! {
+                    let clip = untypedClip as! Clip
+                    let clipData = try! Data(contentsOf: clip.assetUrl)
+                    let videoClip = deserializeClip(clipData)
+                    videoClipIds.append(clip.id!.uuidString)
+                    videoClips[clip.id!.uuidString] = InMemoryClip(clip: clip, videoClip: videoClip)
+                }
+            }
+        }
+    }
     var displayLink : CADisplayLink! = nil
     var ready = false
+    var videoClipIds : [VideoClipId] = []
     var videoClips : [VideoClipId: InMemoryClip] = [:]
     var draggingVideoId : VideoClipId! = nil
     var previousRenderedIds : [VideoClipId] = []
@@ -43,13 +56,6 @@ class EditorViewController: UIViewController, WKScriptMessageHandler, MetalViewD
         initMetal(metalView)
         
         NotificationCenter.default.addObserver(self, selector: #selector(handleInsertedClips(_:)), name: Notification.Name.NSManagedObjectContextObjectsDidChange, object: nil)
-        
-        for untypedClip in project.clips! {
-            let clip = untypedClip as! Clip
-            let clipData = try! Data(contentsOf: clip.assetUrl)
-            let videoClip = deserializeClip(clipData)
-            videoClips[clip.id!.uuidString] = InMemoryClip(clip: clip, videoClip: videoClip)
-        }
         
         // Create web view controller and bind to "steinaMsg" namespace
         let webViewController = WKUserContentController()
@@ -142,7 +148,8 @@ class EditorViewController: UIViewController, WKScriptMessageHandler, MetalViewD
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         if let clipsCollectionVC = segue.destination as? ClipsCollectionViewController {
             clipsCollectionVC.delegate = self
-            clipsCollectionVC.project = project
+            clipsCollectionVC.videoClipIds = videoClipIds
+            clipsCollectionVC.videoClips = videoClips
         }
         if let captureVC = segue.destination as? CaptureViewController {
             captureVC.project = project
@@ -218,6 +225,7 @@ class EditorViewController: UIViewController, WKScriptMessageHandler, MetalViewD
                     let videoClip = deserializeClip(clipData)
                     let clipId = newClip.id!.uuidString
                     let inMemoryClip = InMemoryClip(clip: newClip, videoClip: videoClip)
+                    videoClipIds.append(clipId)
                     videoClips[clipId] = inMemoryClip
                     runJavascript("Steina.createVideoTarget(\"\(clipId)\", 30, \(inMemoryClip.videoClip.frames));")
                 }
@@ -287,9 +295,8 @@ class EditorViewController: UIViewController, WKScriptMessageHandler, MetalViewD
     
     // ClipsCollectionViewControllerDelegate
     
-    func clipsControllerDidSelect(clipsController: ClipsCollectionViewController, clip: Clip) {
-        let id = clip.id!.uuidString
-        runJavascript("vm.setEditingTarget(\"\(id)\")")
+    func clipsControllerDidSelect(clipsController: ClipsCollectionViewController, clipId: VideoClipId) {
+        runJavascript("vm.setEditingTarget(\"\(clipId)\")")
     }
 
 }

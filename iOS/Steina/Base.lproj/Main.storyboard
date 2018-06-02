@@ -193,8 +193,16 @@
                                 <view key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" insetsLayoutMarginsFromSafeArea="NO">
                                     <rect key="frame" x="0.0" y="0.0" width="100" height="75"/>
                                     <autoresizingMask key="autoresizingMask"/>
+                                    <subviews>
+                                        <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="g8Y-lb-1IO">
+                                            <rect key="frame" x="0.0" y="0.0" width="100" height="75"/>
+                                            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                        </imageView>
+                                    </subviews>
                                 </view>
-                                <color key="backgroundColor" red="0.15686274509803921" green="0.6485770089285714" blue="0.86353236607142858" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                <connections>
+                                    <outlet property="thumbnailView" destination="g8Y-lb-1IO" id="85K-HQ-njh"/>
+                                </connections>
                             </collectionViewCell>
                         </cells>
                         <connections>

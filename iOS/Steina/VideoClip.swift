@@ -8,11 +8,17 @@
 
 
 import Foundation
+import QuartzCore
 
 let VIDEO_FILE_MAGIC_NUMBER : U32 = 0x000F1DE0
 
 typealias FrameOffset = U32
 typealias FrameLength = U32
+
+struct FrameInfo {
+    let offset : FrameOffset
+    let length : FrameLength
+}
 
 class VideoClip {
     // Total frames in the clip
@@ -20,20 +26,23 @@ class VideoClip {
     
     // Array of tuples containing each frame offset and length.
     //   Offsets are calculated from the base of the data bytes pointer
-    var offsets : [(FrameOffset, FrameLength)] = []
+    var offsets : [FrameInfo] = []
     
     // JPEG compositing mask data
     var mask : Data = Data()
     
     // JPEG frame data bytes
     var data : Data = Data(capacity: 10.megabytes)
+    
+    // Thumbnail
+    var thumbnail : CGImage! = nil
 }
 
 
 func appendFrame(_ clip: VideoClip, jpegData: U8Ptr, length: Int) {
     let offset = clip.data.count
     clip.data.append(jpegData, count: length)
-    clip.offsets.append((offset.u32, length.u32))
+    clip.offsets.append(FrameInfo(offset: offset.u32, length: length.u32))
     clip.frames += 1
 }
 
@@ -83,7 +92,7 @@ func serializeClip(_ clip: VideoClip) -> Data {
     }
     
     // U32 -> Frame offsets from top of data pointer
-    let offsets = clip.offsets.map { $0.0 } // Grab just the offsets, disregard lengths
+    let offsets = clip.offsets.map { $0.offset } // Grab just the offsets, disregard lengths
     for offset in offsets {
         var mutableOffset = offset
         withUnsafeBytes(of: &mutableOffset) { (ptr) in
@@ -131,13 +140,13 @@ func deserializeClip(_ data: Data) -> VideoClip {
                 let thisOffset = ptr[Int(6 + i)]
                 let nextOffset = ptr[Int(6 + i + 1)]
                 let thisLength = nextOffset - thisOffset
-                clip.offsets.append((thisOffset, thisLength))
+                clip.offsets.append(FrameInfo(offset: thisOffset, length: thisLength))
             }
             
             // Last frame
             let lastOffset = ptr[Int(6 + (frames - 1))]
             let lastLength = dataLength - lastOffset
-            clip.offsets.append((lastOffset, lastLength))
+            clip.offsets.append(FrameInfo(offset: lastOffset, length: lastLength))
         })
         
     }
@@ -149,6 +158,32 @@ func deserializeClip(_ data: Data) -> VideoClip {
     
     let jpegDataStart = data.startIndex.advanced(by: Int(dataOffset))
     clip.data = data.subdata(in: jpegDataStart..<data.endIndex)
+    
+    // Decode the first frame as a thumbnail image
+    let thumbInfo = clip.offsets[0]
+    let thumbRangeStart = clip.data.startIndex
+    let thumbRangeEnd = thumbRangeStart.advanced(by: Int(thumbInfo.length))
+    let thumbData = clip.data.subdata(in: thumbRangeStart..<thumbRangeEnd)
+    
+    let thumbDataProvider = CGDataProvider(data: thumbData as CFData)!
+    let maskDataProvider = CGDataProvider(data: clip.mask as CFData)!
+    
+    let thumbCGImage = CGImage(jpegDataProviderSource: thumbDataProvider, decode: nil, shouldInterpolate: false, intent: .defaultIntent)!
+    let maskCGImage = CGImage(jpegDataProviderSource: maskDataProvider, decode: nil, shouldInterpolate: false, intent: .defaultIntent)!
+    
+    let thumbUpsideDown = thumbCGImage.masking(maskCGImage)!
+    
+    let context = CGContext.init(data: nil, width: 640, height: 480, bitsPerComponent: 8, bytesPerRow: 640 * 4, space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+    
+    // @TODO: This rotation matches what's currently rendered by the GPU, but something is still fishy
+    //        in terms of coordinate systems and flipping. Looking into whether the mask is flipping
+    //        when it gets rendered into a jpeg for the video file
+    context.translateBy(x: 640, y: 480)
+    context.rotate(by: .pi)
+    context.draw(thumbUpsideDown, in: CGRect(origin: CGPoint.zero, size: CGSize(width: 640, height: 480)))
+    context.rotate(by: .pi)
+    
+    clip.thumbnail = context.makeImage()!
     
     return clip
 }

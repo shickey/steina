@@ -11,19 +11,19 @@ import UIKit
 private let reuseIdentifier = "ClipCell"
 
 protocol ClipsCollectionViewControllerDelegate {
-    func clipsControllerDidSelect(clipsController: ClipsCollectionViewController, clip: Clip)
+    func clipsControllerDidSelect(clipsController: ClipsCollectionViewController, clipId: VideoClipId)
 }
 
 class ClipsCollectionViewCell: UICollectionViewCell {
-    
+    @IBOutlet weak var thumbnailView: UIImageView!
 }
 
 class ClipsCollectionViewController: UICollectionViewController {
     
     var delegate : ClipsCollectionViewControllerDelegate? = nil
     
-    var project : Project! = nil
-    var clips : [Clip] = []
+    var videoClipIds : [VideoClipId] = []
+    var videoClips : [VideoClipId: InMemoryClip] = [:]
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -34,7 +34,6 @@ class ClipsCollectionViewController: UICollectionViewController {
     }
     
     override func viewWillAppear(_ animated: Bool) {
-        clips = project.clips!.array as! [Clip]
         collectionView?.reloadData()
     }
 
@@ -61,21 +60,42 @@ class ClipsCollectionViewController: UICollectionViewController {
 
 
     override func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return clips.count
+        return videoClipIds.count
     }
 
     override func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: indexPath)
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: indexPath) as! ClipsCollectionViewCell
     
-        // Configure the cell
+        let clipId = videoClipIds[indexPath.item]
+        let videoClip = videoClips[clipId]!
+        
+        let thumb = videoClip.videoClip.thumbnail!
+        
+        cell.thumbnailView.image = UIImage(cgImage: thumb)
+        
+        if collectionView.indexPathsForSelectedItems?.contains(indexPath) == true {
+            cell.backgroundColor = UIColor.yellow
+        }
+        else {
+            cell.backgroundColor = UIColor.clear
+        }
     
         return cell
     }
     
     override func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        if let cell = collectionView.cellForItem(at: indexPath) {
+            cell.backgroundColor = UIColor.yellow
+        }
         if let d = delegate {
-            let clip = clips[indexPath.item]
-            d.clipsControllerDidSelect(clipsController: self, clip: clip)
+            let clipId = videoClipIds[indexPath.item]
+            d.clipsControllerDidSelect(clipsController: self, clipId: clipId)
+        }
+    }
+    
+    override func collectionView(_ collectionView: UICollectionView, didDeselectItemAt indexPath: IndexPath) {
+        if let cell = collectionView.cellForItem(at: indexPath) {
+            cell.backgroundColor = UIColor.clear
         }
     }
 
