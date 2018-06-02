@@ -17,12 +17,15 @@ struct InMemoryClip {
     let videoClip : VideoClip
 }
 
-class EditorViewController: UIViewController, WKScriptMessageHandler, ClipsCollectionViewControllerDelegate {
+class EditorViewController: UIViewController, WKScriptMessageHandler, MetalViewDelegate, ClipsCollectionViewControllerDelegate {
     
     var project : Project! = nil
     var displayLink : CADisplayLink! = nil
     var ready = false
     var videoClips : [VideoClipId: InMemoryClip] = [:]
+    var draggingVideoId : VideoClipId! = nil
+    var previousRenderedIds : [VideoClipId] = []
+    var renderedIds : [VideoClipId] = []
 
     @IBOutlet weak var metalView: MetalView!
     @IBOutlet weak var webViewContainer: UIView!
@@ -31,6 +34,8 @@ class EditorViewController: UIViewController, WKScriptMessageHandler, ClipsColle
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        metalView.delegate = self
         
         initMetal(metalView)
         
@@ -46,6 +51,7 @@ class EditorViewController: UIViewController, WKScriptMessageHandler, ClipsColle
         
         // Create web view controller and bind to "steinaMsg" namespace
         let webViewController = WKUserContentController()
+        webViewController.add(self, name: "cons")
         webViewController.add(self, name: "steinaMsg")
         
         // Create web view configuration
@@ -142,6 +148,8 @@ class EditorViewController: UIViewController, WKScriptMessageHandler, ClipsColle
     }
     
     @objc func tick(_ sender: CADisplayLink) {
+        previousRenderedIds = renderedIds
+        renderedIds = []
         
         // @TODO: The step rate is hard coded in JS to be 1000 / 30
         //        but maybe we should pass the dt each time here?
@@ -180,6 +188,7 @@ class EditorViewController: UIViewController, WKScriptMessageHandler, ClipsColle
                     
                     let transform = entityTransform(scale: scale, rotate: theta, translateX: x, translateY: y)
                     pushRenderFrame(videoClip, frameNumber, transform)
+                    self.renderedIds.append(clipId)
                 }
             }
             render()
@@ -202,6 +211,8 @@ class EditorViewController: UIViewController, WKScriptMessageHandler, ClipsColle
         }
     }
     
+    // WKUserContentControllerDelegate
+    
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
         // @TODO: Ewwwwwwwwww. Clean this mess up.
         if message.name == "steinaMsg" {
@@ -213,6 +224,51 @@ class EditorViewController: UIViewController, WKScriptMessageHandler, ClipsColle
                 }
             }
         }
+        else if message.name == "cons" {
+            if let body = message.body as? NSDictionary {
+                if let message = body.object(forKey: "message") as? String {
+                    print("JS MESSAGE: \(message)")
+                }
+            }
+        }
+    }
+    
+    // MetalViewDelegate
+    
+    func metalViewDelegateBeganTouch(_ metalView: MetalView, location: CGPoint) {
+        if let draggingId = videoTargetAtLocation(location) {
+            draggingVideoId = draggingId        
+            runJavascript("Steina.beginDraggingVideo('\(draggingVideoId!)')")
+        }
+    }
+    
+    func metalViewDelegateMovedTouch(_ metalView: MetalView, location: CGPoint) {
+        guard draggingVideoId != nil else { return }
+        
+        let x = (2.0 * (location.x / metalView.bounds.size.width)) - 1.0
+        let y = ((2.0 * (location.y / metalView.bounds.size.height)) - 1.0) * -1.0 // Invert y
+        runJavascript("Steina.updateDraggingVideo('\(draggingVideoId!)', \(x), \(y))")
+    }
+    
+    func metalViewDelegateEndedTouch(_ metalView: MetalView, location: CGPoint) {
+        guard draggingVideoId != nil else { return }
+        
+        runJavascript("Steina.endDraggingVideo('\(draggingVideoId!)')")
+    }
+    
+    func videoTargetAtLocation(_ location: CGPoint) -> VideoClipId? {
+        let pixels : RawPtr = RawPtr.allocate(byteCount: 1, alignment: MemoryLayout<Float>.alignment)
+        depthTex.getBytes(pixels, bytesPerRow: 640, from: MTLRegionMake2D(Int(location.x), Int(location.y), 1, 1), mipmapLevel: 0)
+        let val = pixels.bindMemory(to: Float.self, capacity: 1)[0]
+        if (val == 1.0) {
+            return nil
+        }
+        let idx = indexForZValue(val)
+        if idx >= previousRenderedIds.count {
+            return nil
+        }
+        let id = previousRenderedIds[idx]
+        return id
     }
     
     // ClipsCollectionViewControllerDelegate

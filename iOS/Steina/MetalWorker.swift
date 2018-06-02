@@ -13,9 +13,46 @@ import simd
 
 let MAX_RENDERED_ENTITIES = 100
 
+protocol MetalViewDelegate {
+    func metalViewDelegateBeganTouch(_ metalView: MetalView, location: CGPoint)
+    func metalViewDelegateMovedTouch(_ metalView: MetalView, location: CGPoint)
+    func metalViewDelegateEndedTouch(_ metalView: MetalView, location: CGPoint)
+}
+
 class MetalView : UIView {
+    
+    var delegate : MetalViewDelegate? = nil
+    
     override class var layerClass : AnyClass {
         return CAMetalLayer.self
+    }
+    
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        let location = touches.first!.location(in: self);
+        if let d = delegate {
+            d.metalViewDelegateBeganTouch(self, location: location)
+        }
+    }
+    
+    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
+        let location = touches.first!.location(in: self);
+        if let d = delegate {
+            d.metalViewDelegateMovedTouch(self, location: location)
+        }
+    }
+    
+    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+        let location = touches.first!.location(in: self);
+        if let d = delegate {
+            d.metalViewDelegateEndedTouch(self, location: location)
+        }
+    }
+    
+    override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
+        let location = touches.first!.location(in: self);
+        if let d = delegate {
+            d.metalViewDelegateEndedTouch(self, location: location)
+        }
     }
 }
 
@@ -178,8 +215,16 @@ func clearRenderList() {
     entitiesToRender = 0;
 }
 
+func zValueForIndex(_ index: Int) -> Float {
+    return 1.0 - (Float(index + 1) / 100.0)
+}
+
+func indexForZValue(_ z: Float) -> Int {
+    return Int(round((1.0 - z) * 100.0)) - 1
+}
+
 func pushRenderFrame(_ clip: VideoClip, _ frameNumber: Int, _ transform: float4x4) {
-    let verts = genVerts(entitiesToRender, z: 1.0 - (Float(entitiesToRender + 1) / 10.0))
+    let verts = genVerts(entitiesToRender, z: zValueForIndex(entitiesToRender))
     let vertDest = vertBuffer.contents() + (verts.count * MemoryLayout<Float>.size * entitiesToRender)
     memcpy(vertDest, verts, verts.count * MemoryLayout<Float>.size)
     

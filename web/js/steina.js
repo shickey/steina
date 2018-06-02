@@ -146,10 +146,28 @@
                 return vm.getVideoTargets().map(t => t.toJSON());
             }
 
+            function beginDraggingVideo(id) {
+              vm.startDrag(id);
+            }
+
+            function updateDraggingVideo(id, x, y) {
+              vm.updateDrag({
+                x: x,
+                y: y
+              });
+            }
+
+            function endDraggingVideo(id) {
+              vm.stopDrag(id);
+            }
+
             window.Steina = {
                 tick,
                 createVideoTarget,
-                getVideoTargets
+                getVideoTargets,
+                beginDraggingVideo,
+                updateDraggingVideo,
+                endDraggingVideo
             }
 
             if (window.steinaMsg) {
@@ -174,13 +192,49 @@
         if (typeof webkit.messageHandlers.steinaMsg === 'undefined') return;
         window.steinaMsg = webkit.messageHandlers.steinaMsg;
 
+        // // Swizzle console methods so we can also get them through the iOS console
         // if (typeof webkit.messageHandlers.cons === 'undefined') return;
         // window.cons = webkit.messageHandlers.cons;
-        // window.console.log = window.console.error = window.console.warn = window.console.info = (message) => {
-        //     window.cons.postMessage({
-        //         message: message
-        //     });
-        // };
+        // var oldConsoleLog = window.console.log;
+        // var oldConsoleError = window.console.error;
+        // var oldConsoleWarn = window.console.warn;
+        // var oldConsoleInfo = window.console.info;
+        // window.console.log = (message) => {
+        //   oldConsoleLog(message);
+        //   window.cons.postMessage({
+        //     level: 'LOG'
+        //     message: message
+        //   })
+        // }
+        // window.console.error = (message) => {
+        //   oldConsoleError(message);
+        //   window.cons.postMessage({
+        //     level: 'ERROR'
+        //     message: message
+        //   })
+        // }
+        // window.console.warn = (message) => {
+        //   oldConsoleWarn(message);
+        //   window.cons.postMessage({
+        //     level: 'WARN'
+        //     message: message
+        //   })
+        // }
+        // window.console.info = (message) => {
+        //   oldConsoleInfo(message);
+        //   window.cons.postMessage({
+        //     level: 'INFO'
+        //     message: message
+        //   })
+        // }
+
+        if (typeof webkit.messageHandlers.cons === 'undefined') return;
+        window.cons = webkit.messageHandlers.cons;
+        window.console.log = window.console.error = window.console.warn = window.console.info = (message) => {
+            window.cons.postMessage({
+                message: message
+            });
+        };
     }
 
 
