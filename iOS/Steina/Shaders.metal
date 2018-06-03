@@ -37,12 +37,13 @@ vertex VertexOut passthrough_vertex(VertexIn in [[ stage_in ]],
 fragment float4 passthrough_fragment(VertexOut v [[ stage_in ]],
                                      texture2d_array<float> texture [[ texture(0) ]],
                                      texture2d_array<float> mask [[ texture(1) ]]) {
-    constexpr sampler s(coord::normalized, filter::linear);
-    
-    float4 color = texture.sample(s, v.uv, v.entityIndex);
+    constexpr sampler s(coord::pixel, filter::linear);
+
     float maskVal = mask.sample(s, v.uv, v.entityIndex).a;
     if (maskVal < 0.005) {
         discard_fragment();
     }
+    float4 color = texture.sample(s, v.uv, v.entityIndex);
+    
     return float4(color.rgb, maskVal);
 }

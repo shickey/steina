@@ -24,6 +24,12 @@ class VideoClip {
     // Total frames in the clip
     var frames : U32 = 0
     
+    // Width of each image
+    var width : U32 = 0
+    
+    // Height of each image
+    var height : U32 = 0
+    
     // Array of tuples containing each frame offset and length.
     //   Offsets are calculated from the base of the data bytes pointer
     var offsets : [FrameInfo] = []
@@ -63,8 +69,22 @@ func serializeClip(_ clip: VideoClip) -> Data {
         out.append(bytes)
     }
     
-    // U32 -> Mask data offset from top of file (24 bytes for the header + length of frame offset data)
-    var maskOffset : U32 = U32(6 * MemoryLayout<U32>.size + (Int(frames) * MemoryLayout<U32>.size))
+    // U32 -> Width of each image
+    var width = clip.width
+    withUnsafeBytes(of: &width) { (ptr) in
+        let bytes = ptr.bindMemory(to: U8.self)
+        out.append(bytes)
+    }
+    
+    // U32 -> Height of each image
+    var height = clip.height
+    withUnsafeBytes(of: &height) { (ptr) in
+        let bytes = ptr.bindMemory(to: U8.self)
+        out.append(bytes)
+    }
+    
+    // U32 -> Mask data offset from top of file (32 bytes for the header + length of frame offset data)
+    var maskOffset : U32 = U32(8 * MemoryLayout<U32>.size + (Int(frames) * MemoryLayout<U32>.size))
     withUnsafeBytes(of: &maskOffset) { (ptr) in
         let bytes = ptr.bindMemory(to: U8.self)
         out.append(bytes)
@@ -113,6 +133,8 @@ func deserializeClip(_ data: Data) -> VideoClip {
     let clip = VideoClip()
     
     var frames : U32 = 0
+    var width : U32 = 0
+    var height : U32 = 0
     var maskOffset : U32 = 0
     var maskLength : U32 = 0
     var dataOffset : U32 = 0
@@ -124,10 +146,12 @@ func deserializeClip(_ data: Data) -> VideoClip {
         bytes.withMemoryRebound(to: U32.self, capacity: 6, { (ptr) in
             assert(ptr[0] == VIDEO_FILE_MAGIC_NUMBER)
             frames = ptr[1]
-            maskOffset = ptr[2]
-            maskLength = ptr[3]
-            dataOffset = ptr[4]
-            dataLength = ptr[5]
+            width = ptr[2]
+            height = ptr[3]
+            maskOffset = ptr[4]
+            maskLength = ptr[5]
+            dataOffset = ptr[6]
+            dataLength = ptr[7]
         })
         
         
@@ -137,14 +161,14 @@ func deserializeClip(_ data: Data) -> VideoClip {
             
             for i in 0..<(frames - 1) { // Handle the last frame differently since we need to use the data length
                                         // to calculate the frame length
-                let thisOffset = ptr[Int(6 + i)]
-                let nextOffset = ptr[Int(6 + i + 1)]
+                let thisOffset = ptr[Int(8 + i)]
+                let nextOffset = ptr[Int(8 + i + 1)]
                 let thisLength = nextOffset - thisOffset
                 clip.offsets.append(FrameInfo(offset: thisOffset, length: thisLength))
             }
             
             // Last frame
-            let lastOffset = ptr[Int(6 + (frames - 1))]
+            let lastOffset = ptr[Int(8 + (frames - 1))]
             let lastLength = dataLength - lastOffset
             clip.offsets.append(FrameInfo(offset: lastOffset, length: lastLength))
         })
@@ -152,6 +176,8 @@ func deserializeClip(_ data: Data) -> VideoClip {
     }
     
     clip.frames = frames
+    clip.width = width
+    clip.height = height
     
     let maskDataStart = data.startIndex.advanced(by: Int(maskOffset))
     clip.mask = data.subdata(in: maskDataStart..<(maskDataStart + Int(maskLength))) 
@@ -173,14 +199,14 @@ func deserializeClip(_ data: Data) -> VideoClip {
     
     let thumbUpsideDown = thumbCGImage.masking(maskCGImage)!
     
-    let context = CGContext.init(data: nil, width: 640, height: 480, bitsPerComponent: 8, bytesPerRow: 640 * 4, space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+    let context = CGContext(data: nil, width: Int(width), height: Int(height), bitsPerComponent: 8, bytesPerRow: Int(width) * 4, space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
     
     // @TODO: This rotation matches what's currently rendered by the GPU, but something is still fishy
     //        in terms of coordinate systems and flipping. Looking into whether the mask is flipping
     //        when it gets rendered into a jpeg for the video file
-    context.translateBy(x: 640, y: 480)
+    context.translateBy(x: CGFloat(width), y: CGFloat(height))
     context.rotate(by: .pi)
-    context.draw(thumbUpsideDown, in: CGRect(origin: CGPoint.zero, size: CGSize(width: 640, height: 480)))
+    context.draw(thumbUpsideDown, in: CGRect(origin: CGPoint.zero, size: CGSize(width: Int(width), height: Int(height))))
     context.rotate(by: .pi)
     
     clip.thumbnail = context.makeImage()!

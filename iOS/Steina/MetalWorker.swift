@@ -62,15 +62,15 @@ let commandQueue : MTLCommandQueue! = device.makeCommandQueue()
 var pipeline : MTLRenderPipelineState! = nil
 var depthState : MTLDepthStencilState! = nil
 
-func genVerts(_ entityIndex: Int, z: Float) -> [Float] {
+func genVerts(_ entityIndex: Int, width: Float, height: Float, z: Float) -> [Float] {
     return [
-        // X     Y    Z    W       U    V       0          EntityIdx
-        -1.0,  1.0,   z, 1.0,    1.0, 1.0,    0.0, Float(entityIndex.u32),
-        -1.0, -1.0,   z, 1.0,    1.0, 0.0,    0.0, Float(entityIndex.u32),
-         1.0, -1.0,   z, 1.0,    0.0, 0.0,    0.0, Float(entityIndex.u32),
-        -1.0,  1.0,   z, 1.0,    1.0, 1.0,    0.0, Float(entityIndex.u32),
-         1.0, -1.0,   z, 1.0,    0.0, 0.0,    0.0, Float(entityIndex.u32),
-         1.0,  1.0,   z, 1.0,    0.0, 1.0,    0.0, Float(entityIndex.u32)
+        // X     Y    Z    W         U       V       0          EntityIdx
+        -1.0,  1.0,   z, 1.0,    width, height,    0.0, Float(entityIndex.u32),
+        -1.0, -1.0,   z, 1.0,    width,    0.0,    0.0, Float(entityIndex.u32),
+         1.0, -1.0,   z, 1.0,    0.0,      0.0,    0.0, Float(entityIndex.u32),
+        -1.0,  1.0,   z, 1.0,    width, height,    0.0, Float(entityIndex.u32),
+         1.0, -1.0,   z, 1.0,    0.0,      0.0,    0.0, Float(entityIndex.u32),
+         1.0,  1.0,   z, 1.0,    0.0,   height,    0.0, Float(entityIndex.u32)
     ]
 }
 
@@ -173,12 +173,12 @@ func initMetal(_ hostView: MetalView) {
     pipeline = try! device.makeRenderPipelineState(descriptor: pipelineDescriptor)
     
     // Set up buffers
-    vertBuffer = device.makeBuffer(length: (genVerts(0, z: 0).count * MemoryLayout<Float>.size) * MAX_RENDERED_ENTITIES, options: [])
+    vertBuffer = device.makeBuffer(length: (genVerts(0, width: 0, height: 0, z: 0).count * MemoryLayout<Float>.size) * MAX_RENDERED_ENTITIES, options: [])
     matBuffer = device.makeBuffer(length: MemoryLayout<float4x4>.size * MAX_RENDERED_ENTITIES, options: [])
     
     // Set up jpeg decompression
     let width = 640
-    let height = 480
+    let height = 640
     let bytesPerPixel = 4
     let pitch = bytesPerPixel * width
     
@@ -189,7 +189,7 @@ func initMetal(_ hostView: MetalView) {
     texDescriptor.textureType = .type2DArray
     texDescriptor.pixelFormat = .bgra8Unorm
     texDescriptor.width = 640
-    texDescriptor.height = 480
+    texDescriptor.height = 640
     texDescriptor.arrayLength = MAX_RENDERED_ENTITIES
     
     pixelTex = device.makeTexture(descriptor: texDescriptor)!
@@ -202,7 +202,7 @@ func initMetal(_ hostView: MetalView) {
     maskTexDescriptor.textureType = .type2DArray
     maskTexDescriptor.pixelFormat = .a8Unorm
     maskTexDescriptor.width = 640
-    maskTexDescriptor.height = 480
+    maskTexDescriptor.height = 640
     maskTexDescriptor.arrayLength = MAX_RENDERED_ENTITIES
     
     maskTex = device.makeTexture(descriptor: maskTexDescriptor)!
@@ -225,7 +225,7 @@ func indexForZValue(_ z: Float) -> Int {
 }
 
 func pushRenderFrame(_ clip: VideoClip, _ renderingIndex: Int, _ frameNumber: Int, _ transform: float4x4) {
-    let verts = genVerts(renderingIndex, z: zValueForIndex(renderingIndex))
+    let verts = genVerts(renderingIndex, width: Float(clip.width), height: Float(clip.height), z: zValueForIndex(renderingIndex))
     let vertDest = vertBuffer.contents() + (verts.count * MemoryLayout<Float>.size * renderingIndex)
     memcpy(vertDest, verts, verts.count * MemoryLayout<Float>.size)
     
@@ -244,22 +244,22 @@ func pushRenderFrame(_ clip: VideoClip, _ renderingIndex: Int, _ frameNumber: In
     clip.data.withUnsafeBytes { (ptr : UnsafePointer<U8>) in
         let frameInfo = clip.offsets[frameNumber]
         let jpegBase = ptr + Int(frameInfo.offset)
-        let pixelsOffset = pixels + (640 * 480 * 4 * renderingIndex)
-        tjDecompress2(decompressor, jpegBase, UInt(frameInfo.length), pixelsOffset, 640, 640 * 4, 480, S32(TJPF_BGRA.rawValue), TJFLAG_FASTDCT | TJFLAG_FASTUPSAMPLE)
+        let pixelsOffset = pixels + (640 * 640 * 4 * renderingIndex)
+        tjDecompress2(decompressor, jpegBase, UInt(frameInfo.length), pixelsOffset, S32(clip.width), S32(clip.width) * 4, S32(clip.height), S32(TJPF_BGRA.rawValue), TJFLAG_FASTDCT | TJFLAG_FASTUPSAMPLE)
     }
     
-    let rawPixelsOffset = rawPixels + (640 * 480 * 4 * renderingIndex)
-    pixelTex.replace(region: MTLRegionMake2D(0, 0, 640, 480), mipmapLevel: 0, slice: renderingIndex, withBytes: rawPixelsOffset, bytesPerRow: 640 * 4, bytesPerImage: 640 * 480 * 4)
+    let rawPixelsOffset = rawPixels + (640 * 640 * 4 * renderingIndex)
+    pixelTex.replace(region: MTLRegionMake2D(0, 0, Int(clip.width), Int(clip.height)), mipmapLevel: 0, slice: renderingIndex, withBytes: rawPixelsOffset, bytesPerRow: Int(clip.width) * 4, bytesPerImage: Int(clip.width * clip.height) * 4)
     
     // Decode and set up mask
     clip.mask.withUnsafeBytes { (ptr : UnsafePointer<U8>) in
         let maskBase = ptr
-        let maskOffset = mask + (640 * 480 * renderingIndex)
-        tjDecompress2(decompressor, maskBase, UInt(640 * 480), maskOffset, 640, 640, 480, S32(TJPF_GRAY.rawValue), TJFLAG_FASTDCT | TJFLAG_FASTUPSAMPLE)
+        let maskOffset = mask + (640 * 640 * renderingIndex)
+        tjDecompress2(decompressor, maskBase, UInt(clip.mask.count), maskOffset, S32(clip.width), S32(clip.width), S32(clip.height), S32(TJPF_GRAY.rawValue), TJFLAG_FASTDCT | TJFLAG_FASTUPSAMPLE)
     }
     
-    let rawMaskPixelsOffset = rawMask + (640 * 480 * renderingIndex)
-    maskTex.replace(region: MTLRegionMake2D(0, 0, 640, 480), mipmapLevel: 0, slice: renderingIndex, withBytes: rawMaskPixelsOffset, bytesPerRow: 640, bytesPerImage: 640 * 480)
+    let rawMaskPixelsOffset = rawMask + (640 * 640 * renderingIndex)
+    maskTex.replace(region: MTLRegionMake2D(0, 0, Int(clip.width), Int(clip.height)), mipmapLevel: 0, slice: renderingIndex, withBytes: rawMaskPixelsOffset, bytesPerRow: Int(clip.width), bytesPerImage: Int(clip.width * clip.height))
     
     // Release the decompressor back to the queue
     let _ = decompressorLockQueue.sync {

@@ -9,6 +9,7 @@
 import UIKit
 import AVFoundation
 import QuartzCore
+import Accelerate
 
 let FORMAT_420v_CODE : UInt32 = 0x34323076   // '420v' in ascii
 
@@ -49,6 +50,7 @@ class CaptureViewController: UIViewController, AVCaptureVideoDataOutputSampleBuf
     var compressor : tjhandle! = nil
     var jpegBuffer : U8Ptr! = nil
     var clip : VideoClip! = nil
+    var maskBounds : CGRect = CGRect(x: 0, y: 0, width: 640, height: 480)
     var maskData : Data! = nil
     
     @IBOutlet weak var previewView: VideoPreviewView!
@@ -95,6 +97,9 @@ class CaptureViewController: UIViewController, AVCaptureVideoDataOutputSampleBuf
     
     func setupCaptureSession() {
         
+        // Allocate memory for storing pixel data
+        // prior to compression
+        
         // Set up JPEG compression
         compressor = tjInitCompress()
         let size = tjBufSize(640, 480, Int32(TJSAMP_420.rawValue))
@@ -126,6 +131,8 @@ class CaptureViewController: UIViewController, AVCaptureVideoDataOutputSampleBuf
         
         session.startRunning()
         
+        updateOrientation()
+        
     }
     
     @objc func deviceOrientationDidChange(_ notification: NSNotification) {
@@ -156,6 +163,8 @@ class CaptureViewController: UIViewController, AVCaptureVideoDataOutputSampleBuf
             recordingOrientation = .landscapeRight
         default: break // Ignore orientations like faceUp/faceDown and just keep the previous orientation value
         }
+        
+        drawMaskView.clearMask()
     }
     
     
@@ -166,6 +175,8 @@ class CaptureViewController: UIViewController, AVCaptureVideoDataOutputSampleBuf
         
         clip = VideoClip()
         clip.mask = maskData
+        clip.width = U32(maskBounds.size.width)
+        clip.height = U32(maskBounds.size.height)
         
         // Begin recording by setting up the delegate methods on the background queue
         frameOutput.setSampleBufferDelegate(self, queue: recordingQueue)
@@ -211,6 +222,17 @@ class CaptureViewController: UIViewController, AVCaptureVideoDataOutputSampleBuf
         self.presentingViewController!.dismiss(animated: true, completion: nil)
     }
     
+    // DrawMaskViewDelegate
+    
+    func drawMaskViewUpdatedMask(_ maskView: DrawMaskView, _ bounds: CGRect?) {
+        guard let newBounds = bounds else {
+            maskBounds = CGRect(x: 0, y: 0, width: 640, height: 480)
+            return
+        }
+        maskBounds = newBounds
+        maskData = maskView.createGreyscaleMaskJpeg()
+    }
+    
     /*******************************************************************************
      *
      * Capture delegate methods
@@ -221,20 +243,73 @@ class CaptureViewController: UIViewController, AVCaptureVideoDataOutputSampleBuf
      *******************************************************************************/
     func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
         
+        if maskBounds == nil { return }
+        
         // Grab pointer to pixels
         let buffer = CMSampleBufferGetImageBuffer(sampleBuffer)!
         CVPixelBufferLockBaseAddress(buffer, [])
-        let baseRawPointer = CVPixelBufferGetBaseAddress(buffer)
+        let baseRawPointer = CVPixelBufferGetBaseAddress(buffer)!
         let bytesPerRow = CVPixelBufferGetBytesPerRow(buffer)
         let width = CVPixelBufferGetWidth(buffer)
         let height = CVPixelBufferGetHeight(buffer)
         
+        // Original pixels
+        var originalBuffer = vImage_Buffer()
+        originalBuffer.width = UInt(width)
+        originalBuffer.height = UInt(height)
+        originalBuffer.rowBytes = bytesPerRow
+        originalBuffer.data = baseRawPointer
+        
+        // Rotate the pixels if necessary
+        var rotatedBuffer : vImage_Buffer = originalBuffer
+        if recordingOrientation != .landscapeRight {
+            let rotatedBase = malloc(4 * width * height)
+            if recordingOrientation == .landscapeLeft {
+                rotatedBuffer = vImage_Buffer(data: rotatedBase, height: 480, width: 640, rowBytes: 640 * 4)
+                var foo : U8 = 0
+                vImageRotate90_ARGB8888(&originalBuffer, &rotatedBuffer, 2, &foo, 0)
+            }
+            else if recordingOrientation == .portrait {
+                rotatedBuffer = vImage_Buffer(data: rotatedBase, height: 640, width: 480, rowBytes: 480 * 4)
+                var foo : U8 = 0
+                vImageRotate90_ARGB8888(&originalBuffer, &rotatedBuffer, 1, &foo, 0)
+            }
+            else if recordingOrientation == .portraitUpsideDown {
+                rotatedBuffer = vImage_Buffer(data: rotatedBase, height: 640, width: 480, rowBytes: 480 * 4)
+                var foo : U8 = 0
+                vImageRotate90_ARGB8888(&originalBuffer, &rotatedBuffer, 3, &foo, 0)
+            }
+        }
+        
+        // Crop into new pixel buffer
+        let crop = maskBounds
+        print("Crop bounds: \(crop)")
+        
+        // Offset the rotated buffer to the first pixel in the cropped region
+        let yOffset = Int(480 - (crop.origin.y + crop.size.height))
+        let xOffset = Int(640 - (crop.origin.x + crop.size.width))
+        let offset = (640 * yOffset * 4) + (xOffset * 4)
+        
+        var inBuffer = vImage_Buffer()
+        inBuffer.height = UInt(crop.size.height)
+        inBuffer.width = UInt(crop.size.width)
+        inBuffer.rowBytes = rotatedBuffer.rowBytes
+        inBuffer.data = rotatedBuffer.data.advanced(by: offset)
+        
+        // Create buffer for final cropped output
+        let outBase = malloc(4 * Int(crop.size.width * crop.size.height))
+        var outBuffer = vImage_Buffer(data: outBase, height: UInt(crop.size.height), width: UInt(crop.size.width), rowBytes: Int(crop.size.width) * 4)
+        
+        vImageScale_ARGB8888(&inBuffer, &outBuffer, nil, 0)
+        
         // Compress
         var jpegSize : UInt = 0
-        let typedBase = baseRawPointer!.bindMemory(to: U8.self, capacity: width * height)
+        let typedBase = outBuffer.data.bindMemory(to: U8.self, capacity: Int(crop.size.width * crop.size.height) * 4)
         var compressedBuffer = jpegBuffer // Ridiculous swift limitation won't allow us to pass the buffer directly
                                           // so we have to do it through an alias
-        tjCompress2(compressor, typedBase, width.s32, bytesPerRow.s32, height.s32, S32(TJPF_BGRA.rawValue), &compressedBuffer, &jpegSize, S32(TJSAMP_420.rawValue), JPEG_QUALITY, JPEG_FLAGS)
+        
+        tjCompress2(compressor, typedBase, S32(crop.size.width), S32(crop.size.width) * 4, S32(crop.size.height), S32(TJPF_BGRA.rawValue), &compressedBuffer, &jpegSize, S32(TJSAMP_420.rawValue), JPEG_QUALITY, JPEG_FLAGS)
+        
         
         // Copy compressed data to in-memory video file representation
         appendFrame(clip, jpegData: compressedBuffer!, length: Int(jpegSize))
@@ -246,12 +321,6 @@ class CaptureViewController: UIViewController, AVCaptureVideoDataOutputSampleBuf
     
     func captureOutput(_ output: AVCaptureOutput, didDrop sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
         print("frame dropped")
-    }
-    
-    // DrawMaskViewDelegate
-    
-    func drawMaskViewUpdatedMask(_ maskView: DrawMaskView) {
-        maskData = maskView.createGreyscaleMaskJpeg()
     }
     
 }

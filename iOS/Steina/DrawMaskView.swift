@@ -10,7 +10,7 @@ import UIKit
 import QuartzCore
 
 protocol DrawMaskViewDelegate {
-    func drawMaskViewUpdatedMask(_ maskView: DrawMaskView)
+    func drawMaskViewUpdatedMask(_ maskView: DrawMaskView, _ bounds: CGRect?)
 }
 
 class DrawMaskView : UIView {
@@ -42,31 +42,50 @@ class DrawMaskView : UIView {
         jpegBuffer = tjAlloc(Int32(size))
     }
     
+    func clearMask() {
+        points = []
+        path = nil
+        maskPath = nil
+        if let d = delegate {
+            d.drawMaskViewUpdatedMask(self, nil)
+        }
+        setNeedsDisplay()
+    }
+    
     func createGreyscaleMaskJpeg() -> Data? {
         guard let maskPath = maskPath else {
             return nil
         }
         
+        let scaleTransform = scaleTransformForMasking()
+        let maskBounds = maskPath.bounds.applying(scaleTransform).integral
+        
         // Create context
-        let context = CGContext(data: nil, width: 640, height: 480, bitsPerComponent: 8, bytesPerRow: 640, space: CGColorSpaceCreateDeviceGray(), bitmapInfo: 0)!
+        let context = CGContext(data: nil, width: Int(maskBounds.width), height: Int(maskBounds.height), bitsPerComponent: 8, bytesPerRow: Int(maskBounds.width), space: CGColorSpaceCreateDeviceGray(), bitmapInfo: 0)!
         UIGraphicsPushContext(context)
         
-        // Set up proper transformation taking into account device orientation
-        let scaleTransform = CGAffineTransform(scaleX: 640.0 / self.bounds.size.width, y: 480.0 / self.bounds.size.height)
+        // Transform the path by scaling and translating to the origin
         let scaledPath = UIBezierPath(cgPath: maskPath.cgPath)
         scaledPath.apply(scaleTransform)
+        scaledPath.apply(CGAffineTransform(translationX: -maskBounds.origin.x, y: -maskBounds.origin.y))
+        
+        context.translateBy(x: maskBounds.width, y: 0)
+        context.scaleBy(x: -1.0, y: 1.0)
         
         // Draw
         UIColor.black.setFill()
-        context.fill(CGRect(origin: CGPoint.zero, size: CGSize(width: 640, height: 480)))
+        context.fill(CGRect(origin: CGPoint.zero, size: CGSize(width: maskBounds.width, height: maskBounds.height)))
         UIColor.white.setFill()
         scaledPath.fill()
         
+        context.scaleBy(x: -1.0, y: 1.0)
+        context.translateBy(x: -maskBounds.width, y: 0)
+        
         // Compress
         let pixels = context.data!
-        let width = 640
-        let height = 480
-        let bytesPerRow = width
+        let width = Int(maskBounds.width)
+        let height = Int(maskBounds.height)
+        let bytesPerRow = Int(maskBounds.width)
         var jpegSize : UInt = 0
         let typedBase = pixels.bindMemory(to: U8.self, capacity: width * height)
         var compressedBuffer = jpegBuffer // Ridiculous swift limitation won't allow us to pass the buffer directly
@@ -91,7 +110,8 @@ class DrawMaskView : UIView {
             maskPath.fill()
             
             if let d = delegate {
-                d.drawMaskViewUpdatedMask(self)
+                let bounds = maskPath.bounds.applying(scaleTransformForMasking()).integral
+                d.drawMaskViewUpdatedMask(self, bounds)
             }
         }
         else {
@@ -102,6 +122,17 @@ class DrawMaskView : UIView {
                 PATH_COLOR.setStroke()
                 path.stroke()
             }
+        }
+    }
+    
+    func scaleTransformForMasking() -> CGAffineTransform {
+        if self.bounds.width < self.bounds.height {
+            // Portrait
+            return CGAffineTransform(scaleX: 480.0 / self.bounds.width, y: 640.0 / self.bounds.height)
+        }
+        else {
+            // Landscape
+            return CGAffineTransform(scaleX: 640.0 / self.bounds.width, y: 480.0 / self.bounds.height)
         }
     }
     
