@@ -286,9 +286,14 @@ class CaptureViewController: UIViewController, AVCaptureVideoDataOutputSampleBuf
         print("Crop bounds: \(crop)")
         
         // Offset the rotated buffer to the first pixel in the cropped region
-        let yOffset = Int(480 - (crop.origin.y + crop.size.height))
-        let xOffset = Int(640 - (crop.origin.x + crop.size.width))
-        let offset = (640 * yOffset * 4) + (xOffset * 4)
+        var yOffset = Int(480 - (crop.origin.y + crop.size.height))
+        var xOffset = Int(640 - (crop.origin.x + crop.size.width))
+        var offset = (640 * yOffset * 4) + (xOffset * 4)
+        if recordingOrientation == .portrait || recordingOrientation == .portraitUpsideDown {
+            yOffset = Int(640 - (crop.origin.y + crop.size.height))
+            xOffset = Int(480 - (crop.origin.x + crop.size.width))
+            offset = (480 * yOffset * 4) + (xOffset * 4)
+        }
         
         var inBuffer = vImage_Buffer()
         inBuffer.height = UInt(crop.size.height)

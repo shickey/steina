@@ -111,7 +111,12 @@ class DrawMaskView : UIView {
             
             if let d = delegate {
                 let bounds = maskPath.bounds.applying(scaleTransformForMasking()).integral
-                d.drawMaskViewUpdatedMask(self, bounds)
+                if bounds.isEmpty || bounds.isInfinite {
+                    d.drawMaskViewUpdatedMask(self, nil)
+                }
+                else {
+                    d.drawMaskViewUpdatedMask(self, bounds)
+                }
             }
         }
         else {
