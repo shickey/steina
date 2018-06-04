@@ -9,6 +9,8 @@
 import UIKit
 import QuartzCore
 
+let MIN_MASK_DIMENSION : CGFloat = 10 // Minimum width and height of a mask
+
 protocol DrawMaskViewDelegate {
     func drawMaskViewUpdatedMask(_ maskView: DrawMaskView, _ bounds: CGRect?)
 }
@@ -108,16 +110,6 @@ class DrawMaskView : UIView {
             context.setBlendMode(.clear)
             UIColor.white.setFill()
             maskPath.fill()
-            
-            if let d = delegate {
-                let bounds = maskPath.bounds.applying(scaleTransformForMasking()).integral
-                if bounds.isEmpty || bounds.isInfinite {
-                    d.drawMaskViewUpdatedMask(self, nil)
-                }
-                else {
-                    d.drawMaskViewUpdatedMask(self, bounds)
-                }
-            }
         }
         else {
             self.alpha = 1.0
@@ -170,6 +162,20 @@ class DrawMaskView : UIView {
             maskPath.addCurve(to: simplifiedPoints[idx], controlPoint1: simplifiedPoints[idx - 2], controlPoint2: simplifiedPoints[idx - 1])
             idx += 3
         }
+        
+        var maskBounds : CGRect? = maskPath.bounds.applying(scaleTransformForMasking()).integral
+        if let bounds = maskBounds {
+            if bounds.isEmpty || bounds.isInfinite || bounds.size.width < MIN_MASK_DIMENSION || bounds.size.height < MIN_MASK_DIMENSION {
+                path = nil
+                maskPath = nil
+                maskBounds = nil
+            }
+        }
+        
+        if let d = delegate {
+            d.drawMaskViewUpdatedMask(self, maskBounds)
+        }
+        
         setNeedsDisplay()
     }
     

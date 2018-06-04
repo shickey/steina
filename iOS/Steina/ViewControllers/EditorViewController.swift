@@ -10,6 +10,7 @@ import UIKit
 import WebKit
 import CoreData
 import Dispatch
+import simd
 
 typealias VideoClipId = String
 
@@ -42,6 +43,7 @@ class EditorViewController: UIViewController, WKScriptMessageHandler, MetalViewD
     var renderedIds : [VideoClipId] = []
     var renderingQueue : DispatchQueue = DispatchQueue(label: "edu.mit.media.llk.Steina.Render", qos: .default, attributes: .concurrent, autoreleaseFrequency: DispatchQueue.AutoreleaseFrequency.workItem, target: nil)
     let renderDispatchGroup = DispatchGroup()
+    let unproject = orthographicUnprojection(left: -320.0, right: 320.0, top: 240.0, bottom: -240.0, near: 1.0, far: -1.0)
     
     @IBOutlet weak var metalView: MetalView!
     @IBOutlet weak var webViewContainer: UIView!
@@ -269,7 +271,8 @@ class EditorViewController: UIViewController, WKScriptMessageHandler, MetalViewD
         
         let x = (2.0 * (location.x / metalView.bounds.size.width)) - 1.0
         let y = ((2.0 * (location.y / metalView.bounds.size.height)) - 1.0) * -1.0 // Invert y
-        runJavascript("Steina.updateDraggingVideo('\(draggingVideoId!)', \(x), \(y))")
+        let unprojected = unproject * float4(Float(x), Float(y), 1.0, 1.0)
+        runJavascript("Steina.updateDraggingVideo('\(draggingVideoId!)', \(unprojected.x), \(unprojected.y))")
     }
     
     func metalViewDelegateEndedTouch(_ metalView: MetalView, location: CGPoint) {

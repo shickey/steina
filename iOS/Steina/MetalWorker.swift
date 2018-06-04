@@ -63,14 +63,16 @@ var pipeline : MTLRenderPipelineState! = nil
 var depthState : MTLDepthStencilState! = nil
 
 func genVerts(_ entityIndex: Int, width: Float, height: Float, z: Float) -> [Float] {
+    let x = width / 2.0
+    let y = height / 2.0
     return [
-        // X     Y    Z    W         U       V       0          EntityIdx
-        -1.0,  1.0,   z, 1.0,    width, height,    0.0, Float(entityIndex.u32),
-        -1.0, -1.0,   z, 1.0,    width,    0.0,    0.0, Float(entityIndex.u32),
-         1.0, -1.0,   z, 1.0,    0.0,      0.0,    0.0, Float(entityIndex.u32),
-        -1.0,  1.0,   z, 1.0,    width, height,    0.0, Float(entityIndex.u32),
-         1.0, -1.0,   z, 1.0,    0.0,      0.0,    0.0, Float(entityIndex.u32),
-         1.0,  1.0,   z, 1.0,    0.0,   height,    0.0, Float(entityIndex.u32)
+      // X   Y   Z    W         U       V       0          EntityIdx
+        -x,  y,  z, 1.0,    width, height,    0.0, Float(entityIndex.u32),
+        -x, -y,  z, 1.0,    width,    0.0,    0.0, Float(entityIndex.u32),
+         x, -y,  z, 1.0,    0.0,      0.0,    0.0, Float(entityIndex.u32),
+        -x,  y,  z, 1.0,    width, height,    0.0, Float(entityIndex.u32),
+         x, -y,  z, 1.0,    0.0,      0.0,    0.0, Float(entityIndex.u32),
+         x,  y,  z, 1.0,    0.0,   height,    0.0, Float(entityIndex.u32)
     ]
 }
 
@@ -90,6 +92,24 @@ func entityTransform(scale: Float, rotate: Float, translateX: Float, translateY:
     scaling[1][1] = scale
     
     return translation * rotation * scaling
+}
+
+func orthographicProjection(left: Float, right: Float, top: Float, bottom: Float, near: Float, far: Float) -> float4x4 {
+    return float4x4(
+        float4([             2.0 / (right - left),                                0,                            0,   -(right + left) / (right - left) ]),
+        float4([                                0,             2.0 / (top - bottom),                            0,   -(top + bottom) / (top - bottom) ]),
+        float4([                                0,                                0,          -2.0 / (far - near),       -(far + near) / (far - near) ]),
+        float4([                                0,                                0,                            0,                                1.0 ])
+    )
+}
+
+func orthographicUnprojection(left: Float, right: Float, top: Float, bottom: Float, near: Float, far: Float) -> float4x4 {
+    return float4x4(
+        float4([             (right - left) / 2.0,                                0,                            0,   (right + left) / 2.0 ]),
+        float4([                                0,             (top - bottom) / 2.0,                            0,   (top + bottom) / 2.0 ]),
+        float4([                                0,                                0,          (far - near) / -2.0,     (far + near) / 2.0 ]),
+        float4([                                0,                                0,                            0,                    1.0 ])
+    )
 }
 
 var pixelTex : MTLTexture! = nil
@@ -212,6 +232,11 @@ func initMetal(_ hostView: MetalView) {
     depthTestDescriptor.depthCompareFunction = .less
     depthTestDescriptor.isDepthWriteEnabled = true
     depthState = device.makeDepthStencilState(descriptor: depthTestDescriptor)
+    
+    // Initialize the projection transform
+    let transformDest = matBuffer.contents()
+    var projectionTransform = orthographicProjection(left: -320.0, right: 320.0, top: 240.0, bottom: -240.0, near: 1.0, far: -1.0)
+    memcpy(transformDest, &projectionTransform, MemoryLayout<float4x4>.size)
 }
 
 @inline(__always)
@@ -229,7 +254,7 @@ func pushRenderFrame(_ clip: VideoClip, _ renderingIndex: Int, _ frameNumber: In
     let vertDest = vertBuffer.contents() + (verts.count * MemoryLayout<Float>.size * renderingIndex)
     memcpy(vertDest, verts, verts.count * MemoryLayout<Float>.size)
     
-    let transformDest = matBuffer.contents() + (MemoryLayout<float4x4>.size * renderingIndex)
+    let transformDest = matBuffer.contents() + (MemoryLayout<float4x4>.size * (renderingIndex + 1)) // We reserve the first transform for the projection matrix
     var mutableTransform = transform
     memcpy(transformDest, &mutableTransform, MemoryLayout<float4x4>.size)
     

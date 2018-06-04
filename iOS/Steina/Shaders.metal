@@ -24,11 +24,13 @@ struct VertexOut {
 vertex VertexOut passthrough_vertex(VertexIn in [[ stage_in ]],
                                     device float4x4 *transforms [[ buffer(1) ]],
                                     unsigned int vid [[ vertex_id ]]) {
+    float4x4 projectionTransform = transforms[0];
+    
     uint entityIdx = static_cast<uint>(in.entityIndex.y);
-    float4x4 transform = transforms[entityIdx];
+    float4x4 modelTransform = transforms[entityIdx + 1];
     
     VertexOut out;
-    out.position = transform * in.position;
+    out.position = projectionTransform * modelTransform * in.position;
     out.uv = in.uv;
     out.entityIndex = entityIdx;
     return out;

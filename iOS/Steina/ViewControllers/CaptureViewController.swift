@@ -16,6 +16,9 @@ let FORMAT_420v_CODE : UInt32 = 0x34323076   // '420v' in ascii
 let JPEG_QUALITY : S32 = 75 // Value from 1-100 (1 - worst, 100 - best)
 let JPEG_FLAGS   : S32 = 0
 
+let MIN_FRAMES = 10            // Minimum frames in a video clip
+let MAX_FRAMES = 300           // 10 seconds of video @ 30 fps
+
 enum ClipOrientation : S32 {
     case portrait = 0
     case portraitUpsideDown = 1
@@ -35,6 +38,25 @@ class VideoPreviewView : UIView {
     
 }
 
+class CaptureInfoLabel : UILabel {
+    
+    var edgeInsets : UIEdgeInsets {
+        return UIEdgeInsets(top: 8, left: 20, bottom: 8, right: 20)
+    }
+    
+    override func drawText(in rect: CGRect) { 
+        super.drawText(in: UIEdgeInsetsInsetRect(rect, self.edgeInsets))
+    }
+    
+    override var intrinsicContentSize: CGSize {
+        var size = super.intrinsicContentSize
+        size.width  += self.edgeInsets.left + self.edgeInsets.right;
+        size.height += self.edgeInsets.top + self.edgeInsets.bottom;
+        return size
+    }
+    
+}
+
 
 class CaptureViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDelegate, DrawMaskViewDelegate {
     
@@ -50,11 +72,14 @@ class CaptureViewController: UIViewController, AVCaptureVideoDataOutputSampleBuf
     var compressor : tjhandle! = nil
     var jpegBuffer : U8Ptr! = nil
     var clip : VideoClip! = nil
-    var maskBounds : CGRect = CGRect(x: 0, y: 0, width: 640, height: 480)
+    var maskBounds : CGRect! = nil
     var maskData : Data! = nil
     
     @IBOutlet weak var previewView: VideoPreviewView!
     @IBOutlet weak var drawMaskView: DrawMaskView!
+    @IBOutlet weak var infoLabel: UILabel!
+    @IBOutlet weak var recordButton: UIButton!
+    @IBOutlet weak var recordProgress: UIProgressView!
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -83,6 +108,19 @@ class CaptureViewController: UIViewController, AVCaptureVideoDataOutputSampleBuf
     
     override func viewWillAppear(_ animated: Bool) {
         updateOrientation()
+        infoLabel.text = "Draw your video shape"
+        infoLabel.alpha = 1.0
+        infoLabel.isHidden = false
+        recordButton.isHidden = true
+        recordProgress.isHidden = true
+    }
+    
+    override func viewDidAppear(_ animated: Bool) {
+        UIView.animate(withDuration: 2.0, delay: 1.0, options: [], animations: { 
+            self.infoLabel.alpha = 0.0
+        }) { (_) in
+            self.infoLabel.isHidden = true
+        }
     }
     
     override func didReceiveMemoryWarning() {
@@ -152,24 +190,28 @@ class CaptureViewController: UIViewController, AVCaptureVideoDataOutputSampleBuf
         if recording { return } // Don't update the orientation while recording so that we can store it
         // alongside the rest of the clip info
         
+        
+        var newRecordingOrientation : ClipOrientation = .portrait
         switch orientation {
         case .portrait:
-            recordingOrientation = .portrait
+            newRecordingOrientation = .portrait
         case .portraitUpsideDown:
-            recordingOrientation = .portraitUpsideDown
+            newRecordingOrientation = .portraitUpsideDown
         case .landscapeLeft:
-            recordingOrientation = .landscapeLeft
+            newRecordingOrientation = .landscapeLeft
         case .landscapeRight:
-            recordingOrientation = .landscapeRight
+            newRecordingOrientation = .landscapeRight
         default: break // Ignore orientations like faceUp/faceDown and just keep the previous orientation value
         }
         
-        drawMaskView.clearMask()
+        if newRecordingOrientation != recordingOrientation {
+            recordingOrientation = newRecordingOrientation
+            drawMaskView.clearMask()
+        }
     }
     
     
     func startRecording() {
-        print("start")
         recording = true
         framesWritten = 0
         
@@ -178,32 +220,66 @@ class CaptureViewController: UIViewController, AVCaptureVideoDataOutputSampleBuf
         clip.width = U32(maskBounds.size.width)
         clip.height = U32(maskBounds.size.height)
         
+        recordProgress.isHidden = false
+        
         // Begin recording by setting up the delegate methods on the background queue
         frameOutput.setSampleBufferDelegate(self, queue: recordingQueue)
     }
     
     func stopRecording() {
-        frameOutput.setSampleBufferDelegate(nil, queue: nil)
+        // It's possible that the delegate was already removed by the output delegate
+        // method (i.e., in the case where we reached the maximum number of frames)
+        // so we only remove it here if necessary
+        if let _ = frameOutput.sampleBufferDelegate {
+            frameOutput.setSampleBufferDelegate(nil, queue: nil)
+        }
         
         // Finish the recording process on the background queue,
         // making sure to wait for all frames to be processed
         recordingQueue.async {
-            print("stop")
-            print("\(self.framesWritten) frames written")
             
             // Write the data on the main queue since the MOC
             // belongs to the main thread
             DispatchQueue.main.async {
                 
-                // Create Clip entity
-                let newClip = self.project.createClip()
+                if self.framesWritten < MIN_FRAMES {
+                    let info = self.infoLabel!
+                    info.text = "Hold to record"
+                    info.alpha = 1.0
+                    info.isHidden = false
+                    UIView.animate(withDuration: 2.0, delay: 1.0, options: [], animations: { 
+                        info.alpha = 0.0
+                    }) { (finished) in
+                        if (finished) {
+                            info.isHidden = true
+                        }
+                    }
+                }
+                else {
+                    // Create Clip entity
+                    let newClip = self.project.createClip()
+                    
+                    let clipData = serializeClip(self.clip)
+                    try! clipData.write(to: newClip.assetUrl)
+                    
+                    newClip.orientation = self.recordingOrientation.rawValue
+                    
+                    try! newClip.managedObjectContext!.save()
+                    
+                    let info = self.infoLabel!
+                    info.text = "Clip captured!"
+                    info.alpha = 1.0
+                    info.isHidden = false
+                    UIView.animate(withDuration: 2.0, delay: 1.0, options: [], animations: { 
+                        info.alpha = 0.0
+                    }) { (finished) in
+                        if (finished) {
+                            info.isHidden = true
+                        }
+                    }
+                }
                 
-                let clipData = serializeClip(self.clip)
-                try! clipData.write(to: newClip.assetUrl)
-                
-                newClip.orientation = self.recordingOrientation.rawValue
-                
-                try! newClip.managedObjectContext!.save()
+                self.recordProgress.isHidden = true
                 
                 self.recording = false
             }
@@ -215,7 +291,12 @@ class CaptureViewController: UIViewController, AVCaptureVideoDataOutputSampleBuf
     }
     
     @IBAction func recordReleased(_ sender: Any) {
-        stopRecording()
+        // If we reached the max number of frames,
+        // we might not be recording anymore, so
+        // there might be nothing to do
+        if recording {
+            stopRecording()
+        }
     }
     
     @IBAction func closePressed(_ sender: Any) {
@@ -225,12 +306,16 @@ class CaptureViewController: UIViewController, AVCaptureVideoDataOutputSampleBuf
     // DrawMaskViewDelegate
     
     func drawMaskViewUpdatedMask(_ maskView: DrawMaskView, _ bounds: CGRect?) {
-        guard let newBounds = bounds else {
-            maskBounds = CGRect(x: 0, y: 0, width: 640, height: 480)
-            return
+        maskBounds = bounds
+        if maskBounds != nil {
+            maskData = maskView.createGreyscaleMaskJpeg()
+            recordButton.isHidden = false
         }
-        maskBounds = newBounds
-        maskData = maskView.createGreyscaleMaskJpeg()
+        else {
+            maskData = nil
+            recordButton.isHidden = true
+        }
+        
     }
     
     /*******************************************************************************
@@ -243,7 +328,14 @@ class CaptureViewController: UIViewController, AVCaptureVideoDataOutputSampleBuf
      *******************************************************************************/
     func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
         
-        if maskBounds == nil { return }
+        if self.framesWritten >= MAX_FRAMES {
+            // Prevent any more frames from getting processed
+            frameOutput.setSampleBufferDelegate(nil, queue: nil)
+            DispatchQueue.main.async {
+                self.stopRecording()
+            }
+            return
+        }
         
         // Grab pointer to pixels
         let buffer = CMSampleBufferGetImageBuffer(sampleBuffer)!
@@ -282,8 +374,7 @@ class CaptureViewController: UIViewController, AVCaptureVideoDataOutputSampleBuf
         }
         
         // Crop into new pixel buffer
-        let crop = maskBounds
-        print("Crop bounds: \(crop)")
+        let crop = maskBounds!
         
         // Offset the rotated buffer to the first pixel in the cropped region
         var yOffset = Int(480 - (crop.origin.y + crop.size.height))
@@ -320,6 +411,10 @@ class CaptureViewController: UIViewController, AVCaptureVideoDataOutputSampleBuf
         appendFrame(clip, jpegData: compressedBuffer!, length: Int(jpegSize))
         
         CVPixelBufferUnlockBaseAddress(buffer, [])
+        
+        DispatchQueue.main.async {
+            self.recordProgress.progress = Float(self.framesWritten) / Float(MAX_FRAMES) 
+        }
         
         self.framesWritten += 1
     }

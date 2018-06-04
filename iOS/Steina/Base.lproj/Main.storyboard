@@ -194,7 +194,7 @@
                                     <rect key="frame" x="0.0" y="0.0" width="100" height="75"/>
                                     <autoresizingMask key="autoresizingMask"/>
                                     <subviews>
-                                        <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="g8Y-lb-1IO">
+                                        <imageView userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="g8Y-lb-1IO">
                                             <rect key="frame" x="0.0" y="0.0" width="100" height="75"/>
                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                         </imageView>
@@ -253,13 +253,36 @@
                                 </subviews>
                                 <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                             </view>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" insetsLayoutMarginsFromSafeArea="NO" text="Label" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="pnE-zM-CSg" customClass="CaptureInfoLabel" customModule="Steina" customModuleProvider="target">
+                                <rect key="frame" x="349" y="494" width="71" height="36"/>
+                                <color key="backgroundColor" red="0.22876701499999999" green="0.2421669434" blue="0.29431132250000003" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="30"/>
+                                <color key="textColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                            <progressView opaque="NO" contentMode="scaleToFill" verticalHuggingPriority="750" progress="0.5" translatesAutoresizingMaskIntoConstraints="NO" id="ful-ae-hNr">
+                                <rect key="frame" x="259" y="50" width="250" height="2"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="250" id="OPl-qu-blM"/>
+                                </constraints>
+                                <color key="progressTintColor" red="0.75151797279999999" green="0.1410054238" blue="0.15413421890000001" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
+                            </progressView>
                         </subviews>
                         <color key="backgroundColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                        <constraints>
+                            <constraint firstItem="ful-ae-hNr" firstAttribute="centerX" secondItem="TTD-NQ-xy4" secondAttribute="centerX" id="F0g-83-03u"/>
+                            <constraint firstItem="pnE-zM-CSg" firstAttribute="centerX" secondItem="TTD-NQ-xy4" secondAttribute="centerX" id="Mhp-MX-gS9"/>
+                            <constraint firstItem="pnE-zM-CSg" firstAttribute="centerY" secondItem="TTD-NQ-xy4" secondAttribute="centerY" id="anf-li-lBH"/>
+                            <constraint firstItem="ful-ae-hNr" firstAttribute="top" secondItem="amO-uh-Wj7" secondAttribute="top" constant="30" id="hsW-0k-s6c"/>
+                        </constraints>
                         <viewLayoutGuide key="safeArea" id="amO-uh-Wj7"/>
                     </view>
                     <connections>
                         <outlet property="drawMaskView" destination="WlG-9b-7JO" id="CjX-kJ-xqM"/>
+                        <outlet property="infoLabel" destination="pnE-zM-CSg" id="bB1-D8-e5q"/>
                         <outlet property="previewView" destination="cvb-YC-Fs6" id="1Zb-ol-BFg"/>
+                        <outlet property="recordButton" destination="dy3-vT-Csp" id="lw3-4F-SmM"/>
+                        <outlet property="recordProgress" destination="ful-ae-hNr" id="4lY-KD-XtO"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="yEX-Ov-bfU" userLabel="First Responder" sceneMemberID="firstResponder"/>
