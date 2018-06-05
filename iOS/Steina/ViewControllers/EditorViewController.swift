@@ -115,7 +115,7 @@ class EditorViewController: UIViewController, WKScriptMessageHandler, MetalViewD
     }
     
     func saveProject() {
-        print("saving")
+        self.project.thumbnail = getLastRenderedImage()
         runJavascript("Steina.serializeVideoTargets()") { (res, err) in
             if let targetDictionary = res as? Dictionary<String, String> {
                 for (id, targetJson) in targetDictionary {

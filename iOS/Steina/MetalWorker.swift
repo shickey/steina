@@ -62,6 +62,11 @@ let commandQueue : MTLCommandQueue! = device.makeCommandQueue()
 var pipeline : MTLRenderPipelineState! = nil
 var depthState : MTLDepthStencilState! = nil
 
+
+var lastRenderedPixels : RawPtr = malloc(640 * 480 * 4)
+var lastRenderedWidth = 0
+var lastRenderedHeight = 0
+
 func genVerts(_ entityIndex: Int, width: Float, height: Float, z: Float) -> [Float] {
     let x = width / 2.0
     let y = height / 2.0
@@ -141,7 +146,8 @@ func initMetal(_ hostView: MetalView) {
     metalLayer = hostView.layer as! CAMetalLayer
     metalLayer.device = device
     metalLayer.pixelFormat = .bgra8Unorm
-    metalLayer.framebufferOnly = true // @TODO: If we ever want to sample from frame attachments, we'll need to set this to false
+//    metalLayer.framebufferOnly = true // @TODO: If we ever want to sample from frame attachments, we'll need to set this to false
+    metalLayer.framebufferOnly = false
     
     // Load shaders
     let shaderLibrary = device.makeDefaultLibrary()!
@@ -249,6 +255,11 @@ func indexForZValue(_ z: Float) -> Int {
     return Int(round((1.0 - z) * 100.0)) - 1
 }
 
+func getLastRenderedImage() -> Data {
+    let context = CGContext(data: lastRenderedPixels, width: lastRenderedWidth, height: lastRenderedHeight, bitsPerComponent: 8, bytesPerRow: lastRenderedWidth * 4, space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.noneSkipFirst.rawValue | CGBitmapInfo.byteOrder32Little.rawValue)!
+    return UIImagePNGRepresentation(UIImage(cgImage: context.makeImage()!))!
+}
+
 func pushRenderFrame(_ clip: VideoClip, _ renderingIndex: Int, _ frameNumber: Int, _ transform: float4x4) {
     let verts = genVerts(renderingIndex, width: Float(clip.width), height: Float(clip.height), z: zValueForIndex(renderingIndex))
     let vertDest = vertBuffer.contents() + (verts.count * MemoryLayout<Float>.size * renderingIndex)
@@ -321,6 +332,16 @@ func render(_ numEntities: Int) {
         
         renderEncoder.endEncoding()
         commandBuffer.present(drawable, afterMinimumDuration: 1.0 / 30.0)
+        commandBuffer.addCompletedHandler { _ in
+            // @TODO: This is a little sketchy. There's probably a way to submit a blit command
+            //        or something to capture the pixels instead.
+            let tex = drawable.texture
+            let bytesPerRow = tex.width * 4
+            let region = MTLRegionMake2D(0, 0, tex.width, tex.height)
+            tex.getBytes(lastRenderedPixels, bytesPerRow: bytesPerRow, from: region, mipmapLevel: 0)
+            lastRenderedWidth = tex.width
+            lastRenderedHeight = tex.height
+        }
         commandBuffer.commit()
     }
     

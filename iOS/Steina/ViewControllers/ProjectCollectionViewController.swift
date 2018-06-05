@@ -13,7 +13,7 @@ private let projectReuseIdentifier = "ProjectCell"
 private let addReuseIdentifier = "AddProjectCell"
 
 class ProjectCell : UICollectionViewCell {
-    @IBOutlet weak var titleLabel: UILabel!
+    @IBOutlet weak var projectThumbnail: UIImageView!
 }
 
 class AddProjectCell : UICollectionViewCell {}
@@ -35,6 +35,11 @@ class ProjectCollectionViewController: UICollectionViewController {
         let fetchRequest = NSFetchRequest<Project>(entityName: Project.entity().name!)
         projects = try! moc.fetch(fetchRequest)
         
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        collectionView?.reloadData()
     }
 
     override func didReceiveMemoryWarning() {
@@ -73,10 +78,13 @@ class ProjectCollectionViewController: UICollectionViewController {
             return collectionView.dequeueReusableCell(withReuseIdentifier: addReuseIdentifier, for: indexPath) as! AddProjectCell
         }
         
+        let project = projects[indexPath.item]
+        
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: projectReuseIdentifier, for: indexPath) as! ProjectCell
-    
-        // Configure the cell
-        cell.titleLabel.text = "Hello world!"
+        
+        if let imgData = project.thumbnail {
+            cell.projectThumbnail.image = UIImage(data: imgData)
+        }
     
         return cell
     }

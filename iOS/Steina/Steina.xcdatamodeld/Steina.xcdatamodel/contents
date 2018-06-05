@@ -3,15 +3,15 @@
     <entity name="Clip" representedClassName="Clip" syncable="YES" codeGenerationType="class">
         <attribute name="id" attributeType="UUID" usesScalarValueType="NO" syncable="YES"/>
         <attribute name="targetJson" optional="YES" attributeType="String" syncable="YES"/>
-        <attribute name="title" optional="YES" attributeType="String" syncable="YES"/>
         <relationship name="project" maxCount="1" deletionRule="Nullify" destinationEntity="Project" inverseName="clips" inverseEntity="Project" syncable="YES"/>
     </entity>
     <entity name="Project" representedClassName="Project" syncable="YES" codeGenerationType="class">
         <attribute name="id" attributeType="UUID" usesScalarValueType="NO" syncable="YES"/>
+        <attribute name="thumbnail" optional="YES" attributeType="Binary" syncable="YES"/>
         <relationship name="clips" optional="YES" toMany="YES" deletionRule="Cascade" ordered="YES" destinationEntity="Clip" inverseName="project" inverseEntity="Clip" syncable="YES"/>
     </entity>
     <elements>
-        <element name="Clip" positionX="-54" positionY="0" width="128" height="105"/>
-        <element name="Project" positionX="-63" positionY="-18" width="128" height="75"/>
+        <element name="Clip" positionX="-54" positionY="0" width="128" height="90"/>
+        <element name="Project" positionX="-63" positionY="-18" width="128" height="90"/>
     </elements>
 </model>
