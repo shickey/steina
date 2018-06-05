@@ -248,6 +248,14 @@
                                             <action selector="closePressed:" destination="vvR-aU-9rN" eventType="touchUpInside" id="ATU-r6-wZy"/>
                                         </connections>
                                     </button>
+                                    <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="zC4-QY-wur">
+                                        <rect key="frame" x="667" y="16" width="75" height="75"/>
+                                        <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxY="YES"/>
+                                        <state key="normal" image="camera-reverse"/>
+                                        <connections>
+                                            <action selector="cameraReverseTapped:" destination="vvR-aU-9rN" eventType="touchUpInside" id="Rt3-Jd-gs4"/>
+                                        </connections>
+                                    </button>
                                 </subviews>
                                 <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                             </view>
@@ -276,6 +284,8 @@
                         <viewLayoutGuide key="safeArea" id="amO-uh-Wj7"/>
                     </view>
                     <connections>
+                        <outlet property="cameraReverseButton" destination="zC4-QY-wur" id="4Vf-8t-e1W"/>
+                        <outlet property="closeButton" destination="Gm8-6q-9ZZ" id="hpg-qI-via"/>
                         <outlet property="drawMaskView" destination="WlG-9b-7JO" id="CjX-kJ-xqM"/>
                         <outlet property="infoLabel" destination="pnE-zM-CSg" id="bB1-D8-e5q"/>
                         <outlet property="previewView" destination="cvb-YC-Fs6" id="1Zb-ol-BFg"/>
@@ -290,6 +300,7 @@
     </scenes>
     <resources>
         <image name="back" width="112" height="112"/>
+        <image name="camera-reverse" width="75" height="75"/>
         <image name="close" width="50" height="50"/>
         <image name="green-flag" width="112" height="112"/>
         <image name="record" width="50" height="50"/>

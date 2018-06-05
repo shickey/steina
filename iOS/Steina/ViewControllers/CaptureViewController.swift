@@ -62,6 +62,9 @@ class CaptureViewController: UIViewController, AVCaptureVideoDataOutputSampleBuf
     
     var project : Project! = nil
     
+    var frontCamera : AVCaptureDevice? = nil
+    var backCamera : AVCaptureDevice? = nil
+    
     var recordingQueue : DispatchQueue! = nil
     
     var session : AVCaptureSession! = nil
@@ -80,6 +83,8 @@ class CaptureViewController: UIViewController, AVCaptureVideoDataOutputSampleBuf
     @IBOutlet weak var infoLabel: UILabel!
     @IBOutlet weak var recordButton: UIButton!
     @IBOutlet weak var recordProgress: UIProgressView!
+    @IBOutlet weak var closeButton: UIButton!
+    @IBOutlet weak var cameraReverseButton: UIButton!
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -135,13 +140,24 @@ class CaptureViewController: UIViewController, AVCaptureVideoDataOutputSampleBuf
     
     func setupCaptureSession() {
         
-        // Allocate memory for storing pixel data
-        // prior to compression
-        
         // Set up JPEG compression
         compressor = tjInitCompress()
         let size = tjBufSize(640, 480, Int32(TJSAMP_420.rawValue))
         jpegBuffer = tjAlloc(Int32(size))
+        
+        let discovery = AVCaptureDevice.DiscoverySession(deviceTypes: [.builtInWideAngleCamera], mediaType: nil, position: .unspecified)
+        for device in discovery.devices {
+            if device.position == .front {
+                frontCamera = device
+            }
+            else if device.position == .back {
+                backCamera = device
+            }
+        }
+        
+        if frontCamera == nil || backCamera == nil {
+            cameraReverseButton.isHidden = true
+        }
         
         session = AVCaptureSession()
         session.beginConfiguration()
@@ -149,8 +165,8 @@ class CaptureViewController: UIViewController, AVCaptureVideoDataOutputSampleBuf
         // @TODO: Test for ability to use this preset, fallback if otherwise
         session.sessionPreset = .vga640x480
         
-        let videoDevice = AVCaptureDevice.default(for: .video)! // @TODO: Handle case where no camera present
-        let input = try! AVCaptureDeviceInput(device: videoDevice)
+        // @TODO: This assumes that we actually found a camera at all, which is probably bad
+        let input = try! AVCaptureDeviceInput(device: backCamera!)
         session.addInput(input)
         
         frameOutput = AVCaptureVideoDataOutput()
@@ -164,6 +180,8 @@ class CaptureViewController: UIViewController, AVCaptureVideoDataOutputSampleBuf
         recordingQueue = DispatchQueue(label: "edu.mit.media.llk.Steina")
         
         previewView.videoPreviewLayer.session = self.session
+        previewView.videoPreviewLayer.connection?.automaticallyAdjustsVideoMirroring = false
+        previewView.videoPreviewLayer.connection?.isVideoMirrored = false
         
         NotificationCenter.default.addObserver(self, selector: #selector(deviceOrientationDidChange(_:)), name: .UIDeviceOrientationDidChange, object: nil)
         
@@ -171,6 +189,25 @@ class CaptureViewController: UIViewController, AVCaptureVideoDataOutputSampleBuf
         
         updateOrientation()
         
+    }
+    
+    func flipCamera() {
+        session.beginConfiguration()
+        
+        let currentCamera = session.inputs[0] as! AVCaptureDeviceInput
+        session.removeInput(currentCamera)
+        
+        if currentCamera.device.position == .front, let back = backCamera {
+            let input = try! AVCaptureDeviceInput(device: back)
+            session.addInput(input)
+        }
+        else {
+            let front = frontCamera!
+            let input = try! AVCaptureDeviceInput(device: front)
+            session.addInput(input)
+        }
+        
+        session.commitConfiguration()
     }
     
     @objc func deviceOrientationDidChange(_ notification: NSNotification) {
@@ -212,6 +249,8 @@ class CaptureViewController: UIViewController, AVCaptureVideoDataOutputSampleBuf
     
     
     func startRecording() {
+        closeButton.isHidden = true
+        cameraReverseButton.isHidden = true
         recording = true
         framesWritten = 0
         
@@ -278,6 +317,11 @@ class CaptureViewController: UIViewController, AVCaptureVideoDataOutputSampleBuf
                 }
                 
                 self.recordProgress.isHidden = true
+                self.closeButton.isHidden = false
+                
+                if self.backCamera != nil && self.frontCamera != nil {
+                    self.cameraReverseButton.isHidden = true
+                }
                 
                 self.recording = false
             }
@@ -299,6 +343,12 @@ class CaptureViewController: UIViewController, AVCaptureVideoDataOutputSampleBuf
     
     @IBAction func closePressed(_ sender: Any) {
         self.presentingViewController!.dismiss(animated: true, completion: nil)
+    }
+    
+    @IBAction func cameraReverseTapped(_ sender: Any) {
+        if let _ = frontCamera, let _ = backCamera {
+            flipCamera()
+        }
     }
     
     // DrawMaskViewDelegate

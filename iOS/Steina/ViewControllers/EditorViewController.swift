@@ -104,7 +104,9 @@ class EditorViewController: UIViewController, WKScriptMessageHandler, MetalViewD
             js += "Steina.setVideoRenderingOrder('\(renderingOrderJson)');"
         }
         for (clipId, inMemoryClip) in videoClips {
-            js += "Steina.inflateVideoTarget('\(clipId)', '\(inMemoryClip.clip.targetJson!)');"
+            if let json = inMemoryClip.clip.targetJson {
+                js += "Steina.inflateVideoTarget('\(clipId)', '\(json)');"
+            }
         }
         runJavascript(js) { (_, _) in
             self.ready = true
