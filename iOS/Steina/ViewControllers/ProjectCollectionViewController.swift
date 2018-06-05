@@ -22,6 +22,7 @@ class ProjectCollectionViewController: UICollectionViewController {
     
     var moc : NSManagedObjectContext! = nil
     var projects : [Project] = []
+    var fetchRequest : NSFetchRequest<Project>! = nil
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -32,19 +33,24 @@ class ProjectCollectionViewController: UICollectionViewController {
         let appDelegate = UIApplication.shared.delegate as! AppDelegate
         moc = appDelegate.persistentContainer.viewContext
         
-        let fetchRequest = NSFetchRequest<Project>(entityName: Project.entity().name!)
-        projects = try! moc.fetch(fetchRequest)
+        fetchRequest = NSFetchRequest<Project>(entityName: Project.entity().name!)
         
+        reload()
     }
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        collectionView?.reloadData()
+        reload()
     }
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
+    }
+    
+    func reload() {
+        projects = try! moc.fetch(fetchRequest)
+        collectionView?.reloadData()
     }
 
     
