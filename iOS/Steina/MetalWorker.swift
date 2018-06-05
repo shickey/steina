@@ -14,9 +14,9 @@ import simd
 let MAX_RENDERED_ENTITIES = 100
 
 protocol MetalViewDelegate {
-    func metalViewDelegateBeganTouch(_ metalView: MetalView, location: CGPoint)
-    func metalViewDelegateMovedTouch(_ metalView: MetalView, location: CGPoint)
-    func metalViewDelegateEndedTouch(_ metalView: MetalView, location: CGPoint)
+    func metalViewBeganTouch(_ metalView: MetalView, location: CGPoint)
+    func metalViewMovedTouch(_ metalView: MetalView, location: CGPoint)
+    func metalViewEndedTouch(_ metalView: MetalView, location: CGPoint)
 }
 
 class MetalView : UIView {
@@ -30,28 +30,28 @@ class MetalView : UIView {
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         let location = touches.first!.location(in: self);
         if let d = delegate {
-            d.metalViewDelegateBeganTouch(self, location: location)
+            d.metalViewBeganTouch(self, location: location)
         }
     }
     
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
         let location = touches.first!.location(in: self);
         if let d = delegate {
-            d.metalViewDelegateMovedTouch(self, location: location)
+            d.metalViewMovedTouch(self, location: location)
         }
     }
     
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
         let location = touches.first!.location(in: self);
         if let d = delegate {
-            d.metalViewDelegateEndedTouch(self, location: location)
+            d.metalViewEndedTouch(self, location: location)
         }
     }
     
     override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
         let location = touches.first!.location(in: self);
         if let d = delegate {
-            d.metalViewDelegateEndedTouch(self, location: location)
+            d.metalViewEndedTouch(self, location: location)
         }
     }
 }
@@ -146,7 +146,6 @@ func initMetal(_ hostView: MetalView) {
     metalLayer = hostView.layer as! CAMetalLayer
     metalLayer.device = device
     metalLayer.pixelFormat = .bgra8Unorm
-//    metalLayer.framebufferOnly = true // @TODO: If we ever want to sample from frame attachments, we'll need to set this to false
     metalLayer.framebufferOnly = false
     
     // Load shaders

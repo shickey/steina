@@ -145,16 +145,21 @@
               vm.inflateVideoTarget(id, targetJson);
             }
 
+            function setVideoRenderingOrder(idArrayJson) {
+              vm.runtime.videoTargetDrawInfo.order = JSON.parse(idArrayJson);
+            }
+
             function getVideoTargets() {
                 return vm.getVideoTargets().map(t => t.toJSON());
             }
 
             function serializeVideoTargets() {
-              var serializedTargets = {};
-              vm.getVideoTargets().forEach(t => {
-                serializedTargets[t.id] = JSON.stringify(t.toJSON());
+              return getVideoTargets().map(t => {
+                return {
+                  id : t.id,
+                  json: JSON.stringify(t)
+                }
               })
-              return serializedTargets;
             }
 
             function beginDraggingVideo(id) {
@@ -178,6 +183,7 @@
                 getVideoTargets,
                 serializeVideoTargets,
                 inflateVideoTarget,
+                setVideoRenderingOrder,
                 beginDraggingVideo,
                 updateDraggingVideo,
                 endDraggingVideo

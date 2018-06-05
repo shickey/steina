@@ -49,6 +49,7 @@ class EditorViewController: UIViewController, WKScriptMessageHandler, MetalViewD
     @IBOutlet weak var webViewContainer: UIView!
     @IBOutlet weak var loadingView: UIView!
     var webView: WKWebView! = nil
+    var clipsCollectionVC : ClipsCollectionViewController? = nil
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -99,10 +100,13 @@ class EditorViewController: UIViewController, WKScriptMessageHandler, MetalViewD
     
     func onScratchLoaded() {
         var js : String = ""
+        if let renderingOrderJson = project.renderingOrder {
+            js += "Steina.setVideoRenderingOrder('\(renderingOrderJson)');"
+        }
         for (clipId, inMemoryClip) in videoClips {
             js += "Steina.inflateVideoTarget('\(clipId)', '\(inMemoryClip.clip.targetJson!)');"
         }
-        runJavascript(js) { (res, err) in
+        runJavascript(js) { (_, _) in
             self.ready = true
             self.onReady()
             UIView.animate(withDuration: 0.5, animations: { 
@@ -117,17 +121,31 @@ class EditorViewController: UIViewController, WKScriptMessageHandler, MetalViewD
     func saveProject() {
         self.project.thumbnail = getLastRenderedImage()
         runJavascript("Steina.serializeVideoTargets()") { (res, err) in
-            if let targetDictionary = res as? Dictionary<String, String> {
-                for (id, targetJson) in targetDictionary {
+            if let targets = res as? Array<Dictionary<String, String>> {
+                for target in targets {
+                    let id = target["id"]!
+                    let json = target["json"]!
+                    
                     let inMemoryClip = self.videoClips[id]!
-                    inMemoryClip.clip.targetJson = targetJson
+                    inMemoryClip.clip.targetJson = json
                 }
+                let ids = targets.map({ (target) -> VideoClipId in
+                    return target["id"]!
+                })
+                let renderingOrderJsonData = try! JSONEncoder().encode(ids)
+                let renderingOrderJson = String(data: renderingOrderJsonData, encoding: .utf8)
+                self.project.renderingOrder = renderingOrderJson
                 try! self.project.managedObjectContext!.save()
             }
         }
     }
     
     func onReady() {
+        if let clipsVC = clipsCollectionVC {
+            clipsVC.videoClipIds = videoClipIds
+            clipsVC.videoClips = videoClips
+            clipsVC.collectionView?.reloadData()
+        }
         startDisplayLink()
     }
     
@@ -161,10 +179,11 @@ class EditorViewController: UIViewController, WKScriptMessageHandler, MetalViewD
     }
     
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        if let clipsCollectionVC = segue.destination as? ClipsCollectionViewController {
-            clipsCollectionVC.delegate = self
-            clipsCollectionVC.videoClipIds = videoClipIds
-            clipsCollectionVC.videoClips = videoClips
+        if let clipsVC = segue.destination as? ClipsCollectionViewController {
+            clipsVC.delegate = self
+            clipsVC.videoClipIds = videoClipIds
+            clipsVC.videoClips = videoClips
+            self.clipsCollectionVC = clipsVC
         }
         if let captureVC = segue.destination as? CaptureViewController {
             captureVC.project = project
@@ -269,14 +288,17 @@ class EditorViewController: UIViewController, WKScriptMessageHandler, MetalViewD
     
     // MetalViewDelegate
     
-    func metalViewDelegateBeganTouch(_ metalView: MetalView, location: CGPoint) {
+    func metalViewBeganTouch(_ metalView: MetalView, location: CGPoint) {
         if let draggingId = videoTargetAtLocation(location) {
             draggingVideoId = draggingId        
             runJavascript("Steina.beginDraggingVideo('\(draggingVideoId!)')")
+            if let clipsVC = clipsCollectionVC, let idx = videoClipIds.index(of: draggingId) {
+                clipsVC.collectionView!.selectItem(at: IndexPath(item: idx, section: 0), animated: false, scrollPosition: .centeredHorizontally)
+            }
         }
     }
     
-    func metalViewDelegateMovedTouch(_ metalView: MetalView, location: CGPoint) {
+    func metalViewMovedTouch(_ metalView: MetalView, location: CGPoint) {
         guard draggingVideoId != nil else { return }
         
         let x = (2.0 * (location.x / metalView.bounds.size.width)) - 1.0
@@ -285,7 +307,7 @@ class EditorViewController: UIViewController, WKScriptMessageHandler, MetalViewD
         runJavascript("Steina.updateDraggingVideo('\(draggingVideoId!)', \(unprojected.x), \(unprojected.y))")
     }
     
-    func metalViewDelegateEndedTouch(_ metalView: MetalView, location: CGPoint) {
+    func metalViewEndedTouch(_ metalView: MetalView, location: CGPoint) {
         guard draggingVideoId != nil else { return }
         
         runJavascript("Steina.endDraggingVideo('\(draggingVideoId!)')")

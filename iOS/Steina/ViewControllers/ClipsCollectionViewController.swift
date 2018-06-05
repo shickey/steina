@@ -16,6 +16,17 @@ protocol ClipsCollectionViewControllerDelegate {
 
 class ClipsCollectionViewCell: UICollectionViewCell {
     @IBOutlet weak var thumbnailView: UIImageView!
+    
+    override var isSelected: Bool {
+        didSet {
+            if isSelected {
+                self.backgroundColor = UIColor.yellow
+            }
+            else {
+                self.backgroundColor = UIColor.clear
+            }
+        }  
+    }
 }
 
 class ClipsCollectionViewController: UICollectionViewController {
@@ -72,30 +83,14 @@ class ClipsCollectionViewController: UICollectionViewController {
         let thumb = videoClip.videoClip.thumbnail!
         
         cell.thumbnailView.image = UIImage(cgImage: thumb)
-        
-        if collectionView.indexPathsForSelectedItems?.contains(indexPath) == true {
-            cell.backgroundColor = UIColor.yellow
-        }
-        else {
-            cell.backgroundColor = UIColor.clear
-        }
     
         return cell
     }
     
     override func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        if let cell = collectionView.cellForItem(at: indexPath) {
-            cell.backgroundColor = UIColor.yellow
-        }
         if let d = delegate {
             let clipId = videoClipIds[indexPath.item]
             d.clipsControllerDidSelect(clipsController: self, clipId: clipId)
-        }
-    }
-    
-    override func collectionView(_ collectionView: UICollectionView, didDeselectItemAt indexPath: IndexPath) {
-        if let cell = collectionView.cellForItem(at: indexPath) {
-            cell.backgroundColor = UIColor.clear
         }
     }
 
