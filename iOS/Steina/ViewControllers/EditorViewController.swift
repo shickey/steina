@@ -93,16 +93,16 @@ class EditorViewController: UIViewController, WKScriptMessageHandler, MetalViewD
     override func viewWillDisappear(_ animated: Bool) {
         runJavascript("vm.stopAll()")
         stopDisplayLink()
-        try! project.managedObjectContext!.save()
+        saveProject()
         super.viewWillDisappear(animated)
     }
     
     func onScratchLoaded() {
         var js : String = ""
         for (clipId, inMemoryClip) in videoClips {
-            js += "Steina.createVideoTarget(\"\(clipId)\", 30, \(inMemoryClip.videoClip.frames), \'\(inMemoryClip.clip.blocksJson!)\');"
+            js += "Steina.inflateVideoTarget('\(clipId)', '\(inMemoryClip.clip.targetJson!)');"
         }
-        runJavascript(js) { (_, _) in
+        runJavascript(js) { (res, err) in
             self.ready = true
             self.onReady()
             UIView.animate(withDuration: 0.5, animations: { 
@@ -111,6 +111,19 @@ class EditorViewController: UIViewController, WKScriptMessageHandler, MetalViewD
                 self.loadingView.isHidden = true
             })
             
+        }
+    }
+    
+    func saveProject() {
+        print("saving")
+        runJavascript("Steina.serializeVideoTargets()") { (res, err) in
+            if let targetDictionary = res as? Dictionary<String, String> {
+                for (id, targetJson) in targetDictionary {
+                    let inMemoryClip = self.videoClips[id]!
+                    inMemoryClip.clip.targetJson = targetJson
+                }
+                try! self.project.managedObjectContext!.save()
+            }
         }
     }
     
@@ -134,7 +147,6 @@ class EditorViewController: UIViewController, WKScriptMessageHandler, MetalViewD
     }
     
     @IBAction func backButtonTapped(_ sender: Any) {
-        try! project.managedObjectContext!.save()
         self.presentingViewController!.dismiss(animated: true, completion: nil)
     }
     
@@ -144,7 +156,8 @@ class EditorViewController: UIViewController, WKScriptMessageHandler, MetalViewD
     
     @IBAction func stopButtonTapped(_ sender: Any) {
         runJavascript("vm.stopAll()")
-        try! project.managedObjectContext!.save()
+        saveProject()
+        
     }
     
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
@@ -179,12 +192,9 @@ class EditorViewController: UIViewController, WKScriptMessageHandler, MetalViewD
                     let clipId = target["id"] as! String
                     let frame = (target["currentFrame"] as! NSNumber).floatValue
                     
-                    let blocks = target["blocks"] as! String
-                    
                     var frameNumber = Int(round(frame))
                 
                     let inMemoryClip = self.videoClips[clipId]!
-                    inMemoryClip.clip.blocksJson = blocks
                     
                     let videoClip = inMemoryClip.videoClip
                     if frameNumber >= videoClip.frames {

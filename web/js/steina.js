@@ -134,16 +134,27 @@
                 vm.runtime._step();
             }
 
-            function createVideoTarget(id, fps, frames, blocksJson) {
+            function createVideoTarget(id, fps, frames) {
                 vm.createVideoTarget(id, {
                     fps,
-                    frames,
-                    blocksJson
+                    frames
                 })
+            }
+
+            function inflateVideoTarget(id, targetJson) {
+              vm.inflateVideoTarget(id, targetJson);
             }
 
             function getVideoTargets() {
                 return vm.getVideoTargets().map(t => t.toJSON());
+            }
+
+            function serializeVideoTargets() {
+              var serializedTargets = {};
+              vm.getVideoTargets().forEach(t => {
+                serializedTargets[t.id] = JSON.stringify(t.toJSON());
+              })
+              return serializedTargets;
             }
 
             function beginDraggingVideo(id) {
@@ -165,6 +176,8 @@
                 tick,
                 createVideoTarget,
                 getVideoTargets,
+                serializeVideoTargets,
+                inflateVideoTarget,
                 beginDraggingVideo,
                 updateDraggingVideo,
                 endDraggingVideo

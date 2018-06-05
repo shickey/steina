@@ -262,8 +262,6 @@ class CaptureViewController: UIViewController, AVCaptureVideoDataOutputSampleBuf
                     let clipData = serializeClip(self.clip)
                     try! clipData.write(to: newClip.assetUrl)
                     
-                    newClip.orientation = self.recordingOrientation.rawValue
-                    
                     try! newClip.managedObjectContext!.save()
                     
                     let info = self.infoLabel!
