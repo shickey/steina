@@ -42,7 +42,7 @@ fragment float4 passthrough_fragment(VertexOut v [[ stage_in ]],
     constexpr sampler s(coord::pixel, filter::linear);
 
     float maskVal = mask.sample(s, v.uv, v.entityIndex).a;
-    if (maskVal < 0.005) {
+    if (maskVal < 0.01) {
         discard_fragment();
     }
     float4 color = texture.sample(s, v.uv, v.entityIndex);

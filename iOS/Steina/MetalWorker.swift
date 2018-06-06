@@ -140,7 +140,12 @@ var decompressors : Set<tjhandle> = Set()
 var decompressorSemaphore = DispatchSemaphore(value: NUM_DECOMPRESSORS)
 let decompressorLockQueue = DispatchQueue(label: "edu.mit.media.llk.Steina.Decompressors")
 
+var captureScope : MTLCaptureScope! = nil
+
 func initMetal(_ hostView: MetalView) {
+    
+    captureScope = MTLCaptureManager.shared().makeCaptureScope(device: device)
+    captureScope.label = "Does this actually work?"
     
     // Set up JPEG decompressors
     for _ in 0..<NUM_DECOMPRESSORS {
@@ -274,7 +279,18 @@ func getLastRenderedImage() -> Data {
     return UIImagePNGRepresentation(UIImage(cgImage: context.makeImage()!))!
 }
 
-func pushRenderFrame(_ clip: VideoClip, _ renderingIndex: Int, _ frameNumber: Int, _ transform: float4x4) {
+struct RenderFrame {
+    let id: VideoClipId
+    let clip : VideoClip
+    let frameNumber: Int
+    let transform : float4x4
+}
+
+func pushRenderFrame(_ renderFrame: RenderFrame, at renderingIndex: Int) {
+    let clip = renderFrame.clip
+    let frameNumber = renderFrame.frameNumber
+    let transform = renderFrame.transform
+    
     let verts = genVerts(renderingIndex, width: Float(clip.width), height: Float(clip.height), z: zValueForIndex(renderingIndex))
     let vertDest = vertBuffer.contents() + (verts.count * MemoryLayout<Float>.size * renderingIndex)
     memcpy(vertDest, verts, verts.count * MemoryLayout<Float>.size)
@@ -321,6 +337,8 @@ func pushRenderFrame(_ clip: VideoClip, _ renderingIndex: Int, _ frameNumber: In
 func render(_ numEntities: Int) {
     assert(metalLayer != nil)
     
+    captureScope.begin()
+    
     if let drawable = metalLayer.nextDrawable() {
         let pass = MTLRenderPassDescriptor()
         pass.colorAttachments[0].texture = drawable.texture
@@ -333,6 +351,7 @@ func render(_ numEntities: Int) {
         pass.depthAttachment.clearDepth = 1.0
         
         let commandBuffer = commandQueue.makeCommandBuffer()!
+        commandBuffer.label = UUID().uuidString
         let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: pass)!
         
         renderEncoder.setViewport(MTLViewport(originX: 0, originY: 0, width: Double(drawable.texture.width), height: Double(drawable.texture.height), znear: 0.0, zfar: 1.0))
@@ -360,12 +379,15 @@ func render(_ numEntities: Int) {
                                 destinationOrigin: MTLOriginMake(0, 0, 0))
         blitCommandEncoder.endEncoding()
         
-        commandBuffer.present(drawable, afterMinimumDuration: 1.0 / 30.0)
         commandBuffer.addCompletedHandler { _ in
-            lastRenderedWidth = drawable.texture.width
-            lastRenderedHeight = drawable.texture.height
+            lastRenderedWidth = Int(metalLayer.drawableSize.width)
+            lastRenderedHeight = Int(metalLayer.drawableSize.height)
         }
+        
+        commandBuffer.present(drawable, afterMinimumDuration: 1.0 / 30.0)
         commandBuffer.commit()
     }
+    
+    captureScope.end()
     
 }

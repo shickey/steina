@@ -146,7 +146,7 @@
                                 <color key="backgroundColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                             </view>
                             <view contentMode="scaleToFill" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="r7b-w5-iT2">
-                                <rect key="frame" x="0.0" y="1024" width="768" height="1024"/>
+                                <rect key="frame" x="0.0" y="0.0" width="768" height="1024"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <subviews>
                                     <activityIndicatorView opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" fixedFrame="YES" animating="YES" style="whiteLarge" translatesAutoresizingMaskIntoConstraints="NO" id="eHt-xX-meP">
@@ -158,6 +158,7 @@
                             </view>
                         </subviews>
                         <color key="backgroundColor" red="0.22876701497318708" green="0.24216694341046363" blue="0.29431132254205217" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
+                        <viewLayoutGuide key="safeArea" id="LYx-JD-MOj"/>
                     </view>
                     <connections>
                         <outlet property="cameraButton" destination="VHX-Fn-Ovc" id="ZhP-h6-gkj"/>

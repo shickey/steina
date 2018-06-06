@@ -162,7 +162,10 @@
               })
             }
 
-            function beginDraggingVideo(id) {
+            function beginDraggingVideo(id, x, y) {
+              var target = vm.runtime.getTargetById(id);
+              target.dragOffsetX = target.x - x;
+              target.dragOffsetY = target.y - y;
               vm.startDrag(id);
             }
 

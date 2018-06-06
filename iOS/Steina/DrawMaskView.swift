@@ -10,6 +10,7 @@ import UIKit
 import QuartzCore
 
 let MIN_MASK_DIMENSION : CGFloat = 10 // Minimum width and height of a mask
+let MASK_BORDER_IN_PIXELS : CGFloat = 2
 
 protocol DrawMaskViewDelegate {
     func drawMaskViewUpdatedMask(_ maskView: DrawMaskView, _ bounds: CGRect?)
@@ -60,7 +61,7 @@ class DrawMaskView : UIView {
         }
         
         let scaleTransform = scaleTransformForMasking()
-        let maskBounds = maskPath.bounds.applying(scaleTransform).integral
+        let maskBounds = maskPath.bounds.applying(scaleTransform).integral.insetBy(dx: -MASK_BORDER_IN_PIXELS, dy: -MASK_BORDER_IN_PIXELS)
         
         // Create context
         let context = CGContext(data: nil, width: Int(maskBounds.width), height: Int(maskBounds.height), bitsPerComponent: 8, bytesPerRow: Int(maskBounds.width), space: CGColorSpaceCreateDeviceGray(), bitmapInfo: 0)!
@@ -163,7 +164,7 @@ class DrawMaskView : UIView {
             idx += 3
         }
         
-        var maskBounds : CGRect? = maskPath.bounds.applying(scaleTransformForMasking()).integral
+        var maskBounds : CGRect? = maskPath.bounds.applying(scaleTransformForMasking()).integral.insetBy(dx: -MASK_BORDER_IN_PIXELS, dy: -MASK_BORDER_IN_PIXELS)
         if let bounds = maskBounds {
             if bounds.isEmpty || bounds.isInfinite || bounds.size.width < MIN_MASK_DIMENSION || bounds.size.height < MIN_MASK_DIMENSION {
                 path = nil

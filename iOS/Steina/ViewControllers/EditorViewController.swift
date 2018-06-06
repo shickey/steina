@@ -233,15 +233,15 @@ class EditorViewController: UIViewController, WKScriptMessageHandler, MetalViewD
         
         // @TODO: The step rate is hard coded in JS to be 1000 / 30
         //        but maybe we should pass the dt each time here?
+        self.renderDispatchGroup.wait()
         runJavascript("Steina.tick(); Steina.getVideoTargets()") { ( res , err ) in
             if let realError = err { 
                 print("JS ERROR: \(realError)")
                 return;
             }
-            self.renderDispatchGroup.wait()
             var numEntitiesToRender = 0
             if let targets = res as? Array<Dictionary<String, Any>> {
-                
+                var draggingRenderFrame : RenderFrame? = nil
                 for target in targets {
                     let visible = target["visible"] as! Bool
                     if !visible { continue; } // Don't render anything if the video isn't visible
@@ -266,22 +266,42 @@ class EditorViewController: UIViewController, WKScriptMessageHandler, MetalViewD
                     let scale = (size / 100.0)
                     let theta = (direction - 90.0) * (.pi / 180.0)
                     
+                    let transform = entityTransform(scale: scale, rotate: theta, translateX: x, translateY: y)
+                    
+                    let renderFrame = RenderFrame(id: clipId, clip: videoClip, frameNumber: frameNumber, transform: transform)
+                    
+                    // If a target is being dragged, we defer drawing it until the end so that it draws on top of everything else
+                    if self.draggingVideoId == clipId {
+                        draggingRenderFrame = renderFrame
+                        continue
+                    }
+                    
                     self.renderedIds.append(clipId)
                     
                     self.renderDispatchGroup.enter()
                     let entityIndex = numEntitiesToRender
-                    self.renderingQueue.async {
-                        let transform = entityTransform(scale: scale, rotate: theta, translateX: x, translateY: y)
-                        pushRenderFrame(videoClip, entityIndex, frameNumber, transform)
+                    self.renderingQueue.async {                        
+                        pushRenderFrame(renderFrame, at: entityIndex)
                         self.renderDispatchGroup.leave()
                     }
                     
                     numEntitiesToRender += 1
                 }
+                
+                // Draw the dragging target, if it exists
+                if let draggingFrame = draggingRenderFrame {
+                    self.renderedIds.append(draggingFrame.id)
+                    self.renderDispatchGroup.enter()
+                    let entityIndex = numEntitiesToRender
+                    self.renderingQueue.async {                        
+                        pushRenderFrame(draggingFrame, at: entityIndex)
+                        self.renderDispatchGroup.leave()
+                    }
+                    numEntitiesToRender += 1
+                } 
             }
-            self.renderDispatchGroup.notify(queue: self.renderingQueue) {
-                render(numEntitiesToRender)
-            }
+            self.renderDispatchGroup.wait()
+            render(numEntitiesToRender)
         }
         
     }
@@ -333,9 +353,14 @@ class EditorViewController: UIViewController, WKScriptMessageHandler, MetalViewD
         let y = (location.y / metalView.bounds.size.height) * (drawableSize.height)// * -1.0 // Invert y
         
         if let draggingId = videoTargetAtLocation(CGPoint(x: x, y: y)) {
+            
+            let projectedX = (2.0 * (location.x / metalView.bounds.size.width)) - 1.0
+            let projectedY = ((2.0 * (location.y / metalView.bounds.size.height)) - 1.0) * -1.0 // Invert y
+            let unprojected = unproject * float4(Float(projectedX), Float(projectedY), 1.0, 1.0)
+            
             dragStartTimestamp = CACurrentMediaTime()
             draggingVideoId = draggingId        
-            runJavascript("Steina.beginDraggingVideo('\(draggingVideoId!)')")
+            runJavascript("Steina.beginDraggingVideo('\(draggingVideoId!)', \(unprojected.x), \(unprojected.y))")
             if let clipsVC = clipsCollectionVC, let idx = videoClipIds.index(of: draggingId) {
                 clipsVC.collectionView!.selectItem(at: IndexPath(item: idx, section: 0), animated: true, scrollPosition: .centeredHorizontally)
             }
