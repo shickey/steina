@@ -241,6 +241,7 @@ class EditorViewController: UIViewController, WKScriptMessageHandler, MetalViewD
             self.renderDispatchGroup.wait()
             var numEntitiesToRender = 0
             if let targets = res as? Array<Dictionary<String, Any>> {
+                
                 for target in targets {
                     let visible = target["visible"] as! Bool
                     if !visible { continue; } // Don't render anything if the video isn't visible
@@ -326,7 +327,12 @@ class EditorViewController: UIViewController, WKScriptMessageHandler, MetalViewD
     // MetalViewDelegate
     
     func metalViewBeganTouch(_ metalView: MetalView, location: CGPoint) {
-        if let draggingId = videoTargetAtLocation(location) {
+        
+        let drawableSize = metalView.metalLayer.drawableSize
+        let x = (location.x / metalView.bounds.size.width) * (drawableSize.width)
+        let y = (location.y / metalView.bounds.size.height) * (drawableSize.height)// * -1.0 // Invert y
+        
+        if let draggingId = videoTargetAtLocation(CGPoint(x: x, y: y)) {
             dragStartTimestamp = CACurrentMediaTime()
             draggingVideoId = draggingId        
             runJavascript("Steina.beginDraggingVideo('\(draggingVideoId!)')")
@@ -360,7 +366,7 @@ class EditorViewController: UIViewController, WKScriptMessageHandler, MetalViewD
     
     func videoTargetAtLocation(_ location: CGPoint) -> VideoClipId? {
         let pixels : RawPtr = RawPtr.allocate(byteCount: 1, alignment: MemoryLayout<Float>.alignment)
-        depthTex.getBytes(pixels, bytesPerRow: 640, from: MTLRegionMake2D(Int(location.x), Int(location.y), 1, 1), mipmapLevel: 0)
+        depthTex.getBytes(pixels, bytesPerRow: 1024, from: MTLRegionMake2D(Int(location.x), Int(location.y), 1, 1), mipmapLevel: 0)
         let val = pixels.bindMemory(to: Float.self, capacity: 1)[0]
         if (val == 1.0) {
             return nil

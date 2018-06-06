@@ -27,6 +27,10 @@ class MetalView : UIView {
         return CAMetalLayer.self
     }
     
+    var metalLayer: CAMetalLayer {
+        return layer as! CAMetalLayer
+    }
+    
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         let location = touches.first!.location(in: self);
         if let d = delegate {
@@ -144,7 +148,7 @@ func initMetal(_ hostView: MetalView) {
     } 
     
     // Set up rendering view layer
-    metalLayer = hostView.layer as! CAMetalLayer
+    metalLayer = hostView.metalLayer
     metalLayer.device = device
     metalLayer.pixelFormat = .bgra8Unorm
     metalLayer.framebufferOnly = false
