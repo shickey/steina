@@ -26,6 +26,11 @@ enum ClipOrientation : S32 {
     case landscapeRight = 3
 }
 
+enum CameraPosition {
+    case back
+    case front
+}
+
 class VideoPreviewView : UIView {
     
     override class var layerClass: AnyClass {
@@ -69,6 +74,7 @@ class CaptureViewController: UIViewController, AVCaptureVideoDataOutputSampleBuf
     
     var session : AVCaptureSession! = nil
     var frameOutput : AVCaptureVideoDataOutput! = nil
+    var cameraPosition : CameraPosition = .back
     var recordingOrientation : ClipOrientation = .portrait
     var framesWritten = 0
     var recording = false
@@ -169,6 +175,8 @@ class CaptureViewController: UIViewController, AVCaptureVideoDataOutputSampleBuf
         let input = try! AVCaptureDeviceInput(device: backCamera!)
         session.addInput(input)
         
+        cameraPosition = .back
+        
         frameOutput = AVCaptureVideoDataOutput()
         frameOutput.videoSettings = [
             String(kCVPixelBufferPixelFormatTypeKey) : kCVPixelFormatType_32BGRA
@@ -180,8 +188,6 @@ class CaptureViewController: UIViewController, AVCaptureVideoDataOutputSampleBuf
         recordingQueue = DispatchQueue(label: "edu.mit.media.llk.Steina")
         
         previewView.videoPreviewLayer.session = self.session
-        previewView.videoPreviewLayer.connection?.automaticallyAdjustsVideoMirroring = false
-        previewView.videoPreviewLayer.connection?.isVideoMirrored = false
         
         NotificationCenter.default.addObserver(self, selector: #selector(deviceOrientationDidChange(_:)), name: .UIDeviceOrientationDidChange, object: nil)
         
@@ -197,14 +203,16 @@ class CaptureViewController: UIViewController, AVCaptureVideoDataOutputSampleBuf
         let currentCamera = session.inputs[0] as! AVCaptureDeviceInput
         session.removeInput(currentCamera)
         
-        if currentCamera.device.position == .front, let back = backCamera {
-            let input = try! AVCaptureDeviceInput(device: back)
-            session.addInput(input)
-        }
-        else {
-            let front = frontCamera!
+        if cameraPosition == .back, let front = frontCamera {
             let input = try! AVCaptureDeviceInput(device: front)
             session.addInput(input)
+            cameraPosition = .front
+        }
+        else {
+            let back = backCamera!
+            let input = try! AVCaptureDeviceInput(device: back)
+            session.addInput(input)
+            cameraPosition = .back
         }
         
         session.commitConfiguration()
@@ -419,6 +427,15 @@ class CaptureViewController: UIViewController, AVCaptureVideoDataOutputSampleBuf
                 var foo : U8 = 0
                 vImageRotate90_ARGB8888(&originalBuffer, &rotatedBuffer, 3, &foo, 0)
             }
+        }
+        
+        // Flip the buffer vertically if using the front facing camera
+        // @TODO: Probably a good idea to wrap this transform into the one above
+        if cameraPosition == .front {
+            let flippedBufferBase = malloc(4 * width * height)
+            var flippedBuffer = vImage_Buffer(data: flippedBufferBase, height: rotatedBuffer.height, width: rotatedBuffer.width, rowBytes: rotatedBuffer.rowBytes)
+            vImageHorizontalReflect_ARGB8888(&rotatedBuffer, &flippedBuffer, 0)
+            rotatedBuffer = flippedBuffer
         }
         
         // Crop into new pixel buffer

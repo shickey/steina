@@ -63,9 +63,10 @@ var pipeline : MTLRenderPipelineState! = nil
 var depthState : MTLDepthStencilState! = nil
 
 
-var lastRenderedPixels : RawPtr = malloc(640 * 480 * 4)
-var lastRenderedWidth = 0
+var lastRenderedTexture : MTLTexture! = nil
+var lastRenderedPixels : RawPtr = malloc(4 * 1024 * 1024)
 var lastRenderedHeight = 0
+var lastRenderedWidth = 0
 
 func genVerts(_ entityIndex: Int, width: Float, height: Float, z: Float) -> [Float] {
     let x = width / 2.0
@@ -175,7 +176,7 @@ func initMetal(_ hostView: MetalView) {
     vertexDescriptor.layouts[0].stepFunction = .perVertex
     
     // Set up depth buffer
-    let depthTexDescriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .depth32Float, width: 640, height: 480, mipmapped: false)
+    let depthTexDescriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .depth32Float, width: 1024, height: 1024, mipmapped: false)
     depthTexDescriptor.usage = .renderTarget
     depthTex = device.makeTexture(descriptor: depthTexDescriptor)!
     
@@ -242,6 +243,15 @@ func initMetal(_ hostView: MetalView) {
     let transformDest = matBuffer.contents()
     var projectionTransform = orthographicProjection(left: -320.0, right: 320.0, top: 240.0, bottom: -240.0, near: 1.0, far: -1.0)
     memcpy(transformDest, &projectionTransform, MemoryLayout<float4x4>.size)
+    
+    // Set up the texture to blit to for saving project thumbnails
+    let blitTexDescriptor = MTLTextureDescriptor()
+    blitTexDescriptor.textureType = .type2D
+    blitTexDescriptor.pixelFormat = .bgra8Unorm
+    blitTexDescriptor.width = 1024 // @TODO: For now, we're only running on devices where we could possibly render up to 1024 pixels in a single dimension
+    blitTexDescriptor.height = 1024
+    
+    lastRenderedTexture = device.makeTexture(descriptor: blitTexDescriptor)
 }
 
 @inline(__always)
@@ -255,6 +265,7 @@ func indexForZValue(_ z: Float) -> Int {
 }
 
 func getLastRenderedImage() -> Data {
+    lastRenderedTexture.getBytes(lastRenderedPixels, bytesPerRow: lastRenderedWidth * 4, from: MTLRegionMake2D(0, 0, lastRenderedWidth, lastRenderedHeight), mipmapLevel: 0)
     let context = CGContext(data: lastRenderedPixels, width: lastRenderedWidth, height: lastRenderedHeight, bitsPerComponent: 8, bytesPerRow: lastRenderedWidth * 4, space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.noneSkipFirst.rawValue | CGBitmapInfo.byteOrder32Little.rawValue)!
     return UIImagePNGRepresentation(UIImage(cgImage: context.makeImage()!))!
 }
@@ -320,6 +331,8 @@ func render(_ numEntities: Int) {
         let commandBuffer = commandQueue.makeCommandBuffer()!
         let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: pass)!
         
+        renderEncoder.setViewport(MTLViewport(originX: 0, originY: 0, width: Double(drawable.texture.width), height: Double(drawable.texture.height), znear: 0.0, zfar: 1.0))
+        
         renderEncoder.setRenderPipelineState(pipeline)
         renderEncoder.setDepthStencilState(depthState)
         renderEncoder.setVertexBuffer(vertBuffer, offset: 0, index: 0)
@@ -330,16 +343,23 @@ func render(_ numEntities: Int) {
         renderEncoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 6 * numEntities)
         
         renderEncoder.endEncoding()
+        
+        let blitCommandEncoder = commandBuffer.makeBlitCommandEncoder()!
+        blitCommandEncoder.copy(from: drawable.texture, 
+                                sourceSlice: 0, 
+                                sourceLevel: 0, 
+                                sourceOrigin: MTLOriginMake(0, 0, 0), 
+                                sourceSize: MTLSizeMake(drawable.texture.width, drawable.texture.height, drawable.texture.depth), 
+                                to: lastRenderedTexture, 
+                                destinationSlice: 0, 
+                                destinationLevel: 0, 
+                                destinationOrigin: MTLOriginMake(0, 0, 0))
+        blitCommandEncoder.endEncoding()
+        
         commandBuffer.present(drawable, afterMinimumDuration: 1.0 / 30.0)
         commandBuffer.addCompletedHandler { _ in
-            // @TODO: This is a little sketchy. There's probably a way to submit a blit command
-            //        or something to capture the pixels instead.
-            let tex = drawable.texture
-            let bytesPerRow = tex.width * 4
-            let region = MTLRegionMake2D(0, 0, tex.width, tex.height)
-            tex.getBytes(lastRenderedPixels, bytesPerRow: bytesPerRow, from: region, mipmapLevel: 0)
-            lastRenderedWidth = tex.width
-            lastRenderedHeight = tex.height
+            lastRenderedWidth = drawable.texture.width
+            lastRenderedHeight = drawable.texture.height
         }
         commandBuffer.commit()
     }

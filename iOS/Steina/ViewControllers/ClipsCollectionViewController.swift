@@ -83,6 +83,13 @@ class ClipsCollectionViewController: UICollectionViewController {
         let thumb = videoClip.videoClip.thumbnail!
         
         cell.thumbnailView.image = UIImage(cgImage: thumb)
+        
+        if cell.isSelected {
+            cell.backgroundColor = UIColor.yellow
+        }
+        else {
+            cell.backgroundColor = UIColor.clear
+        }
     
         return cell
     }

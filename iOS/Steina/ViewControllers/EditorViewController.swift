@@ -48,6 +48,10 @@ class EditorViewController: UIViewController, WKScriptMessageHandler, MetalViewD
     @IBOutlet weak var metalView: MetalView!
     @IBOutlet weak var webViewContainer: UIView!
     @IBOutlet weak var loadingView: UIView!
+    @IBOutlet weak var greenFlagButton: UIButton!
+    @IBOutlet weak var stopButton: UIButton!
+    @IBOutlet weak var cameraButton: UIButton!
+    @IBOutlet weak var toolbarView: UIView!
     var webView: WKWebView! = nil
     var clipsCollectionVC : ClipsCollectionViewController? = nil
     
@@ -71,6 +75,7 @@ class EditorViewController: UIViewController, WKScriptMessageHandler, MetalViewD
         
         // Init webview and load editor
         webView = WKWebView(frame: self.webViewContainer.bounds, configuration: webViewConfig)
+        webView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         webView.scrollView.isScrollEnabled = false
         webView.scrollView.panGestureRecognizer.isEnabled = false
         webView.scrollView.bounces = false
@@ -86,6 +91,7 @@ class EditorViewController: UIViewController, WKScriptMessageHandler, MetalViewD
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        arrangeViewsForSize(view.bounds.size)
         if ready {
             onReady()
         }
@@ -96,6 +102,34 @@ class EditorViewController: UIViewController, WKScriptMessageHandler, MetalViewD
         stopDisplayLink()
         saveProject()
         super.viewWillDisappear(animated)
+    }
+    
+    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
+        coordinator.animate(alongsideTransition: { (_) in
+            self.arrangeViewsForSize(size)
+        }, completion: nil)
+    }
+    
+    func arrangeViewsForSize(_ size: CGSize) {
+        if size.width < size.height {
+            // Portrait
+            self.toolbarView.alpha = 1.0
+            self.webView.alpha = 1.0
+            let remainingHeight = size.height - self.toolbarView.frame.size.height - self.webView.frame.size.height
+            let aspectWidth = ceil((4.0 / 3.0) * remainingHeight)
+            let x = (size.width - aspectWidth) / 2.0
+            self.metalView.frame = CGRect(x: x, y: self.toolbarView.frame.size.height, width: aspectWidth, height: remainingHeight)
+        }
+        else {
+            // Landscape
+            self.toolbarView.alpha = 0.0
+            self.webView.alpha = 0.0
+            let height = size.height
+            let aspectWidth = ceil((4.0 / 3.0) * height)
+            let x = (size.width - aspectWidth) / 2.0
+            self.metalView.frame = CGRect(x: x, y: 0, width: aspectWidth, height: height)
+            self.metalView.layer.frame = self.metalView.frame
+        }
     }
     
     func onScratchLoaded() {
@@ -295,7 +329,7 @@ class EditorViewController: UIViewController, WKScriptMessageHandler, MetalViewD
             draggingVideoId = draggingId        
             runJavascript("Steina.beginDraggingVideo('\(draggingVideoId!)')")
             if let clipsVC = clipsCollectionVC, let idx = videoClipIds.index(of: draggingId) {
-                clipsVC.collectionView!.selectItem(at: IndexPath(item: idx, section: 0), animated: false, scrollPosition: .centeredHorizontally)
+                clipsVC.collectionView!.selectItem(at: IndexPath(item: idx, section: 0), animated: true, scrollPosition: .centeredHorizontally)
             }
         }
     }

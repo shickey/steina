@@ -94,24 +94,6 @@
                                 <rect key="frame" x="0.0" y="0.0" width="768" height="100"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxY="YES"/>
                                 <subviews>
-                                    <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="h9q-Rr-5Ua">
-                                        <rect key="frame" x="685" y="13" width="75" height="75"/>
-                                        <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMinY="YES" flexibleMaxY="YES"/>
-                                        <inset key="imageEdgeInsets" minX="10" minY="10" maxX="10" maxY="10"/>
-                                        <state key="normal" image="green-flag"/>
-                                        <connections>
-                                            <action selector="greenFlagButtonTapped:" destination="BYZ-38-t0r" eventType="touchUpInside" id="3zK-j4-oLd"/>
-                                        </connections>
-                                    </button>
-                                    <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="VHX-Fn-Ovc">
-                                        <rect key="frame" x="535" y="13" width="75" height="75"/>
-                                        <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMinY="YES" flexibleMaxY="YES"/>
-                                        <inset key="imageEdgeInsets" minX="10" minY="10" maxX="10" maxY="10"/>
-                                        <state key="normal" image="video-cam"/>
-                                        <connections>
-                                            <segue destination="vvR-aU-9rN" kind="show" id="P4Z-w3-g5O"/>
-                                        </connections>
-                                    </button>
                                     <containerView opaque="NO" contentMode="scaleToFill" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="jDq-cp-7oN">
                                         <rect key="frame" x="103" y="0.0" width="424" height="100"/>
                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxY="YES"/>
@@ -119,15 +101,6 @@
                                             <segue destination="8zF-0t-HXv" kind="embed" id="Btv-vD-wek"/>
                                         </connections>
                                     </containerView>
-                                    <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="xH6-e8-XCb">
-                                        <rect key="frame" x="610" y="13" width="75" height="75"/>
-                                        <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMinY="YES" flexibleMaxY="YES"/>
-                                        <inset key="imageEdgeInsets" minX="10" minY="10" maxX="10" maxY="10"/>
-                                        <state key="normal" image="stop"/>
-                                        <connections>
-                                            <action selector="stopButtonTapped:" destination="BYZ-38-t0r" eventType="touchUpInside" id="hzd-OV-gy9"/>
-                                        </connections>
-                                    </button>
                                     <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="NET-4j-8ux">
                                         <rect key="frame" x="13" y="13" width="75" height="75"/>
                                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES" flexibleMaxY="YES"/>
@@ -135,6 +108,33 @@
                                         <state key="normal" image="back"/>
                                         <connections>
                                             <action selector="backButtonTapped:" destination="BYZ-38-t0r" eventType="touchUpInside" id="qgg-fo-PcP"/>
+                                        </connections>
+                                    </button>
+                                    <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="h9q-Rr-5Ua">
+                                        <rect key="frame" x="685" y="12" width="75" height="75"/>
+                                        <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMinY="YES" flexibleMaxY="YES"/>
+                                        <inset key="imageEdgeInsets" minX="10" minY="10" maxX="10" maxY="10"/>
+                                        <state key="normal" image="green-flag"/>
+                                        <connections>
+                                            <action selector="greenFlagButtonTapped:" destination="BYZ-38-t0r" eventType="touchUpInside" id="3zK-j4-oLd"/>
+                                        </connections>
+                                    </button>
+                                    <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="xH6-e8-XCb">
+                                        <rect key="frame" x="610" y="12" width="75" height="75"/>
+                                        <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMinY="YES" flexibleMaxY="YES"/>
+                                        <inset key="imageEdgeInsets" minX="10" minY="10" maxX="10" maxY="10"/>
+                                        <state key="normal" image="stop"/>
+                                        <connections>
+                                            <action selector="stopButtonTapped:" destination="BYZ-38-t0r" eventType="touchUpInside" id="hzd-OV-gy9"/>
+                                        </connections>
+                                    </button>
+                                    <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="VHX-Fn-Ovc">
+                                        <rect key="frame" x="535" y="12" width="75" height="75"/>
+                                        <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMinY="YES" flexibleMaxY="YES"/>
+                                        <inset key="imageEdgeInsets" minX="10" minY="10" maxX="10" maxY="10"/>
+                                        <state key="normal" image="video-cam"/>
+                                        <connections>
+                                            <segue destination="vvR-aU-9rN" kind="show" id="P4Z-w3-g5O"/>
                                         </connections>
                                     </button>
                                 </subviews>
@@ -146,7 +146,7 @@
                                 <color key="backgroundColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                             </view>
                             <view contentMode="scaleToFill" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="r7b-w5-iT2">
-                                <rect key="frame" x="0.0" y="0.0" width="768" height="1024"/>
+                                <rect key="frame" x="0.0" y="1024" width="768" height="1024"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <subviews>
                                     <activityIndicatorView opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" fixedFrame="YES" animating="YES" style="whiteLarge" translatesAutoresizingMaskIntoConstraints="NO" id="eHt-xX-meP">
@@ -158,11 +158,14 @@
                             </view>
                         </subviews>
                         <color key="backgroundColor" red="0.22876701497318708" green="0.24216694341046363" blue="0.29431132254205217" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
-                        <viewLayoutGuide key="safeArea" id="MRZ-ib-WKK"/>
                     </view>
                     <connections>
+                        <outlet property="cameraButton" destination="VHX-Fn-Ovc" id="ZhP-h6-gkj"/>
+                        <outlet property="greenFlagButton" destination="h9q-Rr-5Ua" id="ffJ-va-iHV"/>
                         <outlet property="loadingView" destination="r7b-w5-iT2" id="utK-KH-5J9"/>
                         <outlet property="metalView" destination="CLU-6X-PVr" id="MZJ-cV-w3I"/>
+                        <outlet property="stopButton" destination="xH6-e8-XCb" id="0lU-9H-4N7"/>
+                        <outlet property="toolbarView" destination="5Tz-4t-7AA" id="3Sg-sc-qGv"/>
                         <outlet property="webViewContainer" destination="Q4n-1e-bpP" id="hAx-Ax-eCx"/>
                     </connections>
                 </viewController>
