@@ -410,23 +410,21 @@ class CaptureViewController: UIViewController, AVCaptureVideoDataOutputSampleBuf
         
         // Rotate the pixels if necessary
         var rotatedBuffer : vImage_Buffer = originalBuffer
-        if recordingOrientation != .landscapeRight {
-            let rotatedBase = malloc(4 * width * height)
-            if recordingOrientation == .landscapeLeft {
-                rotatedBuffer = vImage_Buffer(data: rotatedBase, height: 480, width: 640, rowBytes: 640 * 4)
-                var foo : U8 = 0
-                vImageRotate90_ARGB8888(&originalBuffer, &rotatedBuffer, 2, &foo, 0)
-            }
-            else if recordingOrientation == .portrait {
-                rotatedBuffer = vImage_Buffer(data: rotatedBase, height: 640, width: 480, rowBytes: 480 * 4)
-                var foo : U8 = 0
-                vImageRotate90_ARGB8888(&originalBuffer, &rotatedBuffer, 1, &foo, 0)
-            }
-            else if recordingOrientation == .portraitUpsideDown {
-                rotatedBuffer = vImage_Buffer(data: rotatedBase, height: 640, width: 480, rowBytes: 480 * 4)
-                var foo : U8 = 0
-                vImageRotate90_ARGB8888(&originalBuffer, &rotatedBuffer, 3, &foo, 0)
-            }
+        let rotatedBase = malloc(4 * width * height)
+        if (recordingOrientation == .landscapeLeft && cameraPosition == .back) || (recordingOrientation == .landscapeRight && cameraPosition == .front) {
+            rotatedBuffer = vImage_Buffer(data: rotatedBase, height: 480, width: 640, rowBytes: 640 * 4)
+            var foo : U8 = 0
+            vImageRotate90_ARGB8888(&originalBuffer, &rotatedBuffer, 2, &foo, 0)
+        }
+        else if recordingOrientation == .portrait {
+            rotatedBuffer = vImage_Buffer(data: rotatedBase, height: 640, width: 480, rowBytes: 480 * 4)
+            var foo : U8 = 0
+            vImageRotate90_ARGB8888(&originalBuffer, &rotatedBuffer, 1, &foo, 0)
+        }
+        else if recordingOrientation == .portraitUpsideDown {
+            rotatedBuffer = vImage_Buffer(data: rotatedBase, height: 640, width: 480, rowBytes: 480 * 4)
+            var foo : U8 = 0
+            vImageRotate90_ARGB8888(&originalBuffer, &rotatedBuffer, 3, &foo, 0)
         }
         
         // Flip the buffer vertically if using the front facing camera
