@@ -24,7 +24,8 @@
     </category>
 
     <category name="Video" colour="#FF6680" secondaryColour="#FF4D6A">
-      <block type="video_playUntilDone"></block>
+
+      <block type="video_playEntireVideoUntilDone"></block>
 
       <block type="video_setPlayRate">
         <value name="RATE">
@@ -34,13 +35,29 @@
         </value>
       </block>
 
+      <block type="video_startPlaying"></block>
+
+      <block type="video_stopPlaying"></block>
+
       <block type="video_goToFrame">
         <value name="FRAME">
           <shadow type="math_number">
-            <field name="NUM">0</field>
+            <field name="NUM">1</field>
           </shadow>
         </value>
       </block>
+
+      <block type="video_playNFrames">
+        <value name="FRAMES">
+          <shadow type="math_number">
+            <field name="NUM">30</field>
+          </shadow>
+        </value>
+      </block>
+
+      <block type="video_playForwardUntilDone"></block>
+
+      <block type="video_playBackwardUntilDone"></block>
 
       <block type="video_nextFrame"></block>
 
@@ -69,6 +86,19 @@
       </block>
 
       <block type="video_clearVideoEffects"></block>
+
+      <block type="video_whenPlayedToEnd"></block>
+
+      <block type="video_whenPlayedToBeginning"></block>
+
+      <block type="video_whenTapped"></block>
+
+      <block type="video_getCurrentFrame"></block>
+
+      <block type="video_getTotalFrames"></block>
+
+      <block type="video_getPlayRate"></block>
+
     </category>
 
     <category name="Motion" colour="#4C97FF" secondaryColour="#3373CC">

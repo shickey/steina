@@ -39,6 +39,7 @@ class EditorViewController: UIViewController, WKScriptMessageHandler, MetalViewD
     var videoClipIds : [VideoClipId] = []
     var videoClips : [VideoClipId: InMemoryClip] = [:]
     var draggingVideoId : VideoClipId! = nil
+    var dragStartTimestamp : CFTimeInterval! = nil 
     var previousRenderedIds : [VideoClipId] = []
     var renderedIds : [VideoClipId] = []
     var renderingQueue : DispatchQueue = DispatchQueue(label: "edu.mit.media.llk.Steina.Render", qos: .default, attributes: .concurrent, autoreleaseFrequency: DispatchQueue.AutoreleaseFrequency.workItem, target: nil)
@@ -326,6 +327,7 @@ class EditorViewController: UIViewController, WKScriptMessageHandler, MetalViewD
     
     func metalViewBeganTouch(_ metalView: MetalView, location: CGPoint) {
         if let draggingId = videoTargetAtLocation(location) {
+            dragStartTimestamp = CACurrentMediaTime()
             draggingVideoId = draggingId        
             runJavascript("Steina.beginDraggingVideo('\(draggingVideoId!)')")
             if let clipsVC = clipsCollectionVC, let idx = videoClipIds.index(of: draggingId) {
@@ -347,6 +349,13 @@ class EditorViewController: UIViewController, WKScriptMessageHandler, MetalViewD
         guard draggingVideoId != nil else { return }
         
         runJavascript("Steina.endDraggingVideo('\(draggingVideoId!)')")
+        
+        if CACurrentMediaTime() - dragStartTimestamp < 0.1 {
+            runJavascript("Steina.tapVideo('\(draggingVideoId!)')")
+        }
+        
+        dragStartTimestamp = nil
+        draggingVideoId = nil
     }
     
     func videoTargetAtLocation(_ location: CGPoint) -> VideoClipId? {

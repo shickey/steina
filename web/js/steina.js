@@ -146,7 +146,7 @@
             }
 
             function setVideoRenderingOrder(idArrayJson) {
-              vm.runtime.videoTargetDrawInfo.order = JSON.parse(idArrayJson);
+              vm.runtime.videoState.order = JSON.parse(idArrayJson);
             }
 
             function getVideoTargets() {
@@ -177,6 +177,11 @@
               vm.stopDrag(id);
             }
 
+            function tapVideo(id) {
+              var target = vm.runtime.getTargetById(id);
+              target.tapped = true;
+            }
+
             window.Steina = {
                 tick,
                 createVideoTarget,
@@ -186,7 +191,8 @@
                 setVideoRenderingOrder,
                 beginDraggingVideo,
                 updateDraggingVideo,
-                endDraggingVideo
+                endDraggingVideo,
+                tapVideo
             }
 
             if (window.steinaMsg) {
