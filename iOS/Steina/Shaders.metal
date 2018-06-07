@@ -10,23 +10,30 @@
 using namespace metal;
 
 struct VertexIn {
-    float4 position         [[ attribute(0) ]];
-    float2 uv               [[ attribute(1) ]];
-    float2 entityIndex      [[ attribute(2) ]];
-    float  effectColor      [[ attribute(3) ]];
-    float  effectWhirl      [[ attribute(4) ]];
-    float  effectBrightness [[ attribute(5) ]];
-    float  effectGhost      [[ attribute(6) ]];
+    float4 position    [[ attribute(0) ]];
+    float2 uv          [[ attribute(1) ]];
+    float2 entityIndex [[ attribute(2) ]];  
+};
+
+struct VideoEffects {
+    float color;
+    float whirl;
+    float brightness;
+    float ghost;
+};
+
+struct VideoUniforms {
+    uint entityIndex;
+    float width;
+    float height;
+    float4x4 transform;
+    VideoEffects effects;
 };
 
 struct VertexOut {
     float4 position [[ position ]];
     float2 uv;
     uint   entityIndex;
-    float  effectColor;
-    float  effectWhirl;
-    float  effectBrightness;
-    float  effectGhost;
 };
 
 constant float epsilon = 1e-3;
@@ -58,43 +65,66 @@ float3 convertHSL2RGB(float3 hsl) {
 }
 
 vertex VertexOut passthrough_vertex(VertexIn in [[ stage_in ]],
-                                    device float4x4 *transforms [[ buffer(1) ]],
+                                    device VideoUniforms *videoUniforms [[ buffer(1) ]],
                                     unsigned int vid [[ vertex_id ]]) {
-    float4x4 projectionTransform = transforms[0];
     
     uint entityIdx = static_cast<uint>(in.entityIndex.y);
-    float4x4 modelTransform = transforms[entityIdx + 1];
+    VideoUniforms uniforms = videoUniforms[entityIdx + 1];
+    float4x4 modelTransform = uniforms.transform;
+    
+    float4x4 projectionTransform = videoUniforms[0].transform;
     
     VertexOut out;
     out.position = projectionTransform * modelTransform * in.position;
     out.uv = in.uv;
     out.entityIndex = entityIdx;
-    out.effectColor = in.effectColor;
-    out.effectWhirl = in.effectWhirl;
-    out.effectBrightness = in.effectBrightness;
-    out.effectGhost = in.effectGhost;
     return out;
 }
 
 fragment float4 passthrough_fragment(VertexOut v [[ stage_in ]],
                                      texture2d_array<float> texture [[ texture(0) ]],
-                                     texture2d_array<float> mask [[ texture(1) ]]) {
+                                     texture2d_array<float> mask [[ texture(1) ]],
+                                     device VideoUniforms *videoUniforms [[ buffer(0) ]]) {
     constexpr sampler s(coord::pixel, filter::linear);
-
-    float maskVal = mask.sample(s, v.uv, v.entityIndex).a;
+    
+    VideoUniforms uniforms = videoUniforms[v.entityIndex + 1];
+    float2 texCoord = v.uv;
+    
+    // Whirl
+    if (uniforms.effects.whirl != 0) {
+        float kRadius = uniforms.width / 2.0;
+        float2 kCenter = float2(uniforms.width / 2.0, uniforms.height / 2.0);
+        float2 offset = texCoord - kCenter;
+        float offsetMagnitude = length(offset);
+        float whirlFactor = max(1.0 - (offsetMagnitude / kRadius), 0.0);
+        float whirlActual = uniforms.effects.whirl * whirlFactor * whirlFactor;
+        float sinWhirl = sin(whirlActual);
+        float cosWhirl = cos(whirlActual);
+        float2x2 rotationMatrix = float2x2(
+                                   cosWhirl, -sinWhirl,
+                                   sinWhirl, cosWhirl
+                                   );
+        
+        texCoord = rotationMatrix * offset + kCenter;
+    }
+    
+    float maskVal = mask.sample(s, texCoord, v.entityIndex).a;
     if (maskVal < 0.01) {
         discard_fragment();
     }
-    if (v.effectGhost != 0) {
-        maskVal *= v.effectGhost;
+    
+    // Ghost
+    if (uniforms.effects.ghost != 0) {
+        maskVal *= uniforms.effects.ghost;
     }
     
-    float4 color = texture.sample(s, v.uv, v.entityIndex);
+    float4 color = texture.sample(s, texCoord, v.entityIndex);
     
-    if (v.effectColor != 0 || v.effectBrightness != 0) {
+    // Color & Brightness
+    if (uniforms.effects.color != 0 || uniforms.effects.brightness != 0) {
         float3 hsl = convertRGB2HSL(color.xyz);
             
-        if (v.effectColor != 0) {
+        if (uniforms.effects.color != 0) {
             // this code forces grayscale values to be slightly saturated
             // so that some slight change of hue will be visible
             const float minLightness = 0.11 / 2.0;
@@ -102,12 +132,12 @@ fragment float4 passthrough_fragment(VertexOut v [[ stage_in ]],
             if (hsl.z < minLightness) hsl = float3(0.0, 1.0, minLightness);
             else if (hsl.y < minSaturation) hsl = float3(0.0, minSaturation, hsl.z);
             
-            hsl.x = fmod(hsl.x + v.effectColor, 1.0);
+            hsl.x = fmod(hsl.x + uniforms.effects.color, 1.0);
             if (hsl.x < 0.0) hsl.x += 1.0;
         }
         
-        if (v.effectBrightness != 0) {
-            hsl.z = clamp(hsl.z + v.effectBrightness, 0.0, 1.0);
+        if (uniforms.effects.brightness != 0) {
+            hsl.z = clamp(hsl.z + uniforms.effects.brightness, 0.0, 1.0);
         }
         
         color.rgb = convertHSL2RGB(hsl);

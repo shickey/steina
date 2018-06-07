@@ -73,23 +73,46 @@ var lastRenderedHeight = 0
 var lastRenderedWidth = 0
 
 struct VideoEffects {
-    var color : Float = 0
-    var whirl : Float = 0
-    var brightness : Float = 0
-    var ghost : Float = 0
+    var color : F32 = 0
+    var whirl : F32 = 0
+    var brightness : F32 = 0
+    var ghost : F32 = 0
 }
 
-func genVerts(_ entityIndex: Int, width: Float, height: Float, z: Float, effects: VideoEffects) -> [Float] {
+struct VideoUniforms {
+    let entityIndex : U32
+    let width : F32
+    let height : F32
+    let transform: float4x4
+    let effects : VideoEffects
+}
+
+//func genVerts(_ entityIndex: Int, width: Float, height: Float, z: Float, effects: VideoEffects) -> [Float] {
+//    let x = width / 2.0
+//    let y = height / 2.0
+//    return [
+//      // X   Y   Z    W         U       V       0          EntityIdx       effects:  color,         whirl,         brightness,         ghost
+//        -x,  y,  z, 1.0,    width, height,    0.0, Float(entityIndex.u32),   effects.color, effects.whirl, effects.brightness, effects.ghost,
+//        -x, -y,  z, 1.0,    width,    0.0,    0.0, Float(entityIndex.u32),   effects.color, effects.whirl, effects.brightness, effects.ghost,
+//         x, -y,  z, 1.0,    0.0,      0.0,    0.0, Float(entityIndex.u32),   effects.color, effects.whirl, effects.brightness, effects.ghost,
+//        -x,  y,  z, 1.0,    width, height,    0.0, Float(entityIndex.u32),   effects.color, effects.whirl, effects.brightness, effects.ghost,
+//         x, -y,  z, 1.0,    0.0,      0.0,    0.0, Float(entityIndex.u32),   effects.color, effects.whirl, effects.brightness, effects.ghost,
+//         x,  y,  z, 1.0,    0.0,   height,    0.0, Float(entityIndex.u32),   effects.color, effects.whirl, effects.brightness, effects.ghost
+//    ]
+//}
+
+func genVerts(width: Float, height: Float, depth: Float, entityIndex: Int) -> [Float] {
     let x = width / 2.0
     let y = height / 2.0
+    let z = depth
     return [
-      // X   Y   Z    W         U       V       0          EntityIdx       effects:  color,         whirl,         brightness,         ghost
-        -x,  y,  z, 1.0,    width, height,    0.0, Float(entityIndex.u32),   effects.color, effects.whirl, effects.brightness, effects.ghost,
-        -x, -y,  z, 1.0,    width,    0.0,    0.0, Float(entityIndex.u32),   effects.color, effects.whirl, effects.brightness, effects.ghost,
-         x, -y,  z, 1.0,    0.0,      0.0,    0.0, Float(entityIndex.u32),   effects.color, effects.whirl, effects.brightness, effects.ghost,
-        -x,  y,  z, 1.0,    width, height,    0.0, Float(entityIndex.u32),   effects.color, effects.whirl, effects.brightness, effects.ghost,
-         x, -y,  z, 1.0,    0.0,      0.0,    0.0, Float(entityIndex.u32),   effects.color, effects.whirl, effects.brightness, effects.ghost,
-         x,  y,  z, 1.0,    0.0,   height,    0.0, Float(entityIndex.u32),   effects.color, effects.whirl, effects.brightness, effects.ghost
+    //   X   Y   Z    W      U       V    0          EntityIdx
+        -x,  y,  z, 1.0, width, height, 0.0, Float(entityIndex.u32),
+        -x, -y,  z, 1.0, width,    0.0, 0.0, Float(entityIndex.u32),
+         x, -y,  z, 1.0, 0.0,      0.0, 0.0, Float(entityIndex.u32),
+        -x,  y,  z, 1.0, width, height, 0.0, Float(entityIndex.u32),
+         x, -y,  z, 1.0, 0.0,      0.0, 0.0, Float(entityIndex.u32),
+         x,  y,  z, 1.0, 0.0,   height, 0.0, Float(entityIndex.u32)
     ]
 }
 
@@ -187,28 +210,28 @@ func initMetal(_ hostView: MetalView) {
     vertexDescriptor.attributes[2].format = .float2
     vertexDescriptor.attributes[2].bufferIndex = 0
     vertexDescriptor.attributes[2].offset = 6 * MemoryLayout<Float>.size
-    
-        // Effect: color
-    vertexDescriptor.attributes[3].format = .float
-    vertexDescriptor.attributes[3].bufferIndex = 0
-    vertexDescriptor.attributes[3].offset = 8 * MemoryLayout<Float>.size
-    
-        // Effect: whirl
-    vertexDescriptor.attributes[4].format = .float
-    vertexDescriptor.attributes[4].bufferIndex = 0
-    vertexDescriptor.attributes[4].offset = 9 * MemoryLayout<Float>.size
-    
-        // Effect: brightness
-    vertexDescriptor.attributes[5].format = .float
-    vertexDescriptor.attributes[5].bufferIndex = 0
-    vertexDescriptor.attributes[5].offset = 10 * MemoryLayout<Float>.size
-    
-        // Effect: ghost
-    vertexDescriptor.attributes[6].format = .float
-    vertexDescriptor.attributes[6].bufferIndex = 0
-    vertexDescriptor.attributes[6].offset = 11 * MemoryLayout<Float>.size
-    
-    vertexDescriptor.layouts[0].stride = 12 * MemoryLayout<Float>.size
+//    
+//        // Effect: color
+//    vertexDescriptor.attributes[3].format = .float
+//    vertexDescriptor.attributes[3].bufferIndex = 0
+//    vertexDescriptor.attributes[3].offset = 8 * MemoryLayout<Float>.size
+//    
+//        // Effect: whirl
+//    vertexDescriptor.attributes[4].format = .float
+//    vertexDescriptor.attributes[4].bufferIndex = 0
+//    vertexDescriptor.attributes[4].offset = 9 * MemoryLayout<Float>.size
+//    
+//        // Effect: brightness
+//    vertexDescriptor.attributes[5].format = .float
+//    vertexDescriptor.attributes[5].bufferIndex = 0
+//    vertexDescriptor.attributes[5].offset = 10 * MemoryLayout<Float>.size
+//    
+//        // Effect: ghost
+//    vertexDescriptor.attributes[6].format = .float
+//    vertexDescriptor.attributes[6].bufferIndex = 0
+//    vertexDescriptor.attributes[6].offset = 11 * MemoryLayout<Float>.size
+//    
+    vertexDescriptor.layouts[0].stride = 8 * MemoryLayout<Float>.size
     vertexDescriptor.layouts[0].stepFunction = .perVertex
     
     // Set up depth buffer
@@ -235,8 +258,8 @@ func initMetal(_ hostView: MetalView) {
     pipeline = try! device.makeRenderPipelineState(descriptor: pipelineDescriptor)
     
     // Set up buffers
-    vertBuffer = device.makeBuffer(length: (genVerts(0, width: 0, height: 0, z: 0, effects: VideoEffects()).count * MemoryLayout<Float>.size) * MAX_RENDERED_ENTITIES, options: [])
-    matBuffer = device.makeBuffer(length: MemoryLayout<float4x4>.size * MAX_RENDERED_ENTITIES, options: [])
+    vertBuffer = device.makeBuffer(length: (genVerts(width: 0, height: 0, depth: 0, entityIndex: 0).count * MemoryLayout<Float>.size) * MAX_RENDERED_ENTITIES, options: [])
+    matBuffer  = device.makeBuffer(length: MemoryLayout<VideoUniforms>.size * MAX_RENDERED_ENTITIES, options: [])
     
     // Set up jpeg decompression
     let width = 640
@@ -276,9 +299,10 @@ func initMetal(_ hostView: MetalView) {
     depthState = device.makeDepthStencilState(descriptor: depthTestDescriptor)
     
     // Initialize the projection transform
-    let transformDest = matBuffer.contents()
-    var projectionTransform = orthographicProjection(left: -320.0, right: 320.0, top: 240.0, bottom: -240.0, near: 1.0, far: -1.0)
-    memcpy(transformDest, &projectionTransform, MemoryLayout<float4x4>.size)
+    let uniformsDest = matBuffer.contents()
+    let projectionTransform = orthographicProjection(left: -320.0, right: 320.0, top: 240.0, bottom: -240.0, near: 1.0, far: -1.0)
+    var projectionUniforms = VideoUniforms(entityIndex: 0, width: 0, height: 0, transform: projectionTransform, effects: VideoEffects(color: 0, whirl: 0, brightness: 0, ghost: 0))
+    memcpy(uniformsDest, &projectionUniforms, MemoryLayout<VideoUniforms>.size)
     
     // Set up the texture to blit to for saving project thumbnails
     let blitTexDescriptor = MTLTextureDescriptor()
@@ -320,13 +344,15 @@ func pushRenderFrame(_ renderFrame: RenderFrame, at renderingIndex: Int) {
     let transform = renderFrame.transform
     let effects = renderFrame.effects
     
-    let verts = genVerts(renderingIndex, width: Float(clip.width), height: Float(clip.height), z: zValueForIndex(renderingIndex), effects: effects)
+    // Fill vertex buffer
+    let verts = genVerts(width: Float(clip.width), height: Float(clip.height), depth: zValueForIndex(renderingIndex), entityIndex: renderingIndex)
     let vertDest = vertBuffer.contents() + (verts.count * MemoryLayout<Float>.size * renderingIndex)
     memcpy(vertDest, verts, verts.count * MemoryLayout<Float>.size)
     
-    let transformDest = matBuffer.contents() + (MemoryLayout<float4x4>.size * (renderingIndex + 1)) // We reserve the first transform for the projection matrix
-    var mutableTransform = transform
-    memcpy(transformDest, &mutableTransform, MemoryLayout<float4x4>.size)
+    // Fill uniforms buffer
+    var uniforms = VideoUniforms(entityIndex: U32(renderingIndex), width: Float(clip.width), height: Float(clip.height), transform: transform, effects: effects)
+    let uniformsDest = matBuffer.contents() + (MemoryLayout<VideoUniforms>.size * (renderingIndex + 1)) // We reserve the first uniforms for the projection matrix
+    memcpy(uniformsDest, &uniforms, MemoryLayout<VideoUniforms>.size)
     
     // Acquire a decompressor
     var decompressor : tjhandle! = nil
@@ -392,6 +418,7 @@ func render(_ numEntities: Int) {
         
         renderEncoder.setFragmentTexture(pixelTex, index: 0)
         renderEncoder.setFragmentTexture(maskTex, index: 1)
+        renderEncoder.setFragmentBuffer(matBuffer, offset: 0, index: 0)
         renderEncoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 6 * numEntities)
         
         renderEncoder.endEncoding()
