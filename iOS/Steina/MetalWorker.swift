@@ -72,17 +72,24 @@ var lastRenderedPixels : RawPtr = malloc(4 * 1024 * 1024)
 var lastRenderedHeight = 0
 var lastRenderedWidth = 0
 
-func genVerts(_ entityIndex: Int, width: Float, height: Float, z: Float) -> [Float] {
+struct VideoEffects {
+    var color : Float = 0
+    var whirl : Float = 0
+    var brightness : Float = 0
+    var ghost : Float = 0
+}
+
+func genVerts(_ entityIndex: Int, width: Float, height: Float, z: Float, effects: VideoEffects) -> [Float] {
     let x = width / 2.0
     let y = height / 2.0
     return [
-      // X   Y   Z    W         U       V       0          EntityIdx
-        -x,  y,  z, 1.0,    width, height,    0.0, Float(entityIndex.u32),
-        -x, -y,  z, 1.0,    width,    0.0,    0.0, Float(entityIndex.u32),
-         x, -y,  z, 1.0,    0.0,      0.0,    0.0, Float(entityIndex.u32),
-        -x,  y,  z, 1.0,    width, height,    0.0, Float(entityIndex.u32),
-         x, -y,  z, 1.0,    0.0,      0.0,    0.0, Float(entityIndex.u32),
-         x,  y,  z, 1.0,    0.0,   height,    0.0, Float(entityIndex.u32)
+      // X   Y   Z    W         U       V       0          EntityIdx       effects:  color,         whirl,         brightness,         ghost
+        -x,  y,  z, 1.0,    width, height,    0.0, Float(entityIndex.u32),   effects.color, effects.whirl, effects.brightness, effects.ghost,
+        -x, -y,  z, 1.0,    width,    0.0,    0.0, Float(entityIndex.u32),   effects.color, effects.whirl, effects.brightness, effects.ghost,
+         x, -y,  z, 1.0,    0.0,      0.0,    0.0, Float(entityIndex.u32),   effects.color, effects.whirl, effects.brightness, effects.ghost,
+        -x,  y,  z, 1.0,    width, height,    0.0, Float(entityIndex.u32),   effects.color, effects.whirl, effects.brightness, effects.ghost,
+         x, -y,  z, 1.0,    0.0,      0.0,    0.0, Float(entityIndex.u32),   effects.color, effects.whirl, effects.brightness, effects.ghost,
+         x,  y,  z, 1.0,    0.0,   height,    0.0, Float(entityIndex.u32),   effects.color, effects.whirl, effects.brightness, effects.ghost
     ]
 }
 
@@ -181,7 +188,27 @@ func initMetal(_ hostView: MetalView) {
     vertexDescriptor.attributes[2].bufferIndex = 0
     vertexDescriptor.attributes[2].offset = 6 * MemoryLayout<Float>.size
     
-    vertexDescriptor.layouts[0].stride = 8 * MemoryLayout<Float>.size
+        // Effect: color
+    vertexDescriptor.attributes[3].format = .float
+    vertexDescriptor.attributes[3].bufferIndex = 0
+    vertexDescriptor.attributes[3].offset = 8 * MemoryLayout<Float>.size
+    
+        // Effect: whirl
+    vertexDescriptor.attributes[4].format = .float
+    vertexDescriptor.attributes[4].bufferIndex = 0
+    vertexDescriptor.attributes[4].offset = 9 * MemoryLayout<Float>.size
+    
+        // Effect: brightness
+    vertexDescriptor.attributes[5].format = .float
+    vertexDescriptor.attributes[5].bufferIndex = 0
+    vertexDescriptor.attributes[5].offset = 10 * MemoryLayout<Float>.size
+    
+        // Effect: ghost
+    vertexDescriptor.attributes[6].format = .float
+    vertexDescriptor.attributes[6].bufferIndex = 0
+    vertexDescriptor.attributes[6].offset = 11 * MemoryLayout<Float>.size
+    
+    vertexDescriptor.layouts[0].stride = 12 * MemoryLayout<Float>.size
     vertexDescriptor.layouts[0].stepFunction = .perVertex
     
     // Set up depth buffer
@@ -208,7 +235,7 @@ func initMetal(_ hostView: MetalView) {
     pipeline = try! device.makeRenderPipelineState(descriptor: pipelineDescriptor)
     
     // Set up buffers
-    vertBuffer = device.makeBuffer(length: (genVerts(0, width: 0, height: 0, z: 0).count * MemoryLayout<Float>.size) * MAX_RENDERED_ENTITIES, options: [])
+    vertBuffer = device.makeBuffer(length: (genVerts(0, width: 0, height: 0, z: 0, effects: VideoEffects()).count * MemoryLayout<Float>.size) * MAX_RENDERED_ENTITIES, options: [])
     matBuffer = device.makeBuffer(length: MemoryLayout<float4x4>.size * MAX_RENDERED_ENTITIES, options: [])
     
     // Set up jpeg decompression
@@ -284,14 +311,16 @@ struct RenderFrame {
     let clip : VideoClip
     let frameNumber: Int
     let transform : float4x4
+    let effects : VideoEffects
 }
 
 func pushRenderFrame(_ renderFrame: RenderFrame, at renderingIndex: Int) {
     let clip = renderFrame.clip
     let frameNumber = renderFrame.frameNumber
     let transform = renderFrame.transform
+    let effects = renderFrame.effects
     
-    let verts = genVerts(renderingIndex, width: Float(clip.width), height: Float(clip.height), z: zValueForIndex(renderingIndex))
+    let verts = genVerts(renderingIndex, width: Float(clip.width), height: Float(clip.height), z: zValueForIndex(renderingIndex), effects: effects)
     let vertDest = vertBuffer.contents() + (verts.count * MemoryLayout<Float>.size * renderingIndex)
     memcpy(vertDest, verts, verts.count * MemoryLayout<Float>.size)
     

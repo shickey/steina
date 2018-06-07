@@ -243,32 +243,43 @@ class EditorViewController: UIViewController, WKScriptMessageHandler, MetalViewD
             if let targets = res as? Array<Dictionary<String, Any>> {
                 var draggingRenderFrame : RenderFrame? = nil
                 for target in targets {
+                    // Check for visibility, bail early if nothing to render
                     let visible = target["visible"] as! Bool
                     if !visible { continue; } // Don't render anything if the video isn't visible
                     
-                    let clipId = target["id"] as! String
-                    let frame = (target["currentFrame"] as! NSNumber).floatValue
-                    
-                    var frameNumber = Int(round(frame))
-                
-                    let inMemoryClip = self.videoClips[clipId]!
-                    
-                    let videoClip = inMemoryClip.videoClip
-                    if frameNumber >= videoClip.frames {
-                        frameNumber = Int(videoClip.frames) - 1;
-                    }
-                    
+                    // Get target properties
+                    let clipId    = (target["id"] as! String)
+                    let frame     = (target["currentFrame"] as! NSNumber).floatValue
                     let x         = (target["x"] as! NSNumber).floatValue
                     let y         = (target["y"] as! NSNumber).floatValue
                     let size      = (target["size"] as! NSNumber).floatValue
                     let direction = (target["direction"] as! NSNumber).floatValue
+                    let effects   = (target["effects"] as! Dictionary<String, NSNumber>) // We implicitly cast effects values to floats here
                     
+                    // Get video clip
+                    let inMemoryClip = self.videoClips[clipId]!
+                    let videoClip = inMemoryClip.videoClip
+                    
+                    // Figure out which frame to render
+                    var frameNumber = Int(round(frame))
+                    if frameNumber >= videoClip.frames {
+                        frameNumber = Int(videoClip.frames) - 1;
+                    }
+                    
+                    // Compute the proper model transform
                     let scale = (size / 100.0)
                     let theta = (direction - 90.0) * (.pi / 180.0)
-                    
                     let transform = entityTransform(scale: scale, rotate: theta, translateX: x, translateY: y)
                     
-                    let renderFrame = RenderFrame(id: clipId, clip: videoClip, frameNumber: frameNumber, transform: transform)
+                    // Create the effects structure
+                    let colorEffect      = effects["color"]!.floatValue / 360.0
+                    let whirlEffect      = effects["whirl"]!.floatValue / 360.0
+                    let brightnessEffect = effects["brightness"]!.floatValue / 100.0
+                    let ghostEffect      = 1.0 - (effects["ghost"]!.floatValue / 100.0)
+                    let renderingEffects = VideoEffects(color: colorEffect, whirl: whirlEffect, brightness: brightnessEffect, ghost: ghostEffect)
+                    
+                    // Create the render frame structure
+                    let renderFrame = RenderFrame(id: clipId, clip: videoClip, frameNumber: frameNumber, transform: transform, effects: renderingEffects)
                     
                     // If a target is being dragged, we defer drawing it until the end so that it draws on top of everything else
                     if self.draggingVideoId == clipId {
@@ -276,19 +287,18 @@ class EditorViewController: UIViewController, WKScriptMessageHandler, MetalViewD
                         continue
                     }
                     
+                    // Push the render frame into the rendering queue
                     self.renderedIds.append(clipId)
-                    
                     self.renderDispatchGroup.enter()
                     let entityIndex = numEntitiesToRender
                     self.renderingQueue.async {                        
                         pushRenderFrame(renderFrame, at: entityIndex)
                         self.renderDispatchGroup.leave()
                     }
-                    
                     numEntitiesToRender += 1
                 }
                 
-                // Draw the dragging target, if it exists
+                // Push the dragging target into the rendering queue, if it exists
                 if let draggingFrame = draggingRenderFrame {
                     self.renderedIds.append(draggingFrame.id)
                     self.renderDispatchGroup.enter()
