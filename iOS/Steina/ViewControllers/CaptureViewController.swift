@@ -433,7 +433,8 @@ class CaptureViewController: UIViewController, AVCaptureVideoDataOutputSampleBuf
             let flippedBufferBase = malloc(4 * width * height)
             var flippedBuffer = vImage_Buffer(data: flippedBufferBase, height: rotatedBuffer.height, width: rotatedBuffer.width, rowBytes: rotatedBuffer.rowBytes)
             vImageHorizontalReflect_ARGB8888(&rotatedBuffer, &flippedBuffer, 0)
-            rotatedBuffer = flippedBuffer
+            memcpy(rotatedBuffer.data, flippedBuffer.data, flippedBuffer.rowBytes * Int(flippedBuffer.height))
+            free(flippedBufferBase)
         }
         
         // Crop into new pixel buffer
@@ -469,10 +470,11 @@ class CaptureViewController: UIViewController, AVCaptureVideoDataOutputSampleBuf
         
         tjCompress2(compressor, typedBase, S32(crop.size.width), S32(crop.size.width) * 4, S32(crop.size.height), S32(TJPF_BGRA.rawValue), &compressedBuffer, &jpegSize, S32(TJSAMP_420.rawValue), JPEG_QUALITY, JPEG_FLAGS)
         
-        
         // Copy compressed data to in-memory video file representation
         appendFrame(clip, jpegData: compressedBuffer!, length: Int(jpegSize))
         
+        free(outBase)
+        free(rotatedBase)
         CVPixelBufferUnlockBaseAddress(buffer, [])
         
         DispatchQueue.main.async {

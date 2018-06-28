@@ -68,7 +68,7 @@ var depthState : MTLDepthStencilState! = nil
 
 
 var lastRenderedTexture : MTLTexture! = nil
-var lastRenderedPixels : RawPtr = malloc(4 * 1024 * 1024)
+var lastRenderedPixels : RawPtr = malloc(4 * 640 * 480)
 var lastRenderedHeight = 0
 var lastRenderedWidth = 0
 
@@ -86,20 +86,6 @@ struct VideoUniforms {
     let transform: float4x4
     let effects : VideoEffects
 }
-
-//func genVerts(_ entityIndex: Int, width: Float, height: Float, z: Float, effects: VideoEffects) -> [Float] {
-//    let x = width / 2.0
-//    let y = height / 2.0
-//    return [
-//      // X   Y   Z    W         U       V       0          EntityIdx       effects:  color,         whirl,         brightness,         ghost
-//        -x,  y,  z, 1.0,    width, height,    0.0, Float(entityIndex.u32),   effects.color, effects.whirl, effects.brightness, effects.ghost,
-//        -x, -y,  z, 1.0,    width,    0.0,    0.0, Float(entityIndex.u32),   effects.color, effects.whirl, effects.brightness, effects.ghost,
-//         x, -y,  z, 1.0,    0.0,      0.0,    0.0, Float(entityIndex.u32),   effects.color, effects.whirl, effects.brightness, effects.ghost,
-//        -x,  y,  z, 1.0,    width, height,    0.0, Float(entityIndex.u32),   effects.color, effects.whirl, effects.brightness, effects.ghost,
-//         x, -y,  z, 1.0,    0.0,      0.0,    0.0, Float(entityIndex.u32),   effects.color, effects.whirl, effects.brightness, effects.ghost,
-//         x,  y,  z, 1.0,    0.0,   height,    0.0, Float(entityIndex.u32),   effects.color, effects.whirl, effects.brightness, effects.ghost
-//    ]
-//}
 
 func genVerts(width: Float, height: Float, depth: Float, entityIndex: Int) -> [Float] {
     let x = width / 2.0
@@ -136,19 +122,19 @@ func entityTransform(scale: Float, rotate: Float, translateX: Float, translateY:
 
 func orthographicProjection(left: Float, right: Float, top: Float, bottom: Float, near: Float, far: Float) -> float4x4 {
     return float4x4(
-        float4([             2.0 / (right - left),                                0,                            0,   -(right + left) / (right - left) ]),
-        float4([                                0,             2.0 / (top - bottom),                            0,   -(top + bottom) / (top - bottom) ]),
-        float4([                                0,                                0,          -2.0 / (far - near),       -(far + near) / (far - near) ]),
-        float4([                                0,                                0,                            0,                                1.0 ])
+        float4([ 2.0 / (right - left),                    0,                   0, -(right + left) / (right - left) ]),
+        float4([                    0, 2.0 / (top - bottom),                   0, -(top + bottom) / (top - bottom) ]),
+        float4([                    0,                    0, -2.0 / (far - near),     -(far + near) / (far - near) ]),
+        float4([                    0,                    0,                   0,                              1.0 ])
     )
 }
 
 func orthographicUnprojection(left: Float, right: Float, top: Float, bottom: Float, near: Float, far: Float) -> float4x4 {
     return float4x4(
-        float4([             (right - left) / 2.0,                                0,                            0,   (right + left) / 2.0 ]),
-        float4([                                0,             (top - bottom) / 2.0,                            0,   (top + bottom) / 2.0 ]),
-        float4([                                0,                                0,          (far - near) / -2.0,     (far + near) / 2.0 ]),
-        float4([                                0,                                0,                            0,                    1.0 ])
+        float4([ (right - left) / 2.0,                    0,                   0, (right + left) / 2.0 ]),
+        float4([                    0, (top - bottom) / 2.0,                   0, (top + bottom) / 2.0 ]),
+        float4([                    0,                    0, (far - near) / -2.0,   (far + near) / 2.0 ]),
+        float4([                    0,                    0,                   0,                  1.0 ])
     )
 }
 
@@ -159,10 +145,10 @@ var depthTex : MTLTexture! = nil
 var vertBuffer : MTLBuffer! = nil
 var matBuffer : MTLBuffer! = nil
 
-var rawPixels : UnsafeMutableRawPointer! = nil
+var rawPixels : UnsafeMutableRawPointer! = malloc(640 * 480 * 4 * MAX_RENDERED_ENTITIES)!
 var pixels : U8Ptr! = nil
 
-var rawMask : UnsafeMutableRawPointer! = nil
+var rawMask : UnsafeMutableRawPointer! = malloc(640 * 480 * MAX_RENDERED_ENTITIES)!
 var mask : U8Ptr! = nil
 
 var NUM_DECOMPRESSORS = 10
@@ -175,7 +161,7 @@ var captureScope : MTLCaptureScope! = nil
 func initMetal(_ hostView: MetalView) {
     
     captureScope = MTLCaptureManager.shared().makeCaptureScope(device: device)
-    captureScope.label = "Does this actually work?"
+    captureScope.label = "Steina Debug Scope"
     
     // Set up JPEG decompressors
     for _ in 0..<NUM_DECOMPRESSORS {
@@ -210,32 +196,13 @@ func initMetal(_ hostView: MetalView) {
     vertexDescriptor.attributes[2].format = .float2
     vertexDescriptor.attributes[2].bufferIndex = 0
     vertexDescriptor.attributes[2].offset = 6 * MemoryLayout<Float>.size
-//    
-//        // Effect: color
-//    vertexDescriptor.attributes[3].format = .float
-//    vertexDescriptor.attributes[3].bufferIndex = 0
-//    vertexDescriptor.attributes[3].offset = 8 * MemoryLayout<Float>.size
-//    
-//        // Effect: whirl
-//    vertexDescriptor.attributes[4].format = .float
-//    vertexDescriptor.attributes[4].bufferIndex = 0
-//    vertexDescriptor.attributes[4].offset = 9 * MemoryLayout<Float>.size
-//    
-//        // Effect: brightness
-//    vertexDescriptor.attributes[5].format = .float
-//    vertexDescriptor.attributes[5].bufferIndex = 0
-//    vertexDescriptor.attributes[5].offset = 10 * MemoryLayout<Float>.size
-//    
-//        // Effect: ghost
-//    vertexDescriptor.attributes[6].format = .float
-//    vertexDescriptor.attributes[6].bufferIndex = 0
-//    vertexDescriptor.attributes[6].offset = 11 * MemoryLayout<Float>.size
-//    
+    
+        // Set stride of vertex buffer
     vertexDescriptor.layouts[0].stride = 8 * MemoryLayout<Float>.size
     vertexDescriptor.layouts[0].stepFunction = .perVertex
     
     // Set up depth buffer
-    let depthTexDescriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .depth32Float, width: 1024, height: 1024, mipmapped: false)
+    let depthTexDescriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .depth32Float, width: 640, height: 480, mipmapped: false)
     depthTexDescriptor.usage = .renderTarget
     depthTex = device.makeTexture(descriptor: depthTexDescriptor)!
     
@@ -267,7 +234,6 @@ func initMetal(_ hostView: MetalView) {
     let bytesPerPixel = 4
     let pitch = bytesPerPixel * width
     
-    rawPixels = malloc(pitch * height * MAX_RENDERED_ENTITIES)!
     pixels = rawPixels.bindMemory(to: U8.self, capacity: pitch * height * MAX_RENDERED_ENTITIES)
     
     let texDescriptor = MTLTextureDescriptor()
@@ -280,7 +246,6 @@ func initMetal(_ hostView: MetalView) {
     pixelTex = device.makeTexture(descriptor: texDescriptor)!
     
     // Set up mask decompression
-    rawMask = malloc(width * height * MAX_RENDERED_ENTITIES)!
     mask = rawMask.bindMemory(to: U8.self, capacity: width * height * MAX_RENDERED_ENTITIES)
     
     let maskTexDescriptor = MTLTextureDescriptor()
@@ -308,8 +273,8 @@ func initMetal(_ hostView: MetalView) {
     let blitTexDescriptor = MTLTextureDescriptor()
     blitTexDescriptor.textureType = .type2D
     blitTexDescriptor.pixelFormat = .bgra8Unorm
-    blitTexDescriptor.width = 1024 // @TODO: For now, we're only running on devices where we could possibly render up to 1024 pixels in a single dimension
-    blitTexDescriptor.height = 1024
+    blitTexDescriptor.width = 640
+    blitTexDescriptor.height = 480
     
     lastRenderedTexture = device.makeTexture(descriptor: blitTexDescriptor)
 }

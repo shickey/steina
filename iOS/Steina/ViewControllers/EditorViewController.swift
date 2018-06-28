@@ -59,6 +59,7 @@ class EditorViewController: UIViewController, WKScriptMessageHandler, MetalViewD
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        metalView.metalLayer.drawableSize = CGSize(width: 640, height: 480)
         metalView.delegate = self
         
         initMetal(metalView)
@@ -317,6 +318,7 @@ class EditorViewController: UIViewController, WKScriptMessageHandler, MetalViewD
     }
     
     @objc func handleInsertedClips(_ notification: Notification) {
+        print("clip inserted")
         if let insertedObjects = notification.userInfo?[NSInsertedObjectsKey] as? Set<NSManagedObject> {
             for managedObject in insertedObjects {
                 if let newClip = managedObject as? Clip {
