@@ -221,6 +221,14 @@
 
     <category name="Control" colour="#FFAB19" secondaryColour="#CF8B17">
 
+      <block type="control_wait">
+        <value name="DURATION">
+          <shadow type="math_positive_number">
+            <field name="NUM">1</field>
+          </shadow>
+        </value>
+      </block>
+
       <block type="control_repeat">
         <value name="TIMES">
           <shadow type="math_whole_number">
@@ -230,14 +238,6 @@
       </block>
 
       <block type="control_forever"></block>
-
-      <block type="control_wait">
-        <value name="DURATION">
-          <shadow type="math_positive_number">
-            <field name="NUM">1</field>
-          </shadow>
-        </value>
-      </block>
 
       <block type="control_if"></block>
       <block type="control_if_else"></block>
@@ -272,6 +272,19 @@
       </block>
 
       <block type="operator_multiply">
+        <value name="NUM1">
+          <shadow type="math_number">
+            <field name="NUM"></field>
+          </shadow>
+        </value>
+        <value name="NUM2">
+          <shadow type="math_number">
+            <field name="NUM"></field>
+          </shadow>
+        </value>
+      </block>
+
+      <block type="operator_divide">
         <value name="NUM1">
           <shadow type="math_number">
             <field name="NUM"></field>
