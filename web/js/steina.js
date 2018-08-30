@@ -141,25 +141,30 @@
                 })
             }
 
-            function inflateVideoTarget(id, targetJson) {
-              vm.inflateVideoTarget(id, targetJson);
-            }
-
-            function setVideoRenderingOrder(idArrayJson) {
-              vm.runtime.videoState.order = JSON.parse(idArrayJson);
-            }
-
             function getVideoTargets() {
                 return vm.getVideoTargets().map(t => t.toJSON());
             }
 
-            function serializeVideoTargets() {
-              return getVideoTargets().map(t => {
-                return {
-                  id : t.id,
-                  json: JSON.stringify(t)
-                }
-              })
+            function getProjectJson() {
+              var json = {
+                renderingOrder: [],
+                videoTargets: {}
+              }
+              var targets = vm.getVideoTargets()
+              targets.forEach(t => {
+                json.renderingOrder.push(t.id);
+                json.videoTargets[t.id] = t
+              });
+              return JSON.stringify(json);
+            }
+
+            function loadProject(projectJson) {
+              var project = JSON.parse(projectJson);
+              for (targetId in project.videoTargets) {
+                var target = project.videoTargets[targetId];
+                vm.inflateVideoTarget(targetId, target);
+              }
+              vm.runtime.videoState.order = project.renderingOrder;
             }
 
             function beginDraggingVideo(id, x, y) {
@@ -189,9 +194,8 @@
                 tick,
                 createVideoTarget,
                 getVideoTargets,
-                serializeVideoTargets,
-                inflateVideoTarget,
-                setVideoRenderingOrder,
+                getProjectJson,
+                loadProject,
                 beginDraggingVideo,
                 updateDraggingVideo,
                 endDraggingVideo,

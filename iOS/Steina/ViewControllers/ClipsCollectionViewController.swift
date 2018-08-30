@@ -11,7 +11,7 @@ import UIKit
 private let reuseIdentifier = "ClipCell"
 
 protocol ClipsCollectionViewControllerDelegate {
-    func clipsControllerDidSelect(clipsController: ClipsCollectionViewController, clipId: VideoClipId)
+    func clipsControllerDidSelect(clipsController: ClipsCollectionViewController, clipId: ClipId)
 }
 
 class ClipsCollectionViewCell: UICollectionViewCell {
@@ -33,8 +33,7 @@ class ClipsCollectionViewController: UICollectionViewController {
     
     var delegate : ClipsCollectionViewControllerDelegate? = nil
     
-    var videoClipIds : [VideoClipId] = []
-    var videoClips : [VideoClipId: InMemoryClip] = [:]
+    var project : Project! = nil
     
     override func viewWillAppear(_ animated: Bool) {
         collectionView?.reloadData()
@@ -48,18 +47,16 @@ class ClipsCollectionViewController: UICollectionViewController {
 
 
     override func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return videoClipIds.count
+        return project.clips.count
     }
 
     override func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: indexPath) as! ClipsCollectionViewCell
-    
-        let clipId = videoClipIds[indexPath.item]
-        let videoClip = videoClips[clipId]!
         
-        let thumb = videoClip.videoClip.thumbnail!
+        let clipId = project.clipIds[indexPath.item]
+        let clip = project.clips[clipId]!
         
-        cell.thumbnailView.image = UIImage(cgImage: thumb)
+        cell.thumbnailView.image = clip.thumbnail
         
         if cell.isSelected {
             cell.backgroundColor = UIColor.yellow
@@ -75,7 +72,7 @@ class ClipsCollectionViewController: UICollectionViewController {
     
     override func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         if let d = delegate {
-            let clipId = videoClipIds[indexPath.item]
+            let clipId = project.clipIds[indexPath.item]
             d.clipsControllerDidSelect(clipsController: self, clipId: clipId)
         }
     }

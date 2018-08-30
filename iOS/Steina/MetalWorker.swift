@@ -289,15 +289,14 @@ func indexForZValue(_ z: Float) -> Int {
     return Int(round((1.0 - z) * 100.0)) - 1
 }
 
-func getLastRenderedImage() -> Data {
+func getLastRenderedImage() -> UIImage {
     lastRenderedTexture.getBytes(lastRenderedPixels, bytesPerRow: lastRenderedWidth * 4, from: MTLRegionMake2D(0, 0, lastRenderedWidth, lastRenderedHeight), mipmapLevel: 0)
     let context = CGContext(data: lastRenderedPixels, width: lastRenderedWidth, height: lastRenderedHeight, bitsPerComponent: 8, bytesPerRow: lastRenderedWidth * 4, space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.noneSkipFirst.rawValue | CGBitmapInfo.byteOrder32Little.rawValue)!
-    return UIImagePNGRepresentation(UIImage(cgImage: context.makeImage()!))!
+    return UIImage(cgImage: context.makeImage()!)
 }
 
 struct RenderFrame {
-    let id: VideoClipId
-    let clip : VideoClip
+    let clip : Clip
     let frameNumber: Int
     let transform : float4x4
     let effects : VideoEffects

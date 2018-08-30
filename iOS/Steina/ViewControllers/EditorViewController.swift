@@ -8,40 +8,19 @@
 
 import UIKit
 import WebKit
-import CoreData
 import Dispatch
 import simd
 
-typealias VideoClipId = String
-
-struct InMemoryClip {
-    let clip : Clip
-    let videoClip : VideoClip
-}
-
-class EditorViewController: UIViewController, WKScriptMessageHandler, MetalViewDelegate, ClipsCollectionViewControllerDelegate {
+class EditorViewController: UIViewController, WKScriptMessageHandler, MetalViewDelegate, ClipsCollectionViewControllerDelegate, CaptureViewControllerDelegate {
     
-    var project : Project! = nil {
-        didSet {
-            if let p = project {
-                for untypedClip in p.clips! {
-                    let clip = untypedClip as! Clip
-                    let clipData = try! Data(contentsOf: clip.assetUrl)
-                    let videoClip = deserializeClip(clipData)
-                    videoClipIds.append(clip.id!.uuidString)
-                    videoClips[clip.id!.uuidString] = InMemoryClip(clip: clip, videoClip: videoClip)
-                }
-            }
-        }
-    }
+    var project : Project! = nil
+    
     var displayLink : CADisplayLink! = nil
     var ready = false
-    var videoClipIds : [VideoClipId] = []
-    var videoClips : [VideoClipId: InMemoryClip] = [:]
-    var draggingVideoId : VideoClipId! = nil
+    var draggingVideoId : ClipId! = nil
     var dragStartTimestamp : CFTimeInterval! = nil 
-    var previousRenderedIds : [VideoClipId] = []
-    var renderedIds : [VideoClipId] = []
+    var previousRenderedIds : [ClipId] = []
+    var renderedIds : [ClipId] = []
     var renderingQueue : DispatchQueue = DispatchQueue(label: "edu.mit.media.llk.Steina.Render", qos: .default, attributes: .concurrent, autoreleaseFrequency: DispatchQueue.AutoreleaseFrequency.workItem, target: nil)
     let renderDispatchGroup = DispatchGroup()
     let unproject = orthographicUnprojection(left: -320.0, right: 320.0, top: 240.0, bottom: -240.0, near: 1.0, far: -1.0)
@@ -59,12 +38,20 @@ class EditorViewController: UIViewController, WKScriptMessageHandler, MetalViewD
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        // Load clips into memory
+        let projectJsonData = try! Data(contentsOf: project.jsonUrl)
+        let projectJson = try! JSONSerialization.jsonObject(with: projectJsonData, options: [])
+        let jsonDict = projectJson as! NSDictionary
+        let targets = jsonDict["videoTargets"] as! NSDictionary
+        for (targetId, _) in targets {
+            let targetIdStr = targetId as! String
+            loadClip(targetIdStr, project) 
+        }
+        
         metalView.metalLayer.drawableSize = CGSize(width: 640, height: 480)
         metalView.delegate = self
         
         initMetal(metalView)
-        
-        NotificationCenter.default.addObserver(self, selector: #selector(handleInsertedClips(_:)), name: Notification.Name.NSManagedObjectContextObjectsDidChange, object: nil)
         
         // Create web view controller and bind to "steinaMsg" namespace
         let webViewController = WKUserContentController()
@@ -135,15 +122,8 @@ class EditorViewController: UIViewController, WKScriptMessageHandler, MetalViewD
     }
     
     func onScratchLoaded() {
-        var js : String = ""
-        if let renderingOrderJson = project.renderingOrder {
-            js += "Steina.setVideoRenderingOrder('\(renderingOrderJson)');"
-        }
-        for (clipId, inMemoryClip) in videoClips {
-            if let json = inMemoryClip.clip.targetJson {
-                js += "Steina.inflateVideoTarget('\(clipId)', '\(json)');"
-            }
-        }
+        let projectJson = loadProjectJson(project)
+        let js = "Steina.loadProject('\(projectJson)')"
         runJavascript(js) { (_, _) in
             self.ready = true
             self.onReady()
@@ -157,31 +137,16 @@ class EditorViewController: UIViewController, WKScriptMessageHandler, MetalViewD
     }
     
     func saveProject() {
-        self.project.thumbnail = getLastRenderedImage()
-        runJavascript("Steina.serializeVideoTargets()") { (res, err) in
-            if let targets = res as? Array<Dictionary<String, String>> {
-                for target in targets {
-                    let id = target["id"]!
-                    let json = target["json"]!
-                    
-                    let inMemoryClip = self.videoClips[id]!
-                    inMemoryClip.clip.targetJson = json
-                }
-                let ids = targets.map({ (target) -> VideoClipId in
-                    return target["id"]!
-                })
-                let renderingOrderJsonData = try! JSONEncoder().encode(ids)
-                let renderingOrderJson = String(data: renderingOrderJsonData, encoding: .utf8)
-                self.project.renderingOrder = renderingOrderJson
-                try! self.project.managedObjectContext!.save()
-            }
+        project.thumbnail = getLastRenderedImage()
+        saveProjectThumbnail(project)
+        runJavascript("Steina.getProjectJson()") { (res, err) in
+            saveProjectJson(self.project, res as! String) 
         }
     }
     
     func onReady() {
         if let clipsVC = clipsCollectionVC {
-            clipsVC.videoClipIds = videoClipIds
-            clipsVC.videoClips = videoClips
+            clipsVC.project = project
             clipsVC.collectionView?.reloadData()
         }
         startDisplayLink()
@@ -219,11 +184,11 @@ class EditorViewController: UIViewController, WKScriptMessageHandler, MetalViewD
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         if let clipsVC = segue.destination as? ClipsCollectionViewController {
             clipsVC.delegate = self
-            clipsVC.videoClipIds = videoClipIds
-            clipsVC.videoClips = videoClips
+            clipsVC.project = project
             self.clipsCollectionVC = clipsVC
         }
         if let captureVC = segue.destination as? CaptureViewController {
+            captureVC.delegate = self
             captureVC.project = project
         }
     }
@@ -258,8 +223,7 @@ class EditorViewController: UIViewController, WKScriptMessageHandler, MetalViewD
                     let effects   = (target["effects"] as! Dictionary<String, NSNumber>) // We implicitly cast effects values to floats here
                     
                     // Get video clip
-                    let inMemoryClip = self.videoClips[clipId]!
-                    let videoClip = inMemoryClip.videoClip
+                    let videoClip = self.project.clips[clipId]!
                     
                     // Figure out which frame to render
                     var frameNumber = Int(round(frame))
@@ -280,7 +244,7 @@ class EditorViewController: UIViewController, WKScriptMessageHandler, MetalViewD
                     let renderingEffects = VideoEffects(color: colorEffect, whirl: whirlEffect, brightness: brightnessEffect, ghost: ghostEffect)
                     
                     // Create the render frame structure
-                    let renderFrame = RenderFrame(id: clipId, clip: videoClip, frameNumber: frameNumber, transform: transform, effects: renderingEffects)
+                    let renderFrame = RenderFrame(clip: videoClip, frameNumber: frameNumber, transform: transform, effects: renderingEffects)
                     
                     // If a target is being dragged, we defer drawing it until the end so that it draws on top of everything else
                     if self.draggingVideoId == clipId {
@@ -301,7 +265,7 @@ class EditorViewController: UIViewController, WKScriptMessageHandler, MetalViewD
                 
                 // Push the dragging target into the rendering queue, if it exists
                 if let draggingFrame = draggingRenderFrame {
-                    self.renderedIds.append(draggingFrame.id)
+                    self.renderedIds.append(draggingFrame.clip.id.uuidString)
                     self.renderDispatchGroup.enter()
                     let entityIndex = numEntitiesToRender
                     self.renderingQueue.async {                        
@@ -317,24 +281,12 @@ class EditorViewController: UIViewController, WKScriptMessageHandler, MetalViewD
         
     }
     
-    @objc func handleInsertedClips(_ notification: Notification) {
-        print("clip inserted")
-        if let insertedObjects = notification.userInfo?[NSInsertedObjectsKey] as? Set<NSManagedObject> {
-            for managedObject in insertedObjects {
-                if let newClip = managedObject as? Clip {
-                    let clipData = try! Data(contentsOf: newClip.assetUrl)
-                    let videoClip = deserializeClip(clipData)
-                    let clipId = newClip.id!.uuidString
-                    let inMemoryClip = InMemoryClip(clip: newClip, videoClip: videoClip)
-                    videoClipIds.append(clipId)
-                    videoClips[clipId] = inMemoryClip
-                    runJavascript("Steina.createVideoTarget(\"\(clipId)\", 30, \(inMemoryClip.videoClip.frames));")
-                }
-            }
-        }
-    }
     
-    // WKUserContentControllerDelegate
+    /**********************************************************************
+     *
+     * WKUserContentControllerDelegate
+     *
+     **********************************************************************/
     
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
         // @TODO: Ewwwwwwwwww. Clean this mess up.
@@ -356,13 +308,18 @@ class EditorViewController: UIViewController, WKScriptMessageHandler, MetalViewD
         }
     }
     
-    // MetalViewDelegate
+    
+    /**********************************************************************
+     *
+     * MetalViewDelegate
+     *
+     **********************************************************************/
     
     func metalViewBeganTouch(_ metalView: MetalView, location: CGPoint) {
         
         let drawableSize = metalView.metalLayer.drawableSize
         let x = (location.x / metalView.bounds.size.width) * (drawableSize.width)
-        let y = (location.y / metalView.bounds.size.height) * (drawableSize.height)// * -1.0 // Invert y
+        let y = (location.y / metalView.bounds.size.height) * (drawableSize.height)
         
         if let draggingId = videoTargetAtLocation(CGPoint(x: x, y: y)) {
             
@@ -373,7 +330,7 @@ class EditorViewController: UIViewController, WKScriptMessageHandler, MetalViewD
             dragStartTimestamp = CACurrentMediaTime()
             draggingVideoId = draggingId        
             runJavascript("Steina.beginDraggingVideo('\(draggingVideoId!)', \(unprojected.x), \(unprojected.y))")
-            if let clipsVC = clipsCollectionVC, let idx = videoClipIds.index(of: draggingId) {
+            if let clipsVC = clipsCollectionVC, let idx = project.clipIds.index(of: draggingId) {
                 clipsVC.collectionView!.selectItem(at: IndexPath(item: idx, section: 0), animated: true, scrollPosition: .centeredHorizontally)
             }
         }
@@ -401,7 +358,7 @@ class EditorViewController: UIViewController, WKScriptMessageHandler, MetalViewD
         draggingVideoId = nil
     }
     
-    func videoTargetAtLocation(_ location: CGPoint) -> VideoClipId? {
+    func videoTargetAtLocation(_ location: CGPoint) -> ClipId? {
         let pixels : RawPtr = RawPtr.allocate(byteCount: 1, alignment: MemoryLayout<Float>.alignment)
         depthTex.getBytes(pixels, bytesPerRow: 1024, from: MTLRegionMake2D(Int(location.x), Int(location.y), 1, 1), mipmapLevel: 0)
         let val = pixels.bindMemory(to: Float.self, capacity: 1)[0]
@@ -416,10 +373,26 @@ class EditorViewController: UIViewController, WKScriptMessageHandler, MetalViewD
         return id
     }
     
-    // ClipsCollectionViewControllerDelegate
     
-    func clipsControllerDidSelect(clipsController: ClipsCollectionViewController, clipId: VideoClipId) {
+    /**********************************************************************
+     *
+     * ClipsCollectionViewControllerDelegate
+     *
+     **********************************************************************/
+    
+    func clipsControllerDidSelect(clipsController: ClipsCollectionViewController, clipId: ClipId) {
         runJavascript("vm.setEditingTarget(\"\(clipId)\")")
+    }
+    
+    
+    /**********************************************************************
+     *
+     * CaptureViewControllerDelegate
+     *
+     **********************************************************************/
+    
+    func captureViewControllerDidCreateClip(captureViewController: CaptureViewController, clip: Clip) {
+        runJavascript("Steina.createVideoTarget(\"\(clip.id.uuidString)\", 30, \(clip.frames));")
     }
 
 }

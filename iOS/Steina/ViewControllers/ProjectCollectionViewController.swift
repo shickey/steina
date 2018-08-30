@@ -7,7 +7,6 @@
 //
 
 import UIKit
-import CoreData
 
 private let projectReuseIdentifier = "ProjectCell"
 private let addReuseIdentifier = "AddProjectCell"
@@ -20,50 +19,27 @@ class AddProjectCell : UICollectionViewCell {}
 
 class ProjectCollectionViewController: UICollectionViewController {
     
-    var moc : NSManagedObjectContext! = nil
-    var projects : [Project] = []
-    var fetchRequest : NSFetchRequest<Project>! = nil
+    var projects : NSMutableArray! = nil
 
     override func viewDidLoad() {
         super.viewDidLoad()
-
-        // Uncomment the following line to preserve selection between presentations
-        // self.clearsSelectionOnViewWillAppear = false
-
-        let appDelegate = UIApplication.shared.delegate as! AppDelegate
-        moc = appDelegate.persistentContainer.viewContext
-        
-        fetchRequest = NSFetchRequest<Project>(entityName: Project.entity().name!)
-        
-        reload()
+        projects = SteinaStore.projects
     }
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        reload()
-    }
-
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
-    }
-    
-    func reload() {
-        projects = try! moc.fetch(fetchRequest)
         collectionView?.reloadData()
     }
-
     
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         let dest = segue.destination as! EditorViewController
         if let _ = sender as? AddProjectCell {
-            let project = Project.create(context: moc)
-            try! moc.save()
+            let project = SteinaStore.insertProject()
             dest.project = project
         }
         else if let projectCell = sender as? ProjectCell {
             let indexPath = collectionView!.indexPath(for: projectCell)!
-            dest.project = projects[indexPath.item]
+            dest.project = projects[indexPath.item] as! Project
         }
         
     }
@@ -84,46 +60,11 @@ class ProjectCollectionViewController: UICollectionViewController {
             return collectionView.dequeueReusableCell(withReuseIdentifier: addReuseIdentifier, for: indexPath) as! AddProjectCell
         }
         
-        let project = projects[indexPath.item]
-        
+        let project = projects[indexPath.item] as! Project
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: projectReuseIdentifier, for: indexPath) as! ProjectCell
-        
-        if let imgData = project.thumbnail {
-            cell.projectThumbnail.image = UIImage(data: imgData)
-        }
+        cell.projectThumbnail.image = project.thumbnail
     
         return cell
     }
-
-    // MARK: UICollectionViewDelegate
-
-    /*
-    // Uncomment this method to specify if the specified item should be highlighted during tracking
-    override func collectionView(_ collectionView: UICollectionView, shouldHighlightItemAt indexPath: IndexPath) -> Bool {
-        return true
-    }
-    */
-
-    /*
-    // Uncomment this method to specify if the specified item should be selected
-    override func collectionView(_ collectionView: UICollectionView, shouldSelectItemAt indexPath: IndexPath) -> Bool {
-        return true
-    }
-    */
-
-    /*
-    // Uncomment these methods to specify if an action menu should be displayed for the specified item, and react to actions performed on the item
-    override func collectionView(_ collectionView: UICollectionView, shouldShowMenuForItemAt indexPath: IndexPath) -> Bool {
-        return false
-    }
-
-    override func collectionView(_ collectionView: UICollectionView, canPerformAction action: Selector, forItemAt indexPath: IndexPath, withSender sender: Any?) -> Bool {
-        return false
-    }
-
-    override func collectionView(_ collectionView: UICollectionView, performAction action: Selector, forItemAt indexPath: IndexPath, withSender sender: Any?) {
-    
-    }
-    */
 
 }

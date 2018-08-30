@@ -62,8 +62,13 @@ class CaptureInfoLabel : UILabel {
     
 }
 
+protocol CaptureViewControllerDelegate {
+    func captureViewControllerDidCreateClip(captureViewController: CaptureViewController, clip: Clip)
+}
 
 class CaptureViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDelegate, DrawMaskViewDelegate {
+    
+    var delegate : CaptureViewControllerDelegate? = nil
     
     var project : Project! = nil
     
@@ -80,7 +85,7 @@ class CaptureViewController: UIViewController, AVCaptureVideoDataOutputSampleBuf
     var recording = false
     var compressor : tjhandle! = nil
     var jpegBuffer : U8Ptr! = nil
-    var clip : VideoClip! = nil
+    var clip : Clip! = nil
     var maskBounds : CGRect! = nil
     var maskData : Data! = nil
     
@@ -262,7 +267,7 @@ class CaptureViewController: UIViewController, AVCaptureVideoDataOutputSampleBuf
         recording = true
         framesWritten = 0
         
-        clip = VideoClip()
+        clip = createClipInProject(project)
         clip.mask = maskData
         clip.width = U32(maskBounds.size.width)
         clip.height = U32(maskBounds.size.height)
@@ -303,13 +308,12 @@ class CaptureViewController: UIViewController, AVCaptureVideoDataOutputSampleBuf
                     }
                 }
                 else {
-                    // Create Clip entity
-                    let newClip = self.project.createClip()
+                    self.clip.thumbnail = generateThumbnailForClip(self.clip)
+                    saveClip(self.clip)
                     
-                    let clipData = serializeClip(self.clip)
-                    try! clipData.write(to: newClip.assetUrl)
-                    
-                    try! newClip.managedObjectContext!.save()
+                    if let d = self.delegate {
+                        d.captureViewControllerDidCreateClip(captureViewController: self, clip: self.clip)
+                    }
                     
                     let info = self.infoLabel!
                     info.text = "Clip captured!"
