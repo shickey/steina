@@ -18,7 +18,14 @@ typealias ClipId = String
 
 let VIDEO_FILE_MAGIC_NUMBER : U32 = 0x000F1DE0
 let DATA_DIRECTORY_URL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).last!
-let PROJECT_MANIFEST_URL = DATA_DIRECTORY_URL.appendingPathComponent("steina.manifest") 
+let PROJECT_MANIFEST_URL = DATA_DIRECTORY_URL.appendingPathComponent("steina.manifest")
+
+
+/*******************************************************************
+ *
+ * Clip
+ *
+ *******************************************************************/
 
 
 struct FrameInfo {
@@ -162,8 +169,8 @@ func deserializeClip(_ clip: Clip, _ project: Project, _ data: Data) {
     
     data.withUnsafeBytes { (bytes : UnsafePointer<U8>) in
         
-        // Parse the first 4 fields of the header
-        bytes.withMemoryRebound(to: U32.self, capacity: 6, { (ptr) in
+        // Parse the first 8 fields of the header
+        bytes.withMemoryRebound(to: U32.self, capacity: 8, { (ptr) in
             assert(ptr[0] == VIDEO_FILE_MAGIC_NUMBER)
             frames = ptr[1]
             width = ptr[2]
@@ -236,6 +243,39 @@ func generateThumbnailForClip(_ clip: Clip) -> UIImage {
     return UIImage(cgImage: context.makeImage()!)
 }
 
+func createClipInProject(_ project: Project) -> Clip {
+    let clipId = UUID()
+    let clip = Clip(id: clipId, project: project)
+    addClipToProject(clip, project)
+    return clip
+}
+
+func addClipToProject(_ clip: Clip, _ project: Project) {
+    project.clips[clip.id.uuidString] = clip
+    project.clipIds.append(clip.id.uuidString)
+}
+
+func saveClip(_ clip: Clip) {
+    let clipData = serializeClip(clip)
+    // @TODO: Handle file writing error
+    try! clipData.write(to: clip.assetUrl)
+}
+
+func loadClip(_ id: String, _ project: Project) {
+    let uuid = UUID(uuidString: id)!
+    let clip = Clip(id: uuid, project: project)
+    let clipData = try! Data(contentsOf: clip.assetUrl)
+    deserializeClip(clip, project, clipData)
+    addClipToProject(clip, project)
+}
+
+
+/*******************************************************************
+ *
+ * Project
+ *
+ *******************************************************************/
+
 class Project {
     let id : UUID
     var clipIds : [ClipId] = []
@@ -283,31 +323,12 @@ func saveProjectJson(_ project: Project, _ json: String) {
     try! json.write(to: project.jsonUrl, atomically: true, encoding: .utf8)
 }
 
-func createClipInProject(_ project: Project) -> Clip {
-    let clipId = UUID()
-    let clip = Clip(id: clipId, project: project)
-    addClipToProject(clip, project)
-    return clip
-}
 
-func addClipToProject(_ clip: Clip, _ project: Project) {
-    project.clips[clip.id.uuidString] = clip
-    project.clipIds.append(clip.id.uuidString)
-}
-
-func saveClip(_ clip: Clip) {
-    let clipData = serializeClip(clip)
-    // @TODO: Handle file writing error
-    try! clipData.write(to: clip.assetUrl)
-}
-
-func loadClip(_ id: String, _ project: Project) {
-    let uuid = UUID(uuidString: id)!
-    let clip = Clip(id: uuid, project: project)
-    let clipData = try! Data(contentsOf: clip.assetUrl)
-    deserializeClip(clip, project, clipData)
-    addClipToProject(clip, project)
-}
+/*******************************************************************
+ *
+ * Storage
+ *
+ *******************************************************************/
 
 class SteinaStore {
     
