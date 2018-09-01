@@ -16,8 +16,13 @@ class AudioView : UIView {
     var dragging = false
     var draggingIdx : Int! = nil
     
+    var panStartSample : Int! = nil
+    var panning = false
+    
     var sampleWindowStart = 0
     var sampleWindowEnd = 0
+    
+    var longPressRecognizer : UILongPressGestureRecognizer! = nil
     
     var samplesPerPixel : Int {
         return Int((CGFloat(sampleWindowEnd - sampleWindowStart) / bounds.size.width))
@@ -58,7 +63,7 @@ class AudioView : UIView {
         doubleTapRecognizer.numberOfTapsRequired = 2
         self.addGestureRecognizer(doubleTapRecognizer)
         
-        let longPressRecognizer = UILongPressGestureRecognizer(target: self, action: #selector(longPressRecognized))
+        longPressRecognizer = UILongPressGestureRecognizer(target: self, action: #selector(longPressRecognized))
         self.addGestureRecognizer(longPressRecognizer)
         
         let pinchRecognizer = UIPinchGestureRecognizer(target: self, action: #selector(pinchRecognized))
@@ -160,18 +165,44 @@ class AudioView : UIView {
             dragging = true
             draggingIdx = markerIdx
         }
+        else {
+            panStartSample = sampleForXPosition(location.x)
+        }
     }
     
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
-        if !dragging { return }
+//        if !dragging { return }
         let location = touches.first!.location(in: self)
-        let samples = sampleForXPosition(location.x)!
-        markers[draggingIdx] = samples // @TODO: Should we prevent dragging markers over each other?
-        self.setNeedsDisplay()
+        if dragging {
+            let samples = sampleForXPosition(location.x)!
+            markers[draggingIdx] = samples // @TODO: Should we prevent dragging markers over each other?
+            self.setNeedsDisplay()
+        }
+        else if panning {
+            let totalSamplesInWindow = sampleWindowEnd - sampleWindowStart
+            let sampleOffsetForTouch = Int(location.x * CGFloat(samplesPerPixel))
+            var startSample = max(panStartSample - sampleOffsetForTouch, 0)
+            var endSample = startSample + totalSamplesInWindow
+            if endSample > buffer.frameLength {
+                endSample = Int(buffer.frameLength)
+                startSample = endSample - totalSamplesInWindow
+            }
+            sampleWindowStart = startSample
+            sampleWindowEnd = endSample
+            setNeedsDisplay()
+        }
+        else if longPressRecognizer.state == .possible {
+            // Only pan if we haven't started a long press yet
+            panning = true
+            for recognizer in gestureRecognizers! {
+                recognizer.isEnabled = false
+            }
+        }
     }
     
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
         dragging = false
+        panning = false
         markers.sort()
         for recognizer in gestureRecognizers! {
             recognizer.isEnabled = true
@@ -180,6 +211,7 @@ class AudioView : UIView {
     
     override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
         dragging = false
+        panning = false
         markers.sort()
         for recognizer in gestureRecognizers! {
             recognizer.isEnabled = true
