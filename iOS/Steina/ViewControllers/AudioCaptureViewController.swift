@@ -24,6 +24,10 @@ class AudioView : UIView {
     
     var longPressRecognizer : UILongPressGestureRecognizer! = nil
     
+    var totalSamples : Int {
+        return Int(buffer.frameLength)
+    }
+    
     var samplesPerPixel : Int {
         return Int((CGFloat(sampleWindowEnd - sampleWindowStart) / bounds.size.width))
     }
@@ -56,7 +60,7 @@ class AudioView : UIView {
         super.init(coder: aDecoder)
         
         sampleWindowStart = 0
-        sampleWindowEnd = Int(buffer.frameLength)
+        sampleWindowEnd = totalSamples
         
         // Set up gesture recognition
         let doubleTapRecognizer = UITapGestureRecognizer(target: self, action: #selector(doubleTapRecognized))
@@ -89,7 +93,7 @@ class AudioView : UIView {
         
         if recognizer.state == .began {
             var startSample = 0
-            var endSample = Int(buffer.frameLength)
+            var endSample = totalSamples
             for marker in markers {
                 // We can take advantage of markers being in sorted order here
                 if marker < pressedSample {
@@ -144,8 +148,8 @@ class AudioView : UIView {
                 firstSample = 0
             }
             var lastSample = firstSample + totalSamplesInWindow
-            if lastSample > buffer.frameLength {
-                lastSample = Int(buffer.frameLength)
+            if lastSample > totalSamples {
+                lastSample = totalSamples
             }
             sampleWindowStart = firstSample
             sampleWindowEnd = lastSample
@@ -171,7 +175,6 @@ class AudioView : UIView {
     }
     
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
-//        if !dragging { return }
         let location = touches.first!.location(in: self)
         if dragging {
             let samples = sampleForXPosition(location.x)!
@@ -183,8 +186,8 @@ class AudioView : UIView {
             let sampleOffsetForTouch = Int(location.x * CGFloat(samplesPerPixel))
             var startSample = max(panStartSample - sampleOffsetForTouch, 0)
             var endSample = startSample + totalSamplesInWindow
-            if endSample > buffer.frameLength {
-                endSample = Int(buffer.frameLength)
+            if endSample > totalSamples {
+                endSample = totalSamples
                 startSample = endSample - totalSamplesInWindow
             }
             sampleWindowStart = startSample
