@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A34478DE2139C68400545288 /* AudioCaptureViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A34478DD2139C68400545288 /* AudioCaptureViewController.swift */; };
+		A34478E02139C9B300545288 /* cyndi.wav in Resources */ = {isa = PBXBuildFile; fileRef = A34478DF2139C9B300545288 /* cyndi.wav */; };
 		A398F79820A346BB00C60946 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A398F79720A346BB00C60946 /* AppDelegate.swift */; };
 		A398F79D20A346BB00C60946 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = A398F79B20A346BB00C60946 /* Main.storyboard */; };
 		A398F7A220A346BC00C60946 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A398F7A120A346BC00C60946 /* Assets.xcassets */; };
@@ -26,6 +28,8 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		A34478DD2139C68400545288 /* AudioCaptureViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioCaptureViewController.swift; sourceTree = "<group>"; };
+		A34478DF2139C9B300545288 /* cyndi.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = cyndi.wav; sourceTree = "<group>"; };
 		A398F79420A346BB00C60946 /* Steina.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Steina.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A398F79720A346BB00C60946 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		A398F79C20A346BB00C60946 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
@@ -97,6 +101,7 @@
 				A398F7C420B45C3F00C60946 /* lib */,
 				A398F7CC20B5A8E900C60946 /* TypesAndExtensions.swift */,
 				A3C7C6FD20C04C75009E08EF /* Utils.swift */,
+				A34478DF2139C9B300545288 /* cyndi.wav */,
 			);
 			path = Steina;
 			sourceTree = "<group>";
@@ -108,6 +113,7 @@
 				A398F7BA20AA4DC100C60946 /* ClipsCollectionViewController.swift */,
 				A398F7C220B4582900C60946 /* CaptureViewController.swift */,
 				A398F7D620BB05D800C60946 /* ProjectCollectionViewController.swift */,
+				A34478DD2139C68400545288 /* AudioCaptureViewController.swift */,
 			);
 			path = ViewControllers;
 			sourceTree = "<group>";
@@ -182,6 +188,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A398F7A520A346BC00C60946 /* LaunchScreen.storyboard in Resources */,
+				A34478E02139C9B300545288 /* cyndi.wav in Resources */,
 				A398F7AD20A4CD1C00C60946 /* web in Resources */,
 				A398F7A220A346BC00C60946 /* Assets.xcassets in Resources */,
 				A398F79D20A346BB00C60946 /* Main.storyboard in Resources */,
@@ -199,6 +206,7 @@
 				A3C7C6F820C0488E009E08EF /* DrawMaskView.swift in Sources */,
 				A398F7CF20B5B89D00C60946 /* DataTypes.swift in Sources */,
 				A398F7C320B4582900C60946 /* CaptureViewController.swift in Sources */,
+				A34478DE2139C68400545288 /* AudioCaptureViewController.swift in Sources */,
 				A398F7C120B3266200C60946 /* Shaders.metal in Sources */,
 				A398F7CD20B5A8E900C60946 /* TypesAndExtensions.swift in Sources */,
 				A398F7D720BB05D800C60946 /* ProjectCollectionViewController.swift in Sources */,
