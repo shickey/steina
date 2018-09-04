@@ -9,9 +9,36 @@
 import UIKit
 import AVKit
 
+protocol AudioViewDelegate {
+    func audioViewDidSelectSampleRange(audioView: AudioView, sampleRange: SampleRange)
+    func audioViewDidDeselectSampleRange(audioView: AudioView)
+}
+
+struct SampleRange {
+    var start : Int
+    var end : Int
+    
+    var size : Int {
+        return end - start
+    }
+    
+    init(_ newStart: Int, _ newEnd: Int) {
+        start = newStart
+        end = newEnd
+    }
+}
+
 class AudioView : UIView {
+    var delegate : AudioViewDelegate? = nil
+    var buffer : AVAudioPCMBuffer! {
+        didSet {
+            sampleWindow = SampleRange(0, totalSamples)
+        }
+    }
     
     var markers = [144336, 250000, 500000, 1000000, 1350000] // In samples
+    
+    var sampleWindow : SampleRange = SampleRange(0, 0)
     
     var dragging = false
     var draggingIdx : Int! = nil
@@ -19,8 +46,11 @@ class AudioView : UIView {
     var panStartSample : Int! = nil
     var panning = false
     
-    var sampleWindowStart = 0
-    var sampleWindowEnd = 0
+    var currentPlayingSample : Int? = nil {
+        didSet {
+            setNeedsDisplay()
+        }
+    }
     
     var longPressRecognizer : UILongPressGestureRecognizer! = nil
     
@@ -29,38 +59,27 @@ class AudioView : UIView {
     }
     
     var samplesPerPixel : Int {
-        return Int((CGFloat(sampleWindowEnd - sampleWindowStart) / bounds.size.width))
+        return Int((CGFloat(sampleWindow.size) / bounds.size.width))
     }
     
     var pixelsPerSample : CGFloat {
-        return CGFloat(bounds.size.width) / CGFloat(sampleWindowEnd - sampleWindowStart)
+        return CGFloat(bounds.size.width) / CGFloat(sampleWindow.size)
     }
     
     @inline(__always)
     func xPositionForSample(_ sample: Int) -> CGFloat? {
-        if sample < sampleWindowStart || sample > sampleWindowEnd { return nil } 
-        return (CGFloat(sample - sampleWindowStart) / CGFloat(sampleWindowEnd - sampleWindowStart)) * bounds.size.width
+        if sample < sampleWindow.start || sample > sampleWindow.end { return nil } 
+        return (CGFloat(sample - sampleWindow.start) / CGFloat(sampleWindow.size)) * bounds.size.width
     }
     
     @inline(__always)
     func sampleForXPosition(_ xPosition: CGFloat) -> Int? {
         if xPosition < 0 || xPosition > bounds.size.width { return nil }
-        return Int((CGFloat(sampleWindowEnd - sampleWindowStart) / bounds.size.width) * xPosition) + sampleWindowStart
+        return Int((CGFloat(sampleWindow.size) / bounds.size.width) * xPosition) + sampleWindow.start
     }
-    
-    let buffer : AVAudioPCMBuffer = {
-        let cyndiUrl = Bundle.main.url(forResource: "cyndi", withExtension: "wav")!
-        let audioFile = try! AVAudioFile(forReading: cyndiUrl)
-        let buffer = AVAudioPCMBuffer(pcmFormat: audioFile.processingFormat, frameCapacity: AVAudioFrameCount(audioFile.length))!
-        try! audioFile.read(into: buffer)
-        return buffer
-    }()
     
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
-        
-        sampleWindowStart = 0
-        sampleWindowEnd = totalSamples
         
         // Set up gesture recognition
         let doubleTapRecognizer = UITapGestureRecognizer(target: self, action: #selector(doubleTapRecognized))
@@ -92,25 +111,28 @@ class AudioView : UIView {
         let pressedSample = sampleForXPosition(location.x)!
         
         if recognizer.state == .began {
-            var startSample = 0
-            var endSample = totalSamples
+            var selectedSampleRange = SampleRange(0, totalSamples)
             for marker in markers {
                 // We can take advantage of markers being in sorted order here
                 if marker < pressedSample {
-                    startSample = marker
+                    selectedSampleRange.start = marker
                 }
                 else {
-                    endSample = marker
+                    selectedSampleRange.end = marker
                     break
                 }
             }
-            print("start: \(startSample)  end: \(endSample)")
+            if let d = delegate {
+                d.audioViewDidSelectSampleRange(audioView: self, sampleRange: selectedSampleRange)
+            }
         }
         else if recognizer.state == .changed {
             print("long press changed")
         }
         else {
-            print("long press ended")
+            if let d = delegate {
+                d.audioViewDidDeselectSampleRange(audioView: self)
+            }
         }
     }
     
@@ -128,7 +150,7 @@ class AudioView : UIView {
             if firstPinchDistance == 0.0 {
                 firstPinchDistance = 0.1
             }
-            pinchBeginWindowSize = sampleWindowEnd - sampleWindowStart
+            pinchBeginWindowSize = sampleWindow.size
             let midpoint = (location1.x + location2.x) / 2.0
             centerPinchSample = sampleForXPosition(midpoint)
         }
@@ -151,8 +173,7 @@ class AudioView : UIView {
             if lastSample > totalSamples {
                 lastSample = totalSamples
             }
-            sampleWindowStart = firstSample
-            sampleWindowEnd = lastSample
+            sampleWindow = SampleRange(firstSample, lastSample)
             setNeedsDisplay()
         }
         else {
@@ -182,7 +203,7 @@ class AudioView : UIView {
             self.setNeedsDisplay()
         }
         else if panning {
-            let totalSamplesInWindow = sampleWindowEnd - sampleWindowStart
+            let totalSamplesInWindow = sampleWindow.size
             let sampleOffsetForTouch = Int(location.x * CGFloat(samplesPerPixel))
             var startSample = max(panStartSample - sampleOffsetForTouch, 0)
             var endSample = startSample + totalSamplesInWindow
@@ -190,8 +211,7 @@ class AudioView : UIView {
                 endSample = totalSamples
                 startSample = endSample - totalSamplesInWindow
             }
-            sampleWindowStart = startSample
-            sampleWindowEnd = endSample
+            sampleWindow = SampleRange(startSample, endSample)
             setNeedsDisplay()
         }
         else if longPressRecognizer.state == .possible {
@@ -248,7 +268,7 @@ class AudioView : UIView {
         
         // For each pixel in the horizontal direction, draw a vertical line
         // between the maximum and minimum amplitude of that part of the waveform
-        var currentSampleIdx = sampleWindowStart
+        var currentSampleIdx = sampleWindow.start
         for _ in 0..<Int(rect.size.width) {
             var min = 0.0
             var max = 0.0
@@ -284,33 +304,105 @@ class AudioView : UIView {
                 context.strokePath()
             }
         }
+        
+        // Draw the playhead if playing
+        if let currentSample = currentPlayingSample, let sampleX = xPositionForSample(currentSample) {
+            context.setStrokeColor(UIColor.yellow.cgColor)
+            context.setLineWidth(2.0)
+            context.setLineDash(phase: 0, lengths: [])
+            context.beginPath()
+            context.move(to: CGPoint(x: CGFloat(sampleX), y: 0.0))
+            context.addLine(to: CGPoint(x: CGFloat(sampleX), y: rect.size.height))
+            context.strokePath()
+        }
     }
     
 }
 
-class AudioCaptureViewController: UIViewController {
+class AudioCaptureViewController: UIViewController, AudioViewDelegate {
 
     @IBOutlet weak var audioView: AudioView!
     
+    var engine : AVAudioEngine! = nil
+    var audioFile : AVAudioFile! = nil
+    var buffer : AVAudioPCMBuffer! = nil
+    var player : AVAudioPlayerNode! = nil
+    
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do any additional setup after loading the view.
-    }
-
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
+        
+        audioView.delegate = self
+        
+        // Open the audio session
+        let session = AVAudioSession.sharedInstance()
+        try! session.setCategory(AVAudioSessionCategoryPlayAndRecord)
+        try! session.setActive(true)
+        
+        player = AVAudioPlayerNode()
+        
+        let cyndiUrl = Bundle.main.url(forResource: "cyndi", withExtension: "wav")!
+        audioFile = try! AVAudioFile(forReading: cyndiUrl)
+        buffer = AVAudioPCMBuffer(pcmFormat: audioFile.processingFormat, frameCapacity: AVAudioFrameCount(audioFile.length))!
+        try! audioFile.read(into: buffer)
+        
+        engine = AVAudioEngine()
+        engine.attach(player)
+        
+        let mixer = engine.mainMixerNode
+        engine.connect(player, to: mixer, fromBus: 0, toBus: 0, format: buffer.format)
+        
+        try! engine.start()
+        
+        audioView.buffer = buffer
+        
     }
     
-
-    /*
-    // MARK: - Navigation
-
-    // In a storyboard-based application, you will often want to do a little preparation before navigation
-    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        // Get the new view controller using segue.destinationViewController.
-        // Pass the selected object to the new view controller.
+    var shouldReschedule = true
+    var loops = 0
+    
+    func audioViewDidSelectSampleRange(audioView: AudioView, sampleRange: SampleRange) {
+        
+        shouldReschedule = true
+        loops = 0
+        
+        func scheduleAudio() {
+            player.scheduleSegment(audioFile, startingFrame: AVAudioFramePosition(sampleRange.start), frameCount: AVAudioFrameCount(sampleRange.size), at: nil, completionCallbackType: .dataRendered) { (_) in
+                if self.shouldReschedule {
+                    self.loops += 1
+                    scheduleAudio()
+                }
+            }
+        }
+        scheduleAudio()
+        
+        let timer = Timer(timeInterval: 1.0 / 30.0, repeats: true, block: { (timer) in
+            if !self.player.isPlaying {
+                timer.invalidate()
+                self.audioView.currentPlayingSample = nil
+                return
+            }
+            // Update the playback UI
+            let renderTime = self.player.lastRenderTime!
+            let playerTime = self.player.playerTime(forNodeTime: renderTime)!
+            
+            // @TODO: This calculation isn't exactly right and will drift over time
+            let samplePlaying = sampleRange.start + Int(playerTime.sampleTime) - (sampleRange.size * self.loops)
+            
+            if samplePlaying < sampleRange.start || samplePlaying > sampleRange.end {
+                // Don't show the playhead if it's not inside the playback range
+                audioView.currentPlayingSample = nil
+            }
+            else {
+                audioView.currentPlayingSample = samplePlaying
+            }
+        })
+        player.play()
+        RunLoop.main.add(timer, forMode: .defaultRunLoopMode)
     }
-    */
+    
+    func audioViewDidDeselectSampleRange(audioView: AudioView) {
+        shouldReschedule = false
+        player.stop()
+    }
 
 }
