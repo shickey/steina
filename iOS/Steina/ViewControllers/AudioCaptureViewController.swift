@@ -316,93 +316,95 @@ class AudioView : UIView {
             context.strokePath()
         }
     }
+}
+
+class AudioRenderInfo {
+    let buffer : Data
+    var playhead : Int
+    var renderPhase : Double
     
+    init(buffer newBuffer: Data, playhead newPlayhead: Int) {
+        buffer = newBuffer
+        playhead = newPlayhead
+        renderPhase = 0
+    }
+}
+
+func audioRender(_ inRefCon: UnsafeMutableRawPointer, _ audioUnitRenderActionFlags: UnsafeMutablePointer<AudioUnitRenderActionFlags>, _ inTimeStamp: UnsafePointer<AudioTimeStamp>, _ inBusNumber: UInt32, inNumberFrames: UInt32, _ ioData: UnsafeMutablePointer<AudioBufferList>?) -> OSStatus {
+    
+    let renderInfo = inRefCon.bindMemory(to: AudioRenderInfo.self, capacity: 1)[0]
+    
+    let outputBuffers = UnsafeMutableAudioBufferListPointer(ioData)!
+    let outputL = outputBuffers[0].mData!.bindMemory(to: Int16.self, capacity: Int(inNumberFrames))
+    let outputR = outputBuffers[1].mData!.bindMemory(to: Int16.self, capacity: Int(inNumberFrames))
+    
+    renderInfo.buffer.withUnsafeBytes { (ptr: UnsafePointer<Int16>) in
+        for i in 0..<Int(inNumberFrames) {
+            outputL[i] = ptr[renderInfo.playhead + i]
+            outputR[i] = ptr[renderInfo.playhead + i]
+        }
+    }
+    
+    renderInfo.playhead += Int(inNumberFrames)
+    
+    return noErr
 }
 
 class AudioCaptureViewController: UIViewController, AudioViewDelegate {
 
     @IBOutlet weak var audioView: AudioView!
     
-    var engine : AVAudioEngine! = nil
     var audioFile : AVAudioFile! = nil
     var buffer : AVAudioPCMBuffer! = nil
-    var player : AVAudioPlayerNode! = nil
+    
+    var cyndiBuffer : Data! = nil
+    
+    var audioUnit : AudioComponentInstance! = nil
+    var audioRenderInfo : AudioRenderInfo! = nil
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
         audioView.delegate = self
         
-        // Open the audio session
-        let session = AVAudioSession.sharedInstance()
-        try! session.setCategory(AVAudioSessionCategoryPlayAndRecord)
-        try! session.setActive(true)
-        
-        player = AVAudioPlayerNode()
-        
         let cyndiUrl = Bundle.main.url(forResource: "cyndi", withExtension: "wav")!
         audioFile = try! AVAudioFile(forReading: cyndiUrl)
         buffer = AVAudioPCMBuffer(pcmFormat: audioFile.processingFormat, frameCapacity: AVAudioFrameCount(audioFile.length))!
         try! audioFile.read(into: buffer)
         
-        engine = AVAudioEngine()
-        engine.attach(player)
-        
-        let mixer = engine.mainMixerNode
-        engine.connect(player, to: mixer, fromBus: 0, toBus: 0, format: buffer.format)
-        
-        try! engine.start()
+        cyndiBuffer = try! Data(contentsOf: cyndiUrl) // @TODO: Replace this with a call to read in the wave file properly
+        audioRenderInfo = AudioRenderInfo(buffer: cyndiBuffer, playhead: 0)
         
         audioView.buffer = buffer
         
+        initAudioSystem()
     }
     
-    var shouldReschedule = true
-    var loops = 0
+    func initAudioSystem() {
+        // NOTE: kAudioUnitSubType_RemoteIO refers to the iOS system audio for some reason?
+        var componentDescription = AudioComponentDescription(componentType: kAudioUnitType_Output, componentSubType: kAudioUnitSubType_RemoteIO, componentManufacturer: kAudioUnitManufacturer_Apple, componentFlags: 0, componentFlagsMask: 0)
+        let component = AudioComponentFindNext(nil, &componentDescription)!
+        
+        var audioUnitOptional : AudioComponentInstance? = nil
+        AudioComponentInstanceNew(component, &audioUnitOptional)
+        audioUnit = audioUnitOptional!
+        AudioUnitInitialize(audioUnit)
+        
+        var streamDescription = AudioStreamBasicDescription(mSampleRate: 32000, mFormatID: kAudioFormatLinearPCM, mFormatFlags: kAudioFormatFlagIsSignedInteger | kAudioFormatFlagIsNonInterleaved, mBytesPerPacket: 2, mFramesPerPacket: 1, mBytesPerFrame: 2, mChannelsPerFrame: 2, mBitsPerChannel: 16, mReserved: 0)
+        AudioUnitSetProperty(audioUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Input, 0, &streamDescription, UInt32(MemoryLayout<AudioStreamBasicDescription>.size))
+        
+        var callbackStruct = AURenderCallbackStruct(inputProc: audioRender, inputProcRefCon: &audioRenderInfo)
+        AudioUnitSetProperty(audioUnit, kAudioUnitProperty_SetRenderCallback, kAudioUnitScope_Global, 0, &callbackStruct, UInt32(MemoryLayout<AURenderCallbackStruct>.size))
+        
+        AudioOutputUnitStart(audioUnit)
+    }
     
     func audioViewDidSelectSampleRange(audioView: AudioView, sampleRange: SampleRange) {
-        
-        shouldReschedule = true
-        loops = 0
-        
-        func scheduleAudio() {
-            player.scheduleSegment(audioFile, startingFrame: AVAudioFramePosition(sampleRange.start), frameCount: AVAudioFrameCount(sampleRange.size), at: nil, completionCallbackType: .dataRendered) { (_) in
-                if self.shouldReschedule {
-                    self.loops += 1
-                    scheduleAudio()
-                }
-            }
-        }
-        scheduleAudio()
-        
-        let timer = Timer(timeInterval: 1.0 / 30.0, repeats: true, block: { (timer) in
-            if !self.player.isPlaying {
-                timer.invalidate()
-                self.audioView.currentPlayingSample = nil
-                return
-            }
-            // Update the playback UI
-            let renderTime = self.player.lastRenderTime!
-            let playerTime = self.player.playerTime(forNodeTime: renderTime)!
-            
-            // @TODO: This calculation isn't exactly right and will drift over time
-            let samplePlaying = sampleRange.start + Int(playerTime.sampleTime) - (sampleRange.size * self.loops)
-            
-            if samplePlaying < sampleRange.start || samplePlaying > sampleRange.end {
-                // Don't show the playhead if it's not inside the playback range
-                audioView.currentPlayingSample = nil
-            }
-            else {
-                audioView.currentPlayingSample = samplePlaying
-            }
-        })
-        player.play()
-        RunLoop.main.add(timer, forMode: .defaultRunLoopMode)
+
     }
     
     func audioViewDidDeselectSampleRange(audioView: AudioView) {
-        shouldReschedule = false
-        player.stop()
+
     }
 
 }
