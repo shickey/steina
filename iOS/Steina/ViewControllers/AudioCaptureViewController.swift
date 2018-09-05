@@ -7,7 +7,6 @@
 //
 
 import UIKit
-import AVKit
 
 protocol AudioViewDelegate {
     func audioViewDidSelectSampleRange(audioView: AudioView, sampleRange: SampleRange)
@@ -30,7 +29,7 @@ struct SampleRange {
 
 class AudioView : UIView {
     var delegate : AudioViewDelegate? = nil
-    var buffer : AVAudioPCMBuffer! {
+    var buffer : Data! {
         didSet {
             sampleWindow = SampleRange(0, totalSamples)
         }
@@ -55,7 +54,7 @@ class AudioView : UIView {
     var longPressRecognizer : UILongPressGestureRecognizer! = nil
     
     var totalSamples : Int {
-        return Int(buffer.frameLength)
+        return Int(buffer.count) / 2
     }
     
     var samplesPerPixel : Int {
@@ -259,7 +258,8 @@ class AudioView : UIView {
     override func draw(_ rect: CGRect) {
         
         // Draw the waveform
-        let data = buffer.floatChannelData![0]
+        let nsData = buffer as NSData
+        let data = nsData.bytes.bindMemory(to: Int16.self, capacity: nsData.length / 2)
         
         let context = UIGraphicsGetCurrentContext()!
         var currentX = CGFloat(0.0)
@@ -270,10 +270,10 @@ class AudioView : UIView {
         // between the maximum and minimum amplitude of that part of the waveform
         var currentSampleIdx = sampleWindow.start
         for _ in 0..<Int(rect.size.width) {
-            var min = 0.0
-            var max = 0.0
+            var min : Int16 = 0
+            var max : Int16 = 0
             for sampleIdx in currentSampleIdx..<currentSampleIdx + samplesPerPixel {
-                let sample = Double(data[sampleIdx]);
+                let sample = data[sampleIdx];
                 if sample < min {
                     min = sample
                 }
@@ -282,8 +282,8 @@ class AudioView : UIView {
                 }
             }
             context.beginPath()
-            let minY = (rect.size.height / 2.0) - (CGFloat(min) * rect.size.height / 2.0) // Flip y
-            let maxY = (rect.size.height / 2.0) - (CGFloat(max) * rect.size.height / 2.0) // Flip y
+            let minY = (rect.size.height / 2.0) - (CGFloat(min) / CGFloat(Int16.max) * rect.size.height / 2.0) // Flip y
+            let maxY = (rect.size.height / 2.0) - (CGFloat(max) / CGFloat(Int16.max) * rect.size.height / 2.0) // Flip y
                 
             context.move(to: CGPoint(x: currentX, y: minY))
             context.addLine(to: CGPoint(x: currentX, y: maxY))
@@ -318,49 +318,13 @@ class AudioView : UIView {
     }
 }
 
-class AudioRenderInfo {
-    let buffer : Data
-    var playhead : Int
-    var renderPhase : Double
-    
-    init(buffer newBuffer: Data, playhead newPlayhead: Int) {
-        buffer = newBuffer
-        playhead = newPlayhead
-        renderPhase = 0
-    }
-}
 
-func audioRender(_ inRefCon: UnsafeMutableRawPointer, _ audioUnitRenderActionFlags: UnsafeMutablePointer<AudioUnitRenderActionFlags>, _ inTimeStamp: UnsafePointer<AudioTimeStamp>, _ inBusNumber: UInt32, inNumberFrames: UInt32, _ ioData: UnsafeMutablePointer<AudioBufferList>?) -> OSStatus {
-    
-    let renderInfo = inRefCon.bindMemory(to: AudioRenderInfo.self, capacity: 1)[0]
-    
-    let outputBuffers = UnsafeMutableAudioBufferListPointer(ioData)!
-    let outputL = outputBuffers[0].mData!.bindMemory(to: Int16.self, capacity: Int(inNumberFrames))
-    let outputR = outputBuffers[1].mData!.bindMemory(to: Int16.self, capacity: Int(inNumberFrames))
-    
-    renderInfo.buffer.withUnsafeBytes { (ptr: UnsafePointer<Int16>) in
-        for i in 0..<Int(inNumberFrames) {
-            outputL[i] = ptr[renderInfo.playhead + i]
-            outputR[i] = ptr[renderInfo.playhead + i]
-        }
-    }
-    
-    renderInfo.playhead += Int(inNumberFrames)
-    
-    return noErr
-}
 
 class AudioCaptureViewController: UIViewController, AudioViewDelegate {
 
     @IBOutlet weak var audioView: AudioView!
     
-    var audioFile : AVAudioFile! = nil
-    var buffer : AVAudioPCMBuffer! = nil
-    
     var cyndiBuffer : Data! = nil
-    
-    var audioUnit : AudioComponentInstance! = nil
-    var audioRenderInfo : AudioRenderInfo! = nil
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -368,35 +332,13 @@ class AudioCaptureViewController: UIViewController, AudioViewDelegate {
         audioView.delegate = self
         
         let cyndiUrl = Bundle.main.url(forResource: "cyndi", withExtension: "wav")!
-        audioFile = try! AVAudioFile(forReading: cyndiUrl)
-        buffer = AVAudioPCMBuffer(pcmFormat: audioFile.processingFormat, frameCapacity: AVAudioFrameCount(audioFile.length))!
-        try! audioFile.read(into: buffer)
         
         cyndiBuffer = try! Data(contentsOf: cyndiUrl) // @TODO: Replace this with a call to read in the wave file properly
         audioRenderInfo = AudioRenderInfo(buffer: cyndiBuffer, playhead: 0)
         
-        audioView.buffer = buffer
+        audioView.buffer = cyndiBuffer
         
         initAudioSystem()
-    }
-    
-    func initAudioSystem() {
-        // NOTE: kAudioUnitSubType_RemoteIO refers to the iOS system audio for some reason?
-        var componentDescription = AudioComponentDescription(componentType: kAudioUnitType_Output, componentSubType: kAudioUnitSubType_RemoteIO, componentManufacturer: kAudioUnitManufacturer_Apple, componentFlags: 0, componentFlagsMask: 0)
-        let component = AudioComponentFindNext(nil, &componentDescription)!
-        
-        var audioUnitOptional : AudioComponentInstance? = nil
-        AudioComponentInstanceNew(component, &audioUnitOptional)
-        audioUnit = audioUnitOptional!
-        AudioUnitInitialize(audioUnit)
-        
-        var streamDescription = AudioStreamBasicDescription(mSampleRate: 32000, mFormatID: kAudioFormatLinearPCM, mFormatFlags: kAudioFormatFlagIsSignedInteger | kAudioFormatFlagIsNonInterleaved, mBytesPerPacket: 2, mFramesPerPacket: 1, mBytesPerFrame: 2, mChannelsPerFrame: 2, mBitsPerChannel: 16, mReserved: 0)
-        AudioUnitSetProperty(audioUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Input, 0, &streamDescription, UInt32(MemoryLayout<AudioStreamBasicDescription>.size))
-        
-        var callbackStruct = AURenderCallbackStruct(inputProc: audioRender, inputProcRefCon: &audioRenderInfo)
-        AudioUnitSetProperty(audioUnit, kAudioUnitProperty_SetRenderCallback, kAudioUnitScope_Global, 0, &callbackStruct, UInt32(MemoryLayout<AURenderCallbackStruct>.size))
-        
-        AudioOutputUnitStart(audioUnit)
     }
     
     func audioViewDidSelectSampleRange(audioView: AudioView, sampleRange: SampleRange) {

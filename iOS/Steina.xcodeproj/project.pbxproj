@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		A34478DE2139C68400545288 /* AudioCaptureViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A34478DD2139C68400545288 /* AudioCaptureViewController.swift */; };
 		A34478E02139C9B300545288 /* cyndi.wav in Resources */ = {isa = PBXBuildFile; fileRef = A34478DF2139C9B300545288 /* cyndi.wav */; };
+		A344790621402C4A00545288 /* Audio.swift in Sources */ = {isa = PBXBuildFile; fileRef = A344790521402C4A00545288 /* Audio.swift */; };
 		A398F79820A346BB00C60946 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A398F79720A346BB00C60946 /* AppDelegate.swift */; };
 		A398F79D20A346BB00C60946 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = A398F79B20A346BB00C60946 /* Main.storyboard */; };
 		A398F7A220A346BC00C60946 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A398F7A120A346BC00C60946 /* Assets.xcassets */; };
@@ -30,6 +31,7 @@
 /* Begin PBXFileReference section */
 		A34478DD2139C68400545288 /* AudioCaptureViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioCaptureViewController.swift; sourceTree = "<group>"; };
 		A34478DF2139C9B300545288 /* cyndi.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = cyndi.wav; sourceTree = "<group>"; };
+		A344790521402C4A00545288 /* Audio.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Audio.swift; sourceTree = "<group>"; };
 		A398F79420A346BB00C60946 /* Steina.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Steina.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A398F79720A346BB00C60946 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		A398F79C20A346BB00C60946 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
@@ -92,6 +94,7 @@
 				A398F79B20A346BB00C60946 /* Main.storyboard */,
 				A398F7BE20B3210500C60946 /* MetalWorker.swift */,
 				A398F7CE20B5B89D00C60946 /* DataTypes.swift */,
+				A344790521402C4A00545288 /* Audio.swift */,
 				A398F7C920B45C9600C60946 /* Steina-Bridging-Header.h */,
 				A398F7C020B3266200C60946 /* Shaders.metal */,
 				A398F7A120A346BC00C60946 /* Assets.xcassets */,
@@ -209,6 +212,7 @@
 				A34478DE2139C68400545288 /* AudioCaptureViewController.swift in Sources */,
 				A398F7C120B3266200C60946 /* Shaders.metal in Sources */,
 				A398F7CD20B5A8E900C60946 /* TypesAndExtensions.swift in Sources */,
+				A344790621402C4A00545288 /* Audio.swift in Sources */,
 				A398F7D720BB05D800C60946 /* ProjectCollectionViewController.swift in Sources */,
 				A3C7C6FE20C04C75009E08EF /* Utils.swift in Sources */,
 				A398F7BF20B3210500C60946 /* MetalWorker.swift in Sources */,
