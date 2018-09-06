@@ -6,6 +6,8 @@
 //  Copyright © 2018 Massachusetts Institute of Technology. All rights reserved.
 //
 
+import Foundation
+
 typealias U8  = UInt8
 typealias U16 = UInt16
 typealias U32 = UInt32
@@ -49,4 +51,10 @@ extension Int {
     var kilobytes : Int { get { return self * 1024 }}
     var megabytes : Int { get { return self * 1024 * 1024 }}
     var gigabytes : Int { get { return self * 1024 * 1024 * 1024 }}
+}
+
+extension Data {
+    var bytes : RawPtr {
+        return RawPtr(mutating: (self as NSData).bytes)
+    }
 }

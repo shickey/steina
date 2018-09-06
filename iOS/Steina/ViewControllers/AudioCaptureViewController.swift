@@ -334,11 +334,14 @@ class AudioCaptureViewController: UIViewController, AudioViewDelegate {
         let cyndiUrl = Bundle.main.url(forResource: "cyndi", withExtension: "wav")!
         
         cyndiBuffer = try! Data(contentsOf: cyndiUrl) // @TODO: Replace this with a call to read in the wave file properly
-        audioRenderInfo = AudioRenderInfo(buffer: cyndiBuffer, playhead: 0)
         
         audioView.buffer = cyndiBuffer
         
         initAudioSystem()
+        
+        playSound(cyndiBuffer)
+        
+//        copySamples(cyndiBuffer, SampleRange(10000, 40000))
     }
     
     func audioViewDidSelectSampleRange(audioView: AudioView, sampleRange: SampleRange) {
