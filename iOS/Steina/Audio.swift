@@ -8,9 +8,56 @@
 
 import Foundation
 import AudioUnit
+import QuartzCore
+
+typealias PlayingSoundId = UUID
 
 var audioUnit : AudioComponentInstance! = nil
 var audioRenderBuffer = AudioRenderBuffer()
+var playingSounds : [PlayingSoundId : PlayingSound] = [:]
+var soundsToStop : [PlayingSoundId] = []
+
+class Sound {
+    let samples : Data
+    let bytesPerSample : Int
+    
+    init(samples newSamples: Data, bytesPerSample newBytesPerSample: Int) {
+        samples = newSamples
+        bytesPerSample = newBytesPerSample
+    }
+    
+    var length : Int {
+        return samples.count / bytesPerSample
+    }
+}
+
+struct SampleRange {
+    var start : Int
+    var end : Int
+    
+    var size : Int {
+        return end - start
+    }
+    
+    init(_ newStart: Int, _ newEnd: Int) {
+        start = newStart
+        end = newEnd
+    }
+}
+
+class PlayingSound {
+    let sound : Sound
+    let range : SampleRange
+    let shouldLoop : Bool
+    var playhead : Int
+    
+    init(sound newSound: Sound, range newRange: SampleRange, shouldLoop newShouldLoop: Bool) {
+        sound = newSound
+        range = newRange
+        shouldLoop = newShouldLoop
+        playhead = newRange.start
+    }
+}
 
 class AudioRenderBuffer {
     var data : Data = Data(count: 48000 * MemoryLayout<Int16>.size) // init(count:) zeroes the bytes
@@ -19,6 +66,7 @@ class AudioRenderBuffer {
     var length : Int {
         return data.count / 2 // @NOTE: Assumes Int16 samples
     }
+    var callback : (([PlayingSoundId : Int]) -> ())? = nil
 }
 
 var firstTime = true
@@ -30,6 +78,11 @@ func renderAudio(_ inRefCon: UnsafeMutableRawPointer,
                  _ inNumberFrames: UInt32,
                  _ ioData: UnsafeMutablePointer<AudioBufferList>?) -> OSStatus {
     
+    for idToStop in soundsToStop {
+        playingSounds.removeValue(forKey: idToStop)
+    }
+    soundsToStop.removeAll()
+    
     let numSamplesToRender = Int(inNumberFrames)
     
     let renderBuffer = inRefCon.bindMemory(to: AudioRenderBuffer.self, capacity: 1).pointee
@@ -40,30 +93,54 @@ func renderAudio(_ inRefCon: UnsafeMutableRawPointer,
     let outputL = outputBuffers[0].mData!.bindMemory(to: Int16.self, capacity: numSamplesToRender)
     let outputR = outputBuffers[1].mData!.bindMemory(to: Int16.self, capacity: numSamplesToRender)
     
-    // Render playing sounds into the write area of the buffer
-    for sound in playingSounds {
-        let soundSamples = sound.samples.bytes.bindMemory(to: Int16.self, capacity: sound.length)
-        if sound.playhead < sound.length - numSamplesToRender {
-            for i in 0..<numSamplesToRender {
-                renderSamples[(renderBuffer.writeCursor + i) % renderBuffer.length] = soundSamples[sound.playhead + i]
-            }
-        }
-        sound.playhead += numSamplesToRender
-    }
-    renderBuffer.writeCursor = (renderBuffer.writeCursor + numSamplesToRender) % renderBuffer.length 
-    
-    // If it's the first time, do it again to give us some wiggle room
-    if firstTime {
-        for sound in playingSounds {
-            let soundSamples = sound.samples.bytes.bindMemory(to: Int16.self, capacity: sound.length)
-            if sound.playhead < sound.length - numSamplesToRender {
-                for i in 0..<numSamplesToRender {
-                    renderSamples[(renderBuffer.writeCursor + i) % renderBuffer.length] = soundSamples[sound.playhead + i]
-                }
-            }
+    // If there are no sounds, render silence
+    if playingSounds.count == 0 {
+        for i in 0..<numSamplesToRender {
+            renderSamples[(renderBuffer.writeCursor + i) % renderBuffer.length] = 0
         }
         renderBuffer.writeCursor = (renderBuffer.writeCursor + numSamplesToRender) % renderBuffer.length
-        firstTime = false
+    }
+    else {
+        // Render playing sounds into the write area of the buffer
+        for (_, playingSound) in playingSounds {
+            let sound = playingSound.sound
+            let soundSamples = sound.samples.bytes.bindMemory(to: Int16.self, capacity: sound.length)
+            if playingSound.playhead < playingSound.range.end - numSamplesToRender {
+                for i in 0..<numSamplesToRender {
+                    renderSamples[(renderBuffer.writeCursor + i) % renderBuffer.length] = soundSamples[playingSound.playhead + i]
+                }
+                playingSound.playhead += numSamplesToRender
+            }
+            else if playingSound.shouldLoop {
+                playingSound.playhead = playingSound.range.start
+            }
+            else {
+                // @TODO: Remove from playing sounds
+            }
+        }
+        renderBuffer.writeCursor = (renderBuffer.writeCursor + numSamplesToRender) % renderBuffer.length 
+        
+        // If it's the first time, do it again to give us some wiggle room
+        if firstTime {
+            for (_, playingSound) in playingSounds {
+                let sound = playingSound.sound
+                let soundSamples = sound.samples.bytes.bindMemory(to: Int16.self, capacity: sound.length)
+                if playingSound.playhead < playingSound.range.end - numSamplesToRender {
+                    for i in 0..<numSamplesToRender {
+                        renderSamples[(renderBuffer.writeCursor + i) % renderBuffer.length] = soundSamples[playingSound.playhead + i]
+                    }
+                    playingSound.playhead += numSamplesToRender
+                }
+                else if playingSound.shouldLoop {
+                    playingSound.playhead = playingSound.range.start
+                }
+                else {
+                    // @TODO: Remove from playing sounds
+                }
+            }
+            renderBuffer.writeCursor = (renderBuffer.writeCursor + numSamplesToRender) % renderBuffer.length
+            firstTime = false
+        }
     }
     
     // Copy samples to the output hardware    
@@ -74,36 +151,30 @@ func renderAudio(_ inRefCon: UnsafeMutableRawPointer,
     }
     renderBuffer.playCursor = (renderBuffer.playCursor + numSamplesToRender) % renderBuffer.length
     
+    if let callback = renderBuffer.callback {
+        var updatedPlayheads : [PlayingSoundId : Int] = [:]
+        for (soundId, sound) in playingSounds {
+            updatedPlayheads[soundId] = sound.playhead
+        }
+        DispatchQueue.main.async {
+            callback(updatedPlayheads)
+        }
+    }
+    
     return noErr
 }
 
-func copySamples(_ buffer: Data, _ range: SampleRange) {
-    
-    audioRenderBuffer.data.withUnsafeMutableBytes { (ptr: UnsafeMutablePointer<Int16>) in
-        let nsBuffer = (buffer as NSData).bytes.bindMemory(to: Int16.self, capacity: range.size)
-        for i in 0..<range.size {
-            ptr[i] = nsBuffer[range.start + i]
-        }
-    }
+func playSound(_ sound: Sound, _ range: SampleRange, looped: Bool) -> PlayingSoundId {
+    let playingSound = PlayingSound(sound: sound, range: range, shouldLoop: true)
+    let soundId = UUID()
+    playingSounds[soundId] = playingSound
+    return soundId
 }
 
-class PlayingSound {
-    let samples : Data
-    var length : Int {
-        return samples.count / 2 // @NOTE: Assumes Int16 samples
-    }
-    var playhead : Int = 0
-    
-    init(samples newSamples: Data) {
-        samples = newSamples
-    }
-}
-
-var playingSounds : [PlayingSound] = []
-
-func playSound(_ sound: Data) {
-    let playingSound = PlayingSound(samples: sound)
-    playingSounds.append(playingSound)
+func stopSound(_ playingSoundId : PlayingSoundId) {
+    // The sounds to stop get removed at the beginning
+    // of the next audio render loop
+    soundsToStop.append(playingSoundId)
 }
 
 func initAudioSystem() {

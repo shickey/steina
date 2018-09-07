@@ -21,6 +21,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             let project = untypedProject as! Project
             loadProjectThumbnail(project)
         }
+        
+        // Init audio
+        initAudioSystem()
+        
         return true
     }
 

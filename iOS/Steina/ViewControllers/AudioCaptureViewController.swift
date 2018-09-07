@@ -13,25 +13,12 @@ protocol AudioViewDelegate {
     func audioViewDidDeselectSampleRange(audioView: AudioView)
 }
 
-struct SampleRange {
-    var start : Int
-    var end : Int
-    
-    var size : Int {
-        return end - start
-    }
-    
-    init(_ newStart: Int, _ newEnd: Int) {
-        start = newStart
-        end = newEnd
-    }
-}
-
 class AudioView : UIView {
     var delegate : AudioViewDelegate? = nil
-    var buffer : Data! {
+    
+    var sound : Sound! {
         didSet {
-            sampleWindow = SampleRange(0, totalSamples)
+            sampleWindow = SampleRange(0, sound.length)
         }
     }
     
@@ -52,10 +39,6 @@ class AudioView : UIView {
     }
     
     var longPressRecognizer : UILongPressGestureRecognizer! = nil
-    
-    var totalSamples : Int {
-        return Int(buffer.count) / 2
-    }
     
     var samplesPerPixel : Int {
         return Int((CGFloat(sampleWindow.size) / bounds.size.width))
@@ -110,7 +93,7 @@ class AudioView : UIView {
         let pressedSample = sampleForXPosition(location.x)!
         
         if recognizer.state == .began {
-            var selectedSampleRange = SampleRange(0, totalSamples)
+            var selectedSampleRange = SampleRange(0, sound.length)
             for marker in markers {
                 // We can take advantage of markers being in sorted order here
                 if marker < pressedSample {
@@ -126,7 +109,7 @@ class AudioView : UIView {
             }
         }
         else if recognizer.state == .changed {
-            print("long press changed")
+            
         }
         else {
             if let d = delegate {
@@ -169,8 +152,8 @@ class AudioView : UIView {
                 firstSample = 0
             }
             var lastSample = firstSample + totalSamplesInWindow
-            if lastSample > totalSamples {
-                lastSample = totalSamples
+            if lastSample > sound.length {
+                lastSample = sound.length
             }
             sampleWindow = SampleRange(firstSample, lastSample)
             setNeedsDisplay()
@@ -206,8 +189,8 @@ class AudioView : UIView {
             let sampleOffsetForTouch = Int(location.x * CGFloat(samplesPerPixel))
             var startSample = max(panStartSample - sampleOffsetForTouch, 0)
             var endSample = startSample + totalSamplesInWindow
-            if endSample > totalSamples {
-                endSample = totalSamples
+            if endSample > sound.length {
+                endSample = sound.length
                 startSample = endSample - totalSamplesInWindow
             }
             sampleWindow = SampleRange(startSample, endSample)
@@ -258,8 +241,8 @@ class AudioView : UIView {
     override func draw(_ rect: CGRect) {
         
         // Draw the waveform
-        let nsData = buffer as NSData
-        let data = nsData.bytes.bindMemory(to: Int16.self, capacity: nsData.length / 2)
+        let nsData = sound.samples as NSData
+        let data = nsData.bytes.bindMemory(to: Int16.self, capacity: sound.length)
         
         let context = UIGraphicsGetCurrentContext()!
         var currentX = CGFloat(0.0)
@@ -324,32 +307,38 @@ class AudioCaptureViewController: UIViewController, AudioViewDelegate {
 
     @IBOutlet weak var audioView: AudioView!
     
-    var cyndiBuffer : Data! = nil
+    var cyndi : Sound! = nil
+    
+    var playingSoundId : PlayingSoundId! = nil
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
         audioView.delegate = self
         
-        let cyndiUrl = Bundle.main.url(forResource: "cyndi", withExtension: "wav")!
+        let cyndiUrl = Bundle.main.url(forResource: "cyndi48000", withExtension: "wav")!
+        let cyndiData = try! Data(contentsOf: cyndiUrl) // @TODO: Replace this with a call to read in the wave file properly
+        cyndi = Sound(samples: cyndiData, bytesPerSample: 2)
         
-        cyndiBuffer = try! Data(contentsOf: cyndiUrl) // @TODO: Replace this with a call to read in the wave file properly
+        audioView.sound = cyndi
         
-        audioView.buffer = cyndiBuffer
-        
-        initAudioSystem()
-        
-        playSound(cyndiBuffer)
-        
-//        copySamples(cyndiBuffer, SampleRange(10000, 40000))
+        audioRenderBuffer.callback = { (updatedPlayheads) in
+            if let _ = self.playingSoundId, let newPlayhead = updatedPlayheads[self.playingSoundId] {
+                self.audioView.currentPlayingSample = newPlayhead
+            }
+            else {
+                self.audioView.currentPlayingSample = nil
+            }
+        }
     }
     
     func audioViewDidSelectSampleRange(audioView: AudioView, sampleRange: SampleRange) {
-
+        playingSoundId = playSound(cyndi, sampleRange, looped: true)
     }
     
     func audioViewDidDeselectSampleRange(audioView: AudioView) {
-
+        stopSound(playingSoundId)
+        playingSoundId = nil
     }
 
 }
