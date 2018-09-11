@@ -322,7 +322,7 @@ class AudioCaptureViewController: UIViewController, AudioViewDelegate {
         
         audioView.sound = cyndi
         
-        audioRenderBuffer.callback = { (updatedPlayheads) in
+        audioRenderContext.callback = { (updatedPlayheads) in
             if let _ = self.playingSoundId, let newPlayhead = updatedPlayheads[self.playingSoundId] {
                 self.audioView.currentPlayingSample = newPlayhead
             }

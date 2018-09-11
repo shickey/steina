@@ -22,8 +22,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             loadProjectThumbnail(project)
         }
         
-        // Init audio
+        // Audio
         initAudioSystem()
+        startAudio()
         
         return true
     }
