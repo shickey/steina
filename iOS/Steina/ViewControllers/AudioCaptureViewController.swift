@@ -19,6 +19,7 @@ class AudioView : UIView {
     var sound : Sound! {
         didSet {
             sampleWindow = SampleRange(0, sound.length)
+            setNeedsDisplay()
         }
     }
     
@@ -311,6 +312,8 @@ class AudioCaptureViewController: UIViewController, AudioViewDelegate {
     
     var playingSoundId : PlayingSoundId! = nil
     
+    var recording = false
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -332,8 +335,25 @@ class AudioCaptureViewController: UIViewController, AudioViewDelegate {
         }
     }
     
+    @IBAction func recordButtonTapped(_ sender: Any) {
+        if !recording {
+            beginRecordingAudio() { (sound) in
+                print("update")
+                self.audioView.sound = sound
+            }
+            recording = true
+        }
+        else {
+            stopRecordingAudio() { (sound) in
+                audioView.sound = sound
+                recording = false
+            }
+        }
+        
+    }
+    
     func audioViewDidSelectSampleRange(audioView: AudioView, sampleRange: SampleRange) {
-        playingSoundId = playSound(cyndi, sampleRange, looped: true)
+        playingSoundId = playSound(audioView.sound, sampleRange, looped: true)
     }
     
     func audioViewDidDeselectSampleRange(audioView: AudioView) {

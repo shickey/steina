@@ -15,6 +15,7 @@ typealias PlayingSoundId = UUID
 
 var audioUnit : AudioComponentInstance! = nil
 var audioRenderContext = AudioRenderContext()
+var audioRecordingContext = AudioRecordingContext()
 var playingSounds : [PlayingSoundId : PlayingSound] = [:]
 
 var soundsToStart : [PlayingSound] = []
@@ -64,6 +65,10 @@ class PlayingSound {
     }
 }
 
+class AudioRecordingContext {
+    var update : ((Sound) -> ())? = nil
+}
+
 class AudioRenderContext {
     var callback : (([PlayingSoundId : Int]) -> ())? = nil
 }
@@ -74,6 +79,31 @@ func inputAudio(_ inRefCon: UnsafeMutableRawPointer,
                  _ inBusNumber: UInt32,
                  _ inNumberFrames: UInt32,
                  _ ioData: UnsafeMutablePointer<AudioBufferList>?) -> OSStatus {
+    
+    let recordingContext = inRefCon.bindMemory(to: AudioRecordingContext.self, capacity: 1).pointee
+    
+    let audioBuffer = AudioBuffer(mNumberChannels: UInt32(1), 
+                                  mDataByteSize: inNumberFrames * UInt32(MemoryLayout<Float>.size), 
+                                  mData: nil)
+    var audioBufferList = AudioBufferList(mNumberBuffers: 1, mBuffers: audioBuffer)
+    
+    // Fetch input samples from the hardware
+    AudioUnitRender(audioUnit, audioUnitRenderActionFlags, inTimeStamp, inBusNumber, inNumberFrames, &audioBufferList)
+    
+    let audioData = audioBufferList.mBuffers.mData!.bindMemory(to: Float.self, capacity: Int(inNumberFrames))
+    
+    for i in 0..<Int(inNumberFrames) {
+        var sample = Int16(audioData[i] * Float(Int16.max))
+        let bufferPtr = UnsafeBufferPointer(start: &sample, count: 1)
+        recordingData.append(bufferPtr)
+    }
+    
+    if let update = recordingContext.update {
+        let sound = Sound(samples: Data(recordingData), bytesPerSample: 2)
+        DispatchQueue.main.async {
+            update(sound)
+        }
+    }
     
     return noErr
 }
@@ -219,8 +249,8 @@ func initAudioSystem() {
     var renderCallbackStruct = AURenderCallbackStruct(inputProc: outputAudio, inputProcRefCon: &audioRenderContext)
     AudioUnitSetProperty(audioUnit, kAudioUnitProperty_SetRenderCallback, kAudioUnitScope_Input, 0, &renderCallbackStruct, UInt32(MemoryLayout<AURenderCallbackStruct>.size))
     
-    var inputCallbackStruct = AURenderCallbackStruct(inputProc: inputAudio, inputProcRefCon: &audioRenderContext)
-    AudioUnitSetProperty(audioUnit, kAudioOutputUnitProperty_SetInputCallback, kAudioUnitScope_Input, 0, &inputCallbackStruct, UInt32(MemoryLayout<AURenderCallbackStruct>.size))
+    var inputCallbackStruct = AURenderCallbackStruct(inputProc: inputAudio, inputProcRefCon: &audioRecordingContext)
+    AudioUnitSetProperty(audioUnit, kAudioOutputUnitProperty_SetInputCallback, kAudioUnitScope_Output, 1, &inputCallbackStruct, UInt32(MemoryLayout<AURenderCallbackStruct>.size))
     
     var enable : UInt32 = 1
     AudioUnitSetProperty(audioUnit, kAudioUnitProperty_ShouldAllocateBuffer, kAudioUnitScope_Output, 1, &enable, UInt32(MemoryLayout<UInt32>.size))
@@ -246,4 +276,19 @@ func restartAudio(outputEnabled: Bool, inputEnabled: Bool) {
     AudioUnitSetProperty(audioUnit, kAudioOutputUnitProperty_EnableIO, kAudioUnitScope_Input, 1, &input, UInt32(MemoryLayout<UInt32>.size))
     
     startAudio()
+}
+
+var recordingData : Data! = nil
+
+func beginRecordingAudio(_ update: @escaping (Sound) -> ()) {
+    recordingData = Data(capacity: 10.megabytes)
+    audioRecordingContext.update = update
+    restartAudio(outputEnabled: false, inputEnabled: true)
+}
+
+func stopRecordingAudio(_ completion: (Sound) -> ()) {
+    restartAudio(outputEnabled: true, inputEnabled: false)
+    let sound = Sound(samples: recordingData, bytesPerSample: 2)
+    recordingData = nil
+    completion(sound)
 }

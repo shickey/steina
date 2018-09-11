@@ -22,6 +22,14 @@
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <color key="backgroundColor" red="0.35202078065806841" green="0.49006814553573702" blue="0.77996761204285714" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                             </view>
+                            <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="OWi-WK-Lgx">
+                                <rect key="frame" x="482" y="639" width="60" height="60"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMinY="YES" flexibleMaxY="YES"/>
+                                <state key="normal" image="record"/>
+                                <connections>
+                                    <action selector="recordButtonTapped:" destination="f1I-tM-KtB" eventType="touchUpInside" id="f4M-Ei-HTb"/>
+                                </connections>
+                            </button>
                         </subviews>
                         <color key="backgroundColor" red="0.22876701499999999" green="0.2421669434" blue="0.29431132250000003" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
                         <viewLayoutGuide key="safeArea" id="oOc-rf-7mJ"/>
