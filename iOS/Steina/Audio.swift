@@ -227,10 +227,10 @@ func initAudioSystem() {
     var inputStreamDescription = AudioStreamBasicDescription(mSampleRate: 48000, 
                                                              mFormatID: kAudioFormatLinearPCM, 
                                                              mFormatFlags: kAudioFormatFlagsNativeFloatPacked, 
-                                                             mBytesPerPacket: 8, 
+                                                             mBytesPerPacket: 4, 
                                                              mFramesPerPacket: 1, 
-                                                             mBytesPerFrame: 8, 
-                                                             mChannelsPerFrame: 2, 
+                                                             mBytesPerFrame: 4, 
+                                                             mChannelsPerFrame: 1, 
                                                              mBitsPerChannel: 32,
                                                              mReserved: 0)
     AudioUnitSetProperty(audioUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Output, 1, &inputStreamDescription, UInt32(MemoryLayout<AudioStreamBasicDescription>.size))
