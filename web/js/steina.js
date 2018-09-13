@@ -70,16 +70,18 @@
             window.workspace = workspace;
 
             // Get XML toolbox definition
-            var toolbox = document.getElementById('toolbox');
-            window.toolbox = toolbox;
+            var videoToolbox = document.getElementById('video-toolbox');
+            var audioToolbox = document.getElementById('audio-toolbox');
+            window.videoToolbox = videoToolbox;
+            window.audioToolbox = audioToolbox;
 
             vm.addListener('EXTENSION_ADDED', (blocksInfo) => {
                 // Generate the proper blocks and refresh the toolbox
                 Blockly.defineBlocksWithJsonArray(blocksInfo.map(blockInfo => blockInfo.json));
-                workspace.updateToolbox(toolbox);
+                workspace.updateToolbox(videoToolbox);
             });
 
-            vm.extensionManager.loadExtensionURL('video');
+            vm.extensionManager.loadExtensionURL('steina');
 
             // // Disable long-press
             Blockly.longStart_ = function() {};
@@ -111,7 +113,19 @@
                 const dom = Blockly.Xml.textToDom(data.xml);
                 Blockly.Xml.clearWorkspaceAndLoadFromXml(dom, workspace);
                 workspace.addChangeListener(vm.blockListener);
-            })
+            });
+
+            vm.on('targetsUpdate', (data) => {
+              debugger;
+              var editingTargetId = data.editingTarget;
+              var target = vm.runtime.getTargetById(editingTargetId);
+              if (target.hasOwnProperty('fps')) { // Kind of a janky way of determining video vs audio target
+                workspace.updateToolbox(videoToolbox);
+              }
+              else {
+                workspace.updateToolbox(audioToolbox);
+              }
+            });
 
             // Extension event handlers
             bindExtensionHandler();
@@ -145,15 +159,28 @@
                 return vm.getVideoTargets().map(t => t.toJSON());
             }
 
+            function createAudioTarget(id, markers) {
+              vm.createAudioTarget(id, markers);
+            }
+
+            function getAudioTargets() {
+                return vm.getAudioTargets().map(t => t.toJSON());
+            }
+
             function getProjectJson() {
               var json = {
                 renderingOrder: [],
-                videoTargets: {}
+                videoTargets: {},
+                audioTargets: {}
               }
-              var targets = vm.getVideoTargets()
-              targets.forEach(t => {
+              var videoTargets = vm.getVideoTargets()
+              videoTargets.forEach(t => {
                 json.renderingOrder.push(t.id);
                 json.videoTargets[t.id] = t
+              });
+              var audioTargets = vm.getAudioTargets()
+              audioTargets.forEach(t => {
+                json.audioTargets[t.id] = t
               });
               return JSON.stringify(json);
             }
@@ -165,6 +192,10 @@
                 vm.inflateVideoTarget(targetId, target);
               }
               vm.runtime.videoState.order = project.renderingOrder;
+              for (targetId in project.audioTargets) {
+                var target = project.audioTargets[targetId];
+                vm.inflateAudioTarget(targetId, target);
+              }
             }
 
             function beginDraggingVideo(id, x, y) {
@@ -194,6 +225,8 @@
                 tick,
                 createVideoTarget,
                 getVideoTargets,
+                createAudioTarget,
+                getAudioTargets,
                 getProjectJson,
                 loadProject,
                 beginDraggingVideo,

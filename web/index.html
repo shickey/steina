@@ -16,8 +16,8 @@
   <link rel="stylesheet" type="text/css" href="./css/steina.css">
 </head>
 <body>
-  <!-- Toolbox -->
-  <xml id="toolbox">
+  <!-- Video Toolbox -->
+  <xml id="video-toolbox">
 
     <category name="Events" colour="#FFD500" secondaryColour="#CC9900">
       <block type="event_whenflagclicked"></block>
@@ -25,9 +25,9 @@
 
     <category name="Video" colour="#FF6680" secondaryColour="#FF4D6A">
 
-      <block type="video_playEntireVideoUntilDone"></block>
+      <block type="steina_playEntireVideoUntilDone"></block>
 
-      <block type="video_setPlayRate">
+      <block type="steina_setPlayRate">
         <value name="RATE">
           <shadow type="math_number">
             <field name="NUM">100</field>
@@ -35,11 +35,11 @@
         </value>
       </block>
 
-      <block type="video_startPlaying"></block>
+      <block type="steina_startPlaying"></block>
 
-      <block type="video_stopPlaying"></block>
+      <block type="steina_stopPlaying"></block>
 
-      <block type="video_goToFrame">
+      <block type="steina_goToFrame">
         <value name="FRAME">
           <shadow type="math_number">
             <field name="NUM">1</field>
@@ -47,7 +47,7 @@
         </value>
       </block>
 
-      <block type="video_playNFrames">
+      <block type="steina_playNFrames">
         <value name="FRAMES">
           <shadow type="math_number">
             <field name="NUM">30</field>
@@ -55,17 +55,17 @@
         </value>
       </block>
 
-      <block type="video_playForwardUntilDone"></block>
+      <block type="steina_playForwardUntilDone"></block>
 
-      <block type="video_playBackwardUntilDone"></block>
+      <block type="steina_playBackwardUntilDone"></block>
 
-      <block type="video_nextFrame"></block>
+      <block type="steina_nextFrame"></block>
 
-      <block type="video_previousFrame"></block>
+      <block type="steina_previousFrame"></block>
 
-      <block type="video_changeEffectBy">
+      <block type="steina_changeEffectBy">
         <value name="EFFECT">
-          <shadow type="video_menu_effects" />
+          <shadow type="steina_menu_effects" />
         </value>
         <value name="CHANGE">
           <shadow type="math_number">
@@ -74,9 +74,9 @@
         </value>
       </block>
 
-      <block type="video_setEffectTo">
+      <block type="steina_setEffectTo">
         <value name="EFFECT">
-          <shadow type="video_menu_effects" />
+          <shadow type="steina_menu_effects" />
         </value>
         <value name="VALUE">
           <shadow type="math_number">
@@ -85,19 +85,19 @@
         </value>
       </block>
 
-      <block type="video_clearVideoEffects"></block>
+      <block type="steina_clearVideoEffects"></block>
 
-      <block type="video_whenPlayedToEnd"></block>
+      <block type="steina_whenPlayedToEnd"></block>
 
-      <block type="video_whenPlayedToBeginning"></block>
+      <block type="steina_whenPlayedToBeginning"></block>
 
-      <block type="video_whenTapped"></block>
+      <block type="steina_whenTapped"></block>
 
-      <block type="video_getCurrentFrame"></block>
+      <block type="steina_getCurrentFrame"></block>
 
-      <block type="video_getTotalFrames"></block>
+      <block type="steina_getTotalFrames"></block>
 
-      <block type="video_getPlayRate"></block>
+      <block type="steina_getPlayRate"></block>
 
     </category>
 
@@ -217,6 +217,187 @@
                 </value>
             </block>
       <block id="looks_size" type="looks_size"></block>
+    </category>
+
+    <category name="Control" colour="#FFAB19" secondaryColour="#CF8B17">
+
+      <block type="control_wait">
+        <value name="DURATION">
+          <shadow type="math_positive_number">
+            <field name="NUM">1</field>
+          </shadow>
+        </value>
+      </block>
+
+      <block type="control_repeat">
+        <value name="TIMES">
+          <shadow type="math_whole_number">
+            <field name="NUM">4</field>
+          </shadow>
+        </value>
+      </block>
+
+      <block type="control_forever"></block>
+
+      <block type="control_if"></block>
+      <block type="control_if_else"></block>
+
+    </category>
+
+    <category name="Operators" colour="#40BF4A" secondaryColour="#389438">
+      <block type="operator_add">
+        <value name="NUM1">
+          <shadow type="math_number">
+            <field name="NUM"></field>
+          </shadow>
+        </value>
+        <value name="NUM2">
+          <shadow type="math_number">
+            <field name="NUM"></field>
+          </shadow>
+        </value>
+      </block>
+
+      <block type="operator_subtract">
+        <value name="NUM1">
+          <shadow type="math_number">
+            <field name="NUM"></field>
+          </shadow>
+        </value>
+        <value name="NUM2">
+          <shadow type="math_number">
+            <field name="NUM"></field>
+          </shadow>
+        </value>
+      </block>
+
+      <block type="operator_multiply">
+        <value name="NUM1">
+          <shadow type="math_number">
+            <field name="NUM"></field>
+          </shadow>
+        </value>
+        <value name="NUM2">
+          <shadow type="math_number">
+            <field name="NUM"></field>
+          </shadow>
+        </value>
+      </block>
+
+      <block type="operator_divide">
+        <value name="NUM1">
+          <shadow type="math_number">
+            <field name="NUM"></field>
+          </shadow>
+        </value>
+        <value name="NUM2">
+          <shadow type="math_number">
+            <field name="NUM"></field>
+          </shadow>
+        </value>
+      </block>
+
+      <block type="operator_random">
+        <value name="FROM">
+          <shadow type="math_number">
+            <field name="NUM">1</field>
+          </shadow>
+        </value>
+        <value name="TO">
+          <shadow type="math_number">
+            <field name="NUM">100</field>
+          </shadow>
+        </value>
+      </block>
+
+      <block type="operator_gt">
+        <value name="OPERAND1">
+          <shadow type="text">
+            <field name="TEXT"/>
+          </shadow>
+        </value>
+        <value name="OPERAND2">
+          <shadow type="text">
+            <field name="TEXT">100</field>
+          </shadow>
+        </value>
+      </block>
+      <block type="operator_lt">
+        <value name="OPERAND1">
+          <shadow type="text">
+            <field name="TEXT"/>
+          </shadow>
+        </value>
+        <value name="OPERAND2">
+          <shadow type="text">
+            <field name="TEXT">100</field>
+          </shadow>
+        </value>
+      </block>
+      <block type="operator_equals">
+        <value name="OPERAND1">
+          <shadow type="text">
+            <field name="TEXT"/>
+          </shadow>
+        </value>
+        <value name="OPERAND2">
+          <shadow type="text">
+            <field name="TEXT">100</field>
+          </shadow>
+        </value>
+      </block>
+
+      <block type="operator_and"></block>
+      <block type="operator_or"></block>
+      <block type="operator_not"></block>
+
+      <block type="operator_mathop">
+        <value name="NUM">
+          <shadow type="math_number">
+            <field name="NUM"/>
+          </shadow>
+        </value>
+      </block>
+    </category>
+  </xml>
+
+  <!-- Audio Toolbox -->
+  <xml id="audio-toolbox">
+
+    <category name="Events" colour="#FFD500" secondaryColour="#CC9900">
+      <block type="event_whenflagclicked"></block>
+    </category>
+
+    <category name="Audio" colour="#FF6680" secondaryColour="#FF4D6A">
+      <block type="steina_startSound"></block>
+      <block type="steina_playSound"></block>
+      <block type="steina_playSoundFromAToB">
+        <value name="MARKER_A">
+          <shadow type="math_number">
+            <field name="NUM">0</field>
+          </shadow>
+        </value>
+        <value name="MARKER_B">
+          <shadow type="math_number">
+            <field name="NUM">100</field>
+          </shadow>
+        </value>
+      </block>
+      <block type="steina_setVolumeTo">
+        <value name="VALUE">
+          <shadow type="math_number">
+            <field name="NUM">100</field>
+          </shadow>
+        </value>
+      </block>
+      <block type="steina_changeVolumeBy">
+        <value name="VALUE">
+          <shadow type="math_number">
+            <field name="NUM">10</field>
+          </shadow>
+        </value>
+      </block>
+      <block type="steina_getVolume"></block>
     </category>
 
     <category name="Control" colour="#FFAB19" secondaryColour="#CF8B17">

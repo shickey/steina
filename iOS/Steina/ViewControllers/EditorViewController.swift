@@ -11,7 +11,11 @@ import WebKit
 import Dispatch
 import simd
 
-class EditorViewController: UIViewController, WKScriptMessageHandler, MetalViewDelegate, ClipsCollectionViewControllerDelegate, CaptureViewControllerDelegate {
+class EditorViewController: UIViewController,
+                            WKScriptMessageHandler, 
+                            MetalViewDelegate,
+                            ClipsCollectionViewControllerDelegate, 
+                            CaptureViewControllerDelegate {
     
     var project : Project! = nil
     
@@ -31,6 +35,7 @@ class EditorViewController: UIViewController, WKScriptMessageHandler, MetalViewD
     @IBOutlet weak var greenFlagButton: UIButton!
     @IBOutlet weak var stopButton: UIButton!
     @IBOutlet weak var cameraButton: UIButton!
+    @IBOutlet weak var micButton: UIButton!
     @IBOutlet weak var toolbarView: UIView!
     var webView: WKWebView! = nil
     var clipsCollectionVC : ClipsCollectionViewController? = nil
@@ -187,13 +192,22 @@ class EditorViewController: UIViewController, WKScriptMessageHandler, MetalViewD
             clipsVC.project = project
             self.clipsCollectionVC = clipsVC
         }
-        if let captureVC = segue.destination as? CaptureViewController {
+        else if let captureVC = segue.destination as? CaptureViewController {
             captureVC.delegate = self
             captureVC.project = project
+        }
+        else if let audioCaptureVC = segue.destination as? AudioCaptureViewController {
+            audioCaptureVC.project = project
         }
     }
     
     @objc func tick(_ sender: CADisplayLink) {
+        
+//        var timebaseInfo : mach_timebase_info_data_t = mach_timebase_info_data_t(numer: 1, denom: 1)
+//        mach_timebase_info(&timebaseInfo)
+//        let clockFreq = (Double(timebaseInfo.denom) / Double(timebaseInfo.numer)) * 1000000000.0
+//        print("Video: \(sender.timestamp * clockFreq) \(sender.targetTimestamp * clockFreq)")
+        
         previousRenderedIds = renderedIds
         renderedIds = []
         

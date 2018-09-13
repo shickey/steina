@@ -16,14 +16,18 @@ protocol AudioViewDelegate {
 class AudioView : UIView {
     var delegate : AudioViewDelegate? = nil
     
-    var sound : Sound! {
+    var sound : Sound? {
         didSet {
-            sampleWindow = SampleRange(0, sound.length)
+            if let s = sound {
+                sampleWindow = SampleRange(0, s.length)
+                isUserInteractionEnabled = true
+            }
+            else {
+                isUserInteractionEnabled = false
+            }
             setNeedsDisplay()
         }
     }
-    
-    var markers = [144336, 250000, 500000, 1000000, 1350000] // In samples
     
     var sampleWindow : SampleRange = SampleRange(0, 0)
     
@@ -64,6 +68,8 @@ class AudioView : UIView {
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
         
+        isUserInteractionEnabled = false
+        
         // Set up gesture recognition
         let doubleTapRecognizer = UITapGestureRecognizer(target: self, action: #selector(doubleTapRecognized))
         doubleTapRecognizer.numberOfTapsRequired = 2
@@ -84,8 +90,8 @@ class AudioView : UIView {
             return
         }
         let samplePositionForMarker = sampleForXPosition(location.x)!
-        markers.append(samplePositionForMarker);
-        markers.sort()
+        sound!.markers.append(samplePositionForMarker);
+        sound!.markers.sort()
         self.setNeedsDisplay()
     }
     
@@ -94,8 +100,8 @@ class AudioView : UIView {
         let pressedSample = sampleForXPosition(location.x)!
         
         if recognizer.state == .began {
-            var selectedSampleRange = SampleRange(0, sound.length)
-            for marker in markers {
+            var selectedSampleRange = SampleRange(0, sound!.length)
+            for marker in sound!.markers {
                 // We can take advantage of markers being in sorted order here
                 if marker < pressedSample {
                     selectedSampleRange.start = marker
@@ -153,8 +159,8 @@ class AudioView : UIView {
                 firstSample = 0
             }
             var lastSample = firstSample + totalSamplesInWindow
-            if lastSample > sound.length {
-                lastSample = sound.length
+            if lastSample > sound!.length {
+                lastSample = sound!.length
             }
             sampleWindow = SampleRange(firstSample, lastSample)
             setNeedsDisplay()
@@ -182,7 +188,7 @@ class AudioView : UIView {
         let location = touches.first!.location(in: self)
         if dragging {
             let samples = sampleForXPosition(location.x)!
-            markers[draggingIdx] = samples // @TODO: Should we prevent dragging markers over each other?
+            sound!.markers[draggingIdx] = samples // @TODO: Should we prevent dragging markers over each other?
             self.setNeedsDisplay()
         }
         else if panning {
@@ -190,8 +196,8 @@ class AudioView : UIView {
             let sampleOffsetForTouch = Int(location.x * CGFloat(samplesPerPixel))
             var startSample = max(panStartSample - sampleOffsetForTouch, 0)
             var endSample = startSample + totalSamplesInWindow
-            if endSample > sound.length {
-                endSample = sound.length
+            if endSample > sound!.length {
+                endSample = sound!.length
                 startSample = endSample - totalSamplesInWindow
             }
             sampleWindow = SampleRange(startSample, endSample)
@@ -209,7 +215,7 @@ class AudioView : UIView {
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
         dragging = false
         panning = false
-        markers.sort()
+        sound!.markers.sort()
         for recognizer in gestureRecognizers! {
             recognizer.isEnabled = true
         }
@@ -218,7 +224,7 @@ class AudioView : UIView {
     override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
         dragging = false
         panning = false
-        markers.sort()
+        sound!.markers.sort()
         for recognizer in gestureRecognizers! {
             recognizer.isEnabled = true
         }
@@ -228,7 +234,7 @@ class AudioView : UIView {
         let x = location.x
         let markerDistanceThreshold = CGFloat(10.0) // in pixels
         
-        for (idx, marker) in markers.enumerated() {
+        for (idx, marker) in sound!.markers.enumerated() {
             if let markerX = xPositionForSample(marker) {
                 if abs(markerX - x) < markerDistanceThreshold {
                     return (idx, marker)
@@ -241,9 +247,11 @@ class AudioView : UIView {
     
     override func draw(_ rect: CGRect) {
         
+        if (sound == nil) { return }
+        
         // Draw the waveform
-        let nsData = sound.samples as NSData
-        let data = nsData.bytes.bindMemory(to: Int16.self, capacity: sound.length)
+        let nsData = sound!.samples as NSData
+        let data = nsData.bytes.bindMemory(to: Int16.self, capacity: sound!.length)
         
         let context = UIGraphicsGetCurrentContext()!
         var currentX = CGFloat(0.0)
@@ -280,7 +288,7 @@ class AudioView : UIView {
         context.setStrokeColor(UIColor.red.cgColor)
         context.setLineWidth(2.0)
         context.setLineDash(phase: 0, lengths: [10.0, 3.0])
-        for marker in markers {
+        for marker in sound!.markers {
             if let markerX = xPositionForSample(marker) {
                 context.beginPath()
                 context.move(to: CGPoint(x: CGFloat(markerX), y: 0.0))
@@ -303,27 +311,19 @@ class AudioView : UIView {
 }
 
 
-
 class AudioCaptureViewController: UIViewController, AudioViewDelegate {
 
-    @IBOutlet weak var audioView: AudioView!
-    
-    var cyndi : Sound! = nil
+    var project : Project! = nil
     
     var playingSoundId : PlayingSoundId! = nil
-    
     var recording = false
+    
+    @IBOutlet weak var audioView: AudioView!
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
         audioView.delegate = self
-        
-        let cyndiUrl = Bundle.main.url(forResource: "cyndi48000", withExtension: "wav")!
-        let cyndiData = try! Data(contentsOf: cyndiUrl) // @TODO: Replace this with a call to read in the wave file properly
-        cyndi = Sound(samples: cyndiData, bytesPerSample: 2)
-        
-        audioView.sound = cyndi
         
         audioRenderContext.callback = { (updatedPlayheads) in
             if let _ = self.playingSoundId, let newPlayhead = updatedPlayheads[self.playingSoundId] {
@@ -335,10 +335,14 @@ class AudioCaptureViewController: UIViewController, AudioViewDelegate {
         }
     }
     
+    @IBAction func closeButtonTapped(_ sender: Any) {
+        self.presentingViewController!.dismiss(animated: true, completion: nil)
+    }
+    
     @IBAction func recordButtonTapped(_ sender: Any) {
         if !recording {
+            audioView.isUserInteractionEnabled = false
             beginRecordingAudio() { (sound) in
-                print("update")
                 self.audioView.sound = sound
             }
             recording = true
@@ -347,13 +351,14 @@ class AudioCaptureViewController: UIViewController, AudioViewDelegate {
             stopRecordingAudio() { (sound) in
                 audioView.sound = sound
                 recording = false
+                audioView.isUserInteractionEnabled = true
             }
         }
         
     }
     
     func audioViewDidSelectSampleRange(audioView: AudioView, sampleRange: SampleRange) {
-        playingSoundId = playSound(audioView.sound, sampleRange, looped: true)
+        playingSoundId = playSound(audioView.sound!, sampleRange, looped: true)
     }
     
     func audioViewDidDeselectSampleRange(audioView: AudioView) {

@@ -24,6 +24,7 @@ var soundsToStop : [PlayingSoundId] = []
 class Sound {
     let samples : Data
     let bytesPerSample : Int
+    var markers : [Int] = []
     
     init(samples newSamples: Data, bytesPerSample newBytesPerSample: Int) {
         samples = newSamples
@@ -115,6 +116,13 @@ func outputAudio(_ inRefCon: UnsafeMutableRawPointer,
                  _ inNumberFrames: UInt32,
                  _ ioData: UnsafeMutablePointer<AudioBufferList>?) -> OSStatus {
     
+//    print("Audio: \(inTimeStamp.pointee)\n\n")
+    var timebaseInfo : mach_timebase_info_data_t = mach_timebase_info_data_t(numer: 1, denom: 1)
+    mach_timebase_info(&timebaseInfo)
+    let clockFreq = (Double(timebaseInfo.denom) / Double(timebaseInfo.numer)) * 1000000000.0
+    print("Audio: \((Double(CACurrentMediaTime()) - Double(inTimeStamp.pointee.mHostTime) / clockFreq))")
+    print("samples: \(inNumberFrames)")
+    
     // @TODO: These addition and removal loops probably aren't threadsafe
     for idToStop in soundsToStop {
         playingSounds.removeValue(forKey: idToStop)
@@ -199,6 +207,10 @@ func initAudioSystem() {
     do {
         try audioSession.setCategory(AVAudioSessionCategoryPlayAndRecord)
         try audioSession.setPreferredSampleRate(48000)
+        try audioSession.setPreferredIOBufferDuration(0.005) // Requesting a ~5ms audio render loop
+                                                             // In reality, we get a ~6.5ms loop which gives us (in the worst case)
+                                                             // about 20ms in each display link callback to fill the audio
+                                                             // buffer far enough ahead to prevent audio discontinuities.
         try audioSession.setActive(true)
     }
     catch {

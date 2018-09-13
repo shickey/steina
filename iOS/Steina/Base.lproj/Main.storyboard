@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="14113" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="f1I-tM-KtB">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="14113" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="U1t-SG-Nkw">
     <device id="ipad9_7" orientation="portrait">
         <adaptation id="fullscreen"/>
     </device>
@@ -24,10 +24,18 @@
                             </view>
                             <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="OWi-WK-Lgx">
                                 <rect key="frame" x="482" y="639" width="60" height="60"/>
-                                <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMinY="YES" flexibleMaxY="YES"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxX="YES" flexibleMinY="YES"/>
                                 <state key="normal" image="record"/>
                                 <connections>
                                     <action selector="recordButtonTapped:" destination="f1I-tM-KtB" eventType="touchUpInside" id="f4M-Ei-HTb"/>
+                                </connections>
+                            </button>
+                            <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="bg4-3S-PJd">
+                                <rect key="frame" x="20" y="20" width="50" height="50"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                <state key="normal" image="close"/>
+                                <connections>
+                                    <action selector="closeButtonTapped:" destination="f1I-tM-KtB" eventType="touchUpInside" id="3lf-lH-n7T"/>
                                 </connections>
                             </button>
                         </subviews>
@@ -41,7 +49,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="NyX-3X-hJg" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-1046.09375" y="-435.3515625"/>
+            <point key="canvasLocation" x="833" y="588"/>
         </scene>
         <!--Project Collection View Controller-->
         <scene sceneID="5w1-j2-SeB">
@@ -128,7 +136,7 @@
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxY="YES"/>
                                 <subviews>
                                     <containerView opaque="NO" contentMode="scaleToFill" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="jDq-cp-7oN">
-                                        <rect key="frame" x="103" y="0.0" width="424" height="100"/>
+                                        <rect key="frame" x="103" y="0.0" width="665" height="100"/>
                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxY="YES"/>
                                         <connections>
                                             <segue destination="8zF-0t-HXv" kind="embed" id="Btv-vD-wek"/>
@@ -143,33 +151,6 @@
                                             <action selector="backButtonTapped:" destination="BYZ-38-t0r" eventType="touchUpInside" id="qgg-fo-PcP"/>
                                         </connections>
                                     </button>
-                                    <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="h9q-Rr-5Ua">
-                                        <rect key="frame" x="685" y="12" width="75" height="75"/>
-                                        <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMinY="YES" flexibleMaxY="YES"/>
-                                        <inset key="imageEdgeInsets" minX="10" minY="10" maxX="10" maxY="10"/>
-                                        <state key="normal" image="green-flag"/>
-                                        <connections>
-                                            <action selector="greenFlagButtonTapped:" destination="BYZ-38-t0r" eventType="touchUpInside" id="3zK-j4-oLd"/>
-                                        </connections>
-                                    </button>
-                                    <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="xH6-e8-XCb">
-                                        <rect key="frame" x="610" y="12" width="75" height="75"/>
-                                        <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMinY="YES" flexibleMaxY="YES"/>
-                                        <inset key="imageEdgeInsets" minX="10" minY="10" maxX="10" maxY="10"/>
-                                        <state key="normal" image="stop"/>
-                                        <connections>
-                                            <action selector="stopButtonTapped:" destination="BYZ-38-t0r" eventType="touchUpInside" id="hzd-OV-gy9"/>
-                                        </connections>
-                                    </button>
-                                    <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="VHX-Fn-Ovc">
-                                        <rect key="frame" x="535" y="12" width="75" height="75"/>
-                                        <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMinY="YES" flexibleMaxY="YES"/>
-                                        <inset key="imageEdgeInsets" minX="10" minY="10" maxX="10" maxY="10"/>
-                                        <state key="normal" image="video-cam"/>
-                                        <connections>
-                                            <segue destination="vvR-aU-9rN" kind="show" id="P4Z-w3-g5O"/>
-                                        </connections>
-                                    </button>
                                 </subviews>
                                 <color key="backgroundColor" red="0.15686274509803921" green="0.2196078431372549" blue="0.33725490196078434" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                             </view>
@@ -178,6 +159,42 @@
                                 <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                 <color key="backgroundColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                             </view>
+                            <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="h9q-Rr-5Ua">
+                                <rect key="frame" x="673" y="108" width="75" height="75"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMinY="YES" flexibleMaxY="YES"/>
+                                <inset key="imageEdgeInsets" minX="10" minY="10" maxX="10" maxY="10"/>
+                                <state key="normal" image="green-flag"/>
+                                <connections>
+                                    <action selector="greenFlagButtonTapped:" destination="BYZ-38-t0r" eventType="touchUpInside" id="3zK-j4-oLd"/>
+                                </connections>
+                            </button>
+                            <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="xH6-e8-XCb">
+                                <rect key="frame" x="673" y="184" width="75" height="75"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMinY="YES" flexibleMaxY="YES"/>
+                                <inset key="imageEdgeInsets" minX="10" minY="10" maxX="10" maxY="10"/>
+                                <state key="normal" image="stop"/>
+                                <connections>
+                                    <action selector="stopButtonTapped:" destination="BYZ-38-t0r" eventType="touchUpInside" id="hzd-OV-gy9"/>
+                                </connections>
+                            </button>
+                            <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="EkJ-2n-KpS">
+                                <rect key="frame" x="9" y="108" width="75" height="75"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMinY="YES" flexibleMaxY="YES"/>
+                                <inset key="imageEdgeInsets" minX="10" minY="10" maxX="10" maxY="10"/>
+                                <state key="normal" image="video-cam"/>
+                                <connections>
+                                    <segue destination="vvR-aU-9rN" kind="show" id="ZEo-AM-fbb"/>
+                                </connections>
+                            </button>
+                            <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="VHX-Fn-Ovc">
+                                <rect key="frame" x="9" y="184" width="75" height="75"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMinY="YES" flexibleMaxY="YES"/>
+                                <inset key="imageEdgeInsets" minX="10" minY="10" maxX="10" maxY="10"/>
+                                <state key="normal" image="mic"/>
+                                <connections>
+                                    <segue destination="f1I-tM-KtB" kind="show" id="ViN-gV-JzK"/>
+                                </connections>
+                            </button>
                             <view contentMode="scaleToFill" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="r7b-w5-iT2">
                                 <rect key="frame" x="0.0" y="0.0" width="768" height="1024"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -194,10 +211,11 @@
                         <viewLayoutGuide key="safeArea" id="LYx-JD-MOj"/>
                     </view>
                     <connections>
-                        <outlet property="cameraButton" destination="VHX-Fn-Ovc" id="ZhP-h6-gkj"/>
+                        <outlet property="cameraButton" destination="EkJ-2n-KpS" id="OTr-Uf-Bjt"/>
                         <outlet property="greenFlagButton" destination="h9q-Rr-5Ua" id="ffJ-va-iHV"/>
                         <outlet property="loadingView" destination="r7b-w5-iT2" id="utK-KH-5J9"/>
                         <outlet property="metalView" destination="CLU-6X-PVr" id="MZJ-cV-w3I"/>
+                        <outlet property="micButton" destination="VHX-Fn-Ovc" id="pcw-Ke-6U5"/>
                         <outlet property="stopButton" destination="xH6-e8-XCb" id="0lU-9H-4N7"/>
                         <outlet property="toolbarView" destination="5Tz-4t-7AA" id="3Sg-sc-qGv"/>
                         <outlet property="webViewContainer" destination="Q4n-1e-bpP" id="hAx-Ax-eCx"/>
@@ -212,7 +230,7 @@
             <objects>
                 <collectionViewController id="8zF-0t-HXv" customClass="ClipsCollectionViewController" customModule="Steina" customModuleProvider="target" sceneMemberID="viewController">
                     <collectionView key="view" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" dataMode="prototypes" id="qbA-Rb-AWB">
-                        <rect key="frame" x="0.0" y="0.0" width="424" height="100"/>
+                        <rect key="frame" x="0.0" y="0.0" width="665" height="100"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" red="0.15686274510000001" green="0.21960784310000001" blue="0.33725490200000002" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                         <collectionViewFlowLayout key="collectionViewLayout" scrollDirection="horizontal" minimumLineSpacing="10" minimumInteritemSpacing="10" id="p4p-QL-GLy">
@@ -248,7 +266,7 @@
                 </collectionViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="qb0-AZ-Y5u" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="589.74609375" y="-182.421875"/>
+            <point key="canvasLocation" x="599" y="-394"/>
         </scene>
         <!--Capture View Controller-->
         <scene sceneID="Ta3-cP-QYb">
@@ -332,7 +350,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="yEX-Ov-bfU" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="808.59375" y="281.25"/>
+            <point key="canvasLocation" x="881" y="5"/>
         </scene>
     </scenes>
     <resources>
@@ -340,6 +358,7 @@
         <image name="camera-reverse" width="75" height="75"/>
         <image name="close" width="50" height="50"/>
         <image name="green-flag" width="112" height="112"/>
+        <image name="mic" width="112" height="112"/>
         <image name="record" width="50" height="50"/>
         <image name="stop" width="112" height="112"/>
         <image name="video-cam" width="112" height="112"/>
