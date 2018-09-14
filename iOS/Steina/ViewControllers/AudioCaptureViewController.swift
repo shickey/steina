@@ -310,8 +310,13 @@ class AudioView : UIView {
     }
 }
 
+protocol AudioCaptureViewControllerDelegate {
+    func audioCaptureViewControllerCreatedSound(_ sound: Sound)
+}
 
 class AudioCaptureViewController: UIViewController, AudioViewDelegate {
+    
+    var delegate : AudioCaptureViewControllerDelegate? = nil
 
     var project : Project! = nil
     
@@ -336,6 +341,9 @@ class AudioCaptureViewController: UIViewController, AudioViewDelegate {
     }
     
     @IBAction func closeButtonTapped(_ sender: Any) {
+        if let d = delegate {
+            d.audioCaptureViewControllerCreatedSound(audioView.sound!)
+        }
         self.presentingViewController!.dismiss(animated: true, completion: nil)
     }
     
@@ -358,12 +366,12 @@ class AudioCaptureViewController: UIViewController, AudioViewDelegate {
     }
     
     func audioViewDidSelectSampleRange(audioView: AudioView, sampleRange: SampleRange) {
-        playingSoundId = playSound(audioView.sound!, sampleRange, looped: true)
+//        playingSoundId = playSound(audioView.sound!, sampleRange, looped: true)
     }
     
     func audioViewDidDeselectSampleRange(audioView: AudioView) {
-        stopSound(playingSoundId)
-        playingSoundId = nil
+//        stopSound(playingSoundId)
+//        playingSoundId = nil
     }
 
 }

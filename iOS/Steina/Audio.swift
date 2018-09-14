@@ -109,19 +109,50 @@ func inputAudio(_ inRefCon: UnsafeMutableRawPointer,
     return noErr
 }
 
+var firstTick = true
+func outputProjectAudio(_ inRefCon: UnsafeMutableRawPointer,
+                        _ audioUnitRenderActionFlags: UnsafeMutablePointer<AudioUnitRenderActionFlags>,
+                        _ inTimeStamp: UnsafePointer<AudioTimeStamp>,
+                        _ inBusNumber: UInt32,
+                        _ inNumberFrames: UInt32,
+                        _ ioData: UnsafeMutablePointer<AudioBufferList>?) -> OSStatus {
+    if (firstTick) {
+        let baseTime = inTimeStamp.pointee.mHostTime
+        audioBuffer.baseTime = baseTime
+        firstTick = false
+        return noErr
+    }
+    
+    let numSamplesToRender = Int(inNumberFrames)
+    
+    // Copy mixed samples to the output hardware
+    let outputBuffers = UnsafeMutableAudioBufferListPointer(ioData)!
+    let outputL = outputBuffers[0].mData!.bindMemory(to: Int16.self, capacity: numSamplesToRender)
+    let outputR = outputBuffers[1].mData!.bindMemory(to: Int16.self, capacity: numSamplesToRender)
+    
+    let baseOffset = Int(Double(inTimeStamp.pointee.mHostTime - audioBuffer.baseTime) * (48000.0 / Double(clockFrequency)))
+    
+    let bufferSamples = audioBuffer.samples.bytes.bindMemory(to: Int16.self, capacity: audioBuffer.length)
+    for i in 0..<numSamplesToRender {
+        // Downsample to 16-bit
+        let sample = bufferSamples[(Int(baseOffset) + i) % audioBuffer.length]
+        outputL[i] = sample
+        outputR[i] = sample
+    }
+    
+    if (Int(baseOffset) + numSamplesToRender) > audioBuffer.length {
+        audioBuffer.baseTime += U64(audioBuffer.length) * U64(Double(clockFrequency) / 48000.0) 
+    } 
+    
+    return noErr
+}
+
 func outputAudio(_ inRefCon: UnsafeMutableRawPointer,
                  _ audioUnitRenderActionFlags: UnsafeMutablePointer<AudioUnitRenderActionFlags>,
                  _ inTimeStamp: UnsafePointer<AudioTimeStamp>,
                  _ inBusNumber: UInt32,
                  _ inNumberFrames: UInt32,
                  _ ioData: UnsafeMutablePointer<AudioBufferList>?) -> OSStatus {
-    
-//    print("Audio: \(inTimeStamp.pointee)\n\n")
-    var timebaseInfo : mach_timebase_info_data_t = mach_timebase_info_data_t(numer: 1, denom: 1)
-    mach_timebase_info(&timebaseInfo)
-    let clockFreq = (Double(timebaseInfo.denom) / Double(timebaseInfo.numer)) * 1000000000.0
-    print("Audio: \((Double(CACurrentMediaTime()) - Double(inTimeStamp.pointee.mHostTime) / clockFreq))")
-    print("samples: \(inNumberFrames)")
     
     // @TODO: These addition and removal loops probably aren't threadsafe
     for idToStop in soundsToStop {
@@ -202,6 +233,43 @@ func stopSound(_ playingSoundId : PlayingSoundId) {
     soundsToStop.append(playingSoundId)
 }
 
+func fetchSamples(_ asset: Sound, _ start: Int, _ end: Int) -> Data {
+    let samples = asset.samples
+    return samples.subdata(in: samples.startIndex.advanced(by: start * 2)..<samples.startIndex.advanced(by: end * 2))
+}
+
+class SynchronizedAudioBuffer {
+    var samples : Data
+    var baseTime : U64 = 0
+    
+    var length : Int {
+        return samples.count / 2
+    }
+    
+    init(numSamples: Int) {
+        samples = Data(count: numSamples * MemoryLayout<Int16>.size)
+        baseTime = 0
+    }
+}
+
+var audioBuffer = SynchronizedAudioBuffer(numSamples: 48000)
+
+func writeFloatSamples(_ samples: Data, forHostTime hostTime: U64) {
+    let offset = Int(Double(hostTime - audioBuffer.baseTime) * (48000.0 / Double(clockFrequency))) % audioBuffer.length
+    if offset < 0 || offset > audioBuffer.length {
+        print("WARNING: sample offset outside of audio buffer boundary")
+        return
+    }
+    let rawInputSamples = samples.bytes.bindMemory(to: Float.self, capacity: samples.count / MemoryLayout<Float>.size)
+    let rawBufferSamples = audioBuffer.samples.bytes.bindMemory(to: Int16.self, capacity: 48000)
+    
+    let samplesToWrite = samples.count / MemoryLayout<Float>.size
+    for i in 0..<samplesToWrite {
+        let sample = Int16(rawInputSamples[i])
+        rawBufferSamples[(Int(offset) + i) % audioBuffer.length] = sample 
+    }
+}
+
 func initAudioSystem() {
     let audioSession = AVAudioSession.sharedInstance()
     do {
@@ -258,7 +326,9 @@ func initAudioSystem() {
                                                               mReserved: 0)
     AudioUnitSetProperty(audioUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Input, 0, &outputStreamDescription, UInt32(MemoryLayout<AudioStreamBasicDescription>.size))
     
-    var renderCallbackStruct = AURenderCallbackStruct(inputProc: outputAudio, inputProcRefCon: &audioRenderContext)
+//    var renderCallbackStruct = AURenderCallbackStruct(inputProc: outputAudio, inputProcRefCon: &audioRenderContext)
+//    AudioUnitSetProperty(audioUnit, kAudioUnitProperty_SetRenderCallback, kAudioUnitScope_Input, 0, &renderCallbackStruct, UInt32(MemoryLayout<AURenderCallbackStruct>.size))
+    var renderCallbackStruct = AURenderCallbackStruct(inputProc: outputProjectAudio, inputProcRefCon: nil)
     AudioUnitSetProperty(audioUnit, kAudioUnitProperty_SetRenderCallback, kAudioUnitScope_Input, 0, &renderCallbackStruct, UInt32(MemoryLayout<AURenderCallbackStruct>.size))
     
     var inputCallbackStruct = AURenderCallbackStruct(inputProc: inputAudio, inputProcRefCon: &audioRecordingContext)

@@ -116,7 +116,6 @@
             });
 
             vm.on('targetsUpdate', (data) => {
-              debugger;
               var editingTargetId = data.editingTarget;
               var target = vm.runtime.getTargetById(editingTargetId);
               if (target.hasOwnProperty('fps')) { // Kind of a janky way of determining video vs audio target
@@ -159,12 +158,23 @@
                 return vm.getVideoTargets().map(t => t.toJSON());
             }
 
-            function createAudioTarget(id, markers) {
-              vm.createAudioTarget(id, markers);
+            function createAudioTarget(id, audioInfo) {
+              vm.createAudioTarget(id, audioInfo);
             }
 
             function getAudioTargets() {
                 return vm.getAudioTargets().map(t => t.toJSON());
+            }
+
+            function getPlayingSounds() {
+              return JSON.stringify(vm.runtime.audioState.playing);
+            }
+
+            function getRenderingState() {
+              return {
+                videoTargets: vm.getVideoTargets().map(t => t.toJSON()),
+                playingSounds: vm.runtime.audioState.playing
+              }
             }
 
             function getProjectJson() {
@@ -227,6 +237,8 @@
                 getVideoTargets,
                 createAudioTarget,
                 getAudioTargets,
+                getPlayingSounds,
+                getRenderingState,
                 getProjectJson,
                 loadProject,
                 beginDraggingVideo,

@@ -54,3 +54,21 @@ func ramerDouglasPeucker(_ points: [CGPoint], tolerance: CGFloat) -> [CGPoint] {
     
     return leftRecurse + rightRecurse[1..<rightRecurse.count]
 }
+
+/**********************************************
+ *
+ * Time!
+ *
+ **********************************************/
+
+let clockFrequency: U64 = {
+    var timebaseInfo : mach_timebase_info_data_t = mach_timebase_info_data_t(numer: 1, denom: 1)
+    mach_timebase_info(&timebaseInfo)
+    return U64((Double(timebaseInfo.denom) / Double(timebaseInfo.numer)) * 1000000000.0)
+}()
+
+@inline(__always)
+func hostTimeForTimestamp(_ timestamp: CFTimeInterval) -> U64 {
+    return U64(timestamp * Double(clockFrequency))
+}
+

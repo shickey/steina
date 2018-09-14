@@ -14,6 +14,7 @@ import QuartzCore
 typealias FrameOffset = U32
 typealias FrameLength = U32
 typealias ClipId = String
+typealias SoundId = String
 
 
 let VIDEO_FILE_MAGIC_NUMBER : U32 = 0x000F1DE0
@@ -280,6 +281,8 @@ class Project {
     let id : UUID
     var clipIds : [ClipId] = []
     var clips : [ClipId : Clip] = [:]
+    var soundIds : [SoundId] = []
+    var sounds : [SoundId : Sound] = [:]
     var thumbnail : UIImage? = nil
     
     init(id projectId: UUID) {

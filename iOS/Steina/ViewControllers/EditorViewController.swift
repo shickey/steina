@@ -15,7 +15,8 @@ class EditorViewController: UIViewController,
                             WKScriptMessageHandler, 
                             MetalViewDelegate,
                             ClipsCollectionViewControllerDelegate, 
-                            CaptureViewControllerDelegate {
+                            CaptureViewControllerDelegate,
+                            AudioCaptureViewControllerDelegate {
     
     var project : Project! = nil
     
@@ -44,14 +45,18 @@ class EditorViewController: UIViewController,
         super.viewDidLoad()
         
         // Load clips into memory
-        let projectJsonData = try! Data(contentsOf: project.jsonUrl)
-        let projectJson = try! JSONSerialization.jsonObject(with: projectJsonData, options: [])
-        let jsonDict = projectJson as! NSDictionary
-        let targets = jsonDict["videoTargets"] as! NSDictionary
-        for (targetId, _) in targets {
-            let targetIdStr = targetId as! String
-            loadClip(targetIdStr, project) 
+        do {
+            let projectJsonData = try Data(contentsOf: project.jsonUrl)
+            let projectJson = try JSONSerialization.jsonObject(with: projectJsonData, options: [])
+            let jsonDict = projectJson as! NSDictionary
+            let targets = jsonDict["videoTargets"] as! NSDictionary
+            for (targetId, _) in targets {
+                let targetIdStr = targetId as! String
+                loadClip(targetIdStr, project) 
+            }
         }
+        catch {}
+        
         
         metalView.metalLayer.drawableSize = CGSize(width: 640, height: 480)
         metalView.delegate = self
@@ -197,16 +202,14 @@ class EditorViewController: UIViewController,
             captureVC.project = project
         }
         else if let audioCaptureVC = segue.destination as? AudioCaptureViewController {
+            audioCaptureVC.delegate = self
             audioCaptureVC.project = project
         }
     }
     
+    var firstTick = true
+    
     @objc func tick(_ sender: CADisplayLink) {
-        
-//        var timebaseInfo : mach_timebase_info_data_t = mach_timebase_info_data_t(numer: 1, denom: 1)
-//        mach_timebase_info(&timebaseInfo)
-//        let clockFreq = (Double(timebaseInfo.denom) / Double(timebaseInfo.numer)) * 1000000000.0
-//        print("Video: \(sender.timestamp * clockFreq) \(sender.targetTimestamp * clockFreq)")
         
         previousRenderedIds = renderedIds
         renderedIds = []
@@ -214,13 +217,51 @@ class EditorViewController: UIViewController,
         // @TODO: The step rate is hard coded in JS to be 1000 / 30
         //        but maybe we should pass the dt each time here?
         self.renderDispatchGroup.wait()
-        runJavascript("Steina.tick(); Steina.getVideoTargets()") { ( res , err ) in
+        runJavascript("Steina.tick(); Steina.getRenderingState()") { ( res , err ) in
             if let realError = err { 
                 print("JS ERROR: \(realError)")
                 return;
             }
-            var numEntitiesToRender = 0
-            if let targets = res as? Array<Dictionary<String, Any>> {
+            
+            
+            if let json = res as? Dictionary<String, Any> {
+                let targets = json["videoTargets"] as! Array<Dictionary<String, Any>>
+                let playingSounds = json["playingSounds"] as! Dictionary<String, Dictionary<String, Any>>
+                
+                /*****************
+                 * Render Audio
+                 *****************/
+                
+                // Create audio mixing buffer
+                let mixingBuffer = Data(count: MemoryLayout<Float>.size * 1600) // 1600 comes from 48000 samples / 30 fps
+                let rawMixingBuffer = mixingBuffer.bytes.bindMemory(to: Float.self, capacity: 1600)
+                
+                for (_, sound) in playingSounds {
+                    // Get properties
+                    let soundAssetId   = (sound["audioTargetId"] as! String)
+                    let start          = (sound["prevPlayhead"] as! NSNumber).intValue
+                    let end            = (sound["playhead"] as! NSNumber).intValue
+                    
+                    // Get samples
+                    let totalSamples = end - start;
+                    let asset = self.project.sounds[soundAssetId]!
+                    let samples = fetchSamples(asset, start, end)
+                    
+                    // Mix into buffer
+                    let rawSamples = samples.bytes.bindMemory(to: Int16.self, capacity: totalSamples)
+                    for i in 0..<totalSamples {
+                        rawMixingBuffer[i] += Float(rawSamples[i])
+                    }
+                }
+                
+                // Copy samples to audio output buffer
+                writeFloatSamples(mixingBuffer, forHostTime: hostTimeForTimestamp(sender.targetTimestamp))
+                
+                
+                /*****************
+                 * Render Video
+                 *****************/
+                var numEntitiesToRender = 0
                 var draggingRenderFrame : RenderFrame? = nil
                 for target in targets {
                     // Check for visibility, bail early if nothing to render
@@ -287,10 +328,14 @@ class EditorViewController: UIViewController,
                         self.renderDispatchGroup.leave()
                     }
                     numEntitiesToRender += 1
-                } 
+                }
+                
+                self.renderDispatchGroup.wait()
+                render(numEntitiesToRender)
+
             }
-            self.renderDispatchGroup.wait()
-            render(numEntitiesToRender)
+            
+            
         }
         
     }
@@ -408,5 +453,18 @@ class EditorViewController: UIViewController,
     func captureViewControllerDidCreateClip(captureViewController: CaptureViewController, clip: Clip) {
         runJavascript("Steina.createVideoTarget(\"\(clip.id.uuidString)\", 30, \(clip.frames));")
     }
-
+    
+    /**********************************************************************
+     *
+     * AudioCaptureViewControllerDelegate
+     *
+     **********************************************************************/
+    
+    func audioCaptureViewControllerCreatedSound(_ sound: Sound) {
+        let id = UUID()
+        project.sounds[id.uuidString] = sound
+        project.soundIds.append(id.uuidString)
+        runJavascript("Steina.createAudioTarget(\"\(id.uuidString)\", {totalSamples: \(sound.length), markers: [100000, 200000, 400000] })")
+    }
+    
 }
