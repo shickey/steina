@@ -4,9 +4,9 @@
      * Window "onload" handler.
      * @return {void}
      */
-    function onLoad () {
+     function onLoad () {
 
-        Blockly.VerticalFlyout.prototype.DEFAULT_WIDTH = 300;
+      Blockly.VerticalFlyout.prototype.DEFAULT_WIDTH = 300;
 
         // Instantiate the VM and create an empty project
         var vm = new window.VirtualMachine();
@@ -14,28 +14,28 @@
 
         var defaultProject = {
           "targets": [
+          {
+            "isStage": true,
+            "name": "Stage",
+            "variables": {},
+            "lists": {},
+            "broadcasts": {},
+            "blocks": {},
+            "currentCostume": 0,
+            "costumes": [
             {
-              "isStage": true,
-              "name": "Stage",
-              "variables": {},
-              "lists": {},
-              "broadcasts": {},
-              "blocks": {},
-              "currentCostume": 0,
-              "costumes": [
-                {
-                  "assetId": "739b5e2a2435f6e1ec2993791b423146",
-                  "name": "backdrop1",
-                  "bitmapResolution": 1,
-                  "md5ext": "739b5e2a2435f6e1ec2993791b423146.png",
-                  "dataFormat": "png",
-                  "rotationCenterX": 240,
-                  "rotationCenterY": 180
-                }
-              ],
-              "sounds": [],
-              "volume": 100,
+              "assetId": "739b5e2a2435f6e1ec2993791b423146",
+              "name": "backdrop1",
+              "bitmapResolution": 1,
+              "md5ext": "739b5e2a2435f6e1ec2993791b423146.png",
+              "dataFormat": "png",
+              "rotationCenterX": 240,
+              "rotationCenterY": 180
             }
+            ],
+            "sounds": [],
+            "volume": 100,
+          }
           ],
           "meta": {
             "semver": "3.0.0",
@@ -46,26 +46,26 @@
         vm.loadProject(defaultProject).then(() => {
             // Instantiate scratch-blocks and attach it to the DOM.
             var workspace = Blockly.inject('blocks', {
-                media: './media/',
-                scrollbars: false,
-                trashcan: false,
-                horizontalLayout: false,
-                sounds: false,
-                zoom: {
-                    controls: false,
-                    wheel: false,
-                    startScale: 1.0
-                },
-                colours: {
-                    workspace: '#334771',
-                    flyout: '#283856',
-                    scrollbar: '#24324D',
-                    scrollbarHover: '#0C111A',
-                    insertionMarker: '#FFFFFF',
-                    insertionMarkerOpacity: 0.3,
-                    fieldShadow: 'rgba(255, 255, 255, 0.3)',
-                    dragShadowOpacity: 0.6
-                }
+              media: './media/',
+              scrollbars: false,
+              trashcan: false,
+              horizontalLayout: false,
+              sounds: false,
+              zoom: {
+                controls: false,
+                wheel: false,
+                startScale: 1.0
+              },
+              colours: {
+                workspace: '#334771',
+                flyout: '#283856',
+                scrollbar: '#24324D',
+                scrollbarHover: '#0C111A',
+                insertionMarker: '#FFFFFF',
+                insertionMarkerOpacity: 0.3,
+                fieldShadow: 'rgba(255, 255, 255, 0.3)',
+                dragShadowOpacity: 0.6
+              }
             });
             window.workspace = workspace;
 
@@ -79,7 +79,7 @@
                 // Generate the proper blocks and refresh the toolbox
                 Blockly.defineBlocksWithJsonArray(blocksInfo.map(blockInfo => blockInfo.json));
                 workspace.updateToolbox(videoToolbox);
-            });
+              });
 
             vm.extensionManager.loadExtensionURL('steina');
 
@@ -93,26 +93,26 @@
 
             // Handle VM events
             vm.on('SCRIPT_GLOW_ON', function(data) {
-                workspace.glowStack(data.id, true);
+              workspace.glowStack(data.id, true);
             });
             vm.on('SCRIPT_GLOW_OFF', function(data) {
-                workspace.glowStack(data.id, false);
+              workspace.glowStack(data.id, false);
             });
             vm.on('BLOCK_GLOW_ON', function(data) {
-                workspace.glowBlock(data.id, true);
+              workspace.glowBlock(data.id, true);
             });
             vm.on('BLOCK_GLOW_OFF', function(data) {
-                workspace.glowBlock(data.id, false);
+              workspace.glowBlock(data.id, false);
             });
             vm.on('VISUAL_REPORT', function(data) {
-                workspace.reportValue(data.id, data.value);
+              workspace.reportValue(data.id, data.value);
             });
 
             vm.on('workspaceUpdate', (data) => {
-                workspace.removeChangeListener(vm.blockListener);
-                const dom = Blockly.Xml.textToDom(data.xml);
-                Blockly.Xml.clearWorkspaceAndLoadFromXml(dom, workspace);
-                workspace.addChangeListener(vm.blockListener);
+              workspace.removeChangeListener(vm.blockListener);
+              const dom = Blockly.Xml.textToDom(data.xml);
+              Blockly.Xml.clearWorkspaceAndLoadFromXml(dom, workspace);
+              workspace.addChangeListener(vm.blockListener);
             });
 
             vm.on('targetsUpdate', (data) => {
@@ -144,18 +144,18 @@
 
             // Create external interface so iOS can call into JS
             function tick() {
-                vm.runtime._step();
+              vm.runtime._step();
             }
 
             function createVideoTarget(id, fps, frames) {
-                vm.createVideoTarget(id, {
-                    fps,
-                    frames
-                })
+              vm.createVideoTarget(id, {
+                fps,
+                frames
+              })
             }
 
             function getVideoTargets() {
-                return vm.getVideoTargets().map(t => t.toJSON());
+              return vm.getVideoTargets().map(t => t.toJSON());
             }
 
             function createAudioTarget(id, audioInfo) {
@@ -163,7 +163,7 @@
             }
 
             function getAudioTargets() {
-                return vm.getAudioTargets().map(t => t.toJSON());
+              return vm.getAudioTargets().map(t => t.toJSON());
             }
 
             function getPlayingSounds() {
@@ -232,42 +232,42 @@
             }
 
             window.Steina = {
-                tick,
-                createVideoTarget,
-                getVideoTargets,
-                createAudioTarget,
-                getAudioTargets,
-                getPlayingSounds,
-                getRenderingState,
-                getProjectJson,
-                loadProject,
-                beginDraggingVideo,
-                updateDraggingVideo,
-                endDraggingVideo,
-                tapVideo
+              tick,
+              createVideoTarget,
+              getVideoTargets,
+              createAudioTarget,
+              getAudioTargets,
+              getPlayingSounds,
+              getRenderingState,
+              getProjectJson,
+              loadProject,
+              beginDraggingVideo,
+              updateDraggingVideo,
+              endDraggingVideo,
+              tapVideo
             }
 
             if (window.steinaMsg) {
-                window.steinaMsg.postMessage({
-                    message: 'READY'
-                });
+              window.steinaMsg.postMessage({
+                message: 'READY'
+              });
             }
 
-        });
+          });
 
-        
 
-    }
+
+}
 
     // /**
     //  * Binds the extension interface to `window.ext`.
     //  * @return {void}
     //  */
     function bindExtensionHandler () {
-        if (typeof webkit === 'undefined') return;
-        if (typeof webkit.messageHandlers === 'undefined') return;
-        if (typeof webkit.messageHandlers.steinaMsg === 'undefined') return;
-        window.steinaMsg = webkit.messageHandlers.steinaMsg;
+      if (typeof webkit === 'undefined') return;
+      if (typeof webkit.messageHandlers === 'undefined') return;
+      if (typeof webkit.messageHandlers.steinaMsg === 'undefined') return;
+      window.steinaMsg = webkit.messageHandlers.steinaMsg;
 
         // // Swizzle console methods so we can also get them through the iOS console
         // if (typeof webkit.messageHandlers.cons === 'undefined') return;
@@ -308,16 +308,16 @@
         if (typeof webkit.messageHandlers.cons === 'undefined') return;
         window.cons = webkit.messageHandlers.cons;
         window.console.log = window.console.error = window.console.warn = window.console.info = (message) => {
-            window.cons.postMessage({
-                message: message
-            });
+          window.cons.postMessage({
+            message: message
+          });
         };
-    }
+      }
 
 
     /**
      * Bind event handlers.
      */
-    window.onload = onLoad;
+     window.onload = onLoad;
 
-})();
+   })();

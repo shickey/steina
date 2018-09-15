@@ -21,21 +21,6 @@ var playingSounds : [PlayingSoundId : PlayingSound] = [:]
 var soundsToStart : [PlayingSound] = []
 var soundsToStop : [PlayingSoundId] = []
 
-class Sound {
-    let samples : Data
-    let bytesPerSample : Int
-    var markers : [Int] = []
-    
-    init(samples newSamples: Data, bytesPerSample newBytesPerSample: Int) {
-        samples = newSamples
-        bytesPerSample = newBytesPerSample
-    }
-    
-    var length : Int {
-        return samples.count / bytesPerSample
-    }
-}
-
 struct SampleRange {
     var start : Int
     var end : Int
@@ -67,7 +52,7 @@ class PlayingSound {
 }
 
 class AudioRecordingContext {
-    var update : ((Sound) -> ())? = nil
+    var update : (() -> ())? = nil
 }
 
 class AudioRenderContext {
@@ -96,13 +81,12 @@ func inputAudio(_ inRefCon: UnsafeMutableRawPointer,
     for i in 0..<Int(inNumberFrames) {
         var sample = Int16(audioData[i] * Float(Int16.max))
         let bufferPtr = UnsafeBufferPointer(start: &sample, count: 1)
-        recordingData.append(bufferPtr)
+        recordingSound.samples.append(bufferPtr)
     }
     
     if let update = recordingContext.update {
-        let sound = Sound(samples: Data(recordingData), bytesPerSample: 2)
         DispatchQueue.main.async {
-            update(sound)
+            update()
         }
     }
     
@@ -123,6 +107,9 @@ func outputProjectAudio(_ inRefCon: UnsafeMutableRawPointer,
         return noErr
     }
     
+    
+    print("Audio output at \(hostTimeForTimestamp(CACurrentMediaTime())) for host time: \(inTimeStamp.pointee.mHostTime)")
+    
     let numSamplesToRender = Int(inNumberFrames)
     
     // Copy mixed samples to the output hardware
@@ -131,6 +118,7 @@ func outputProjectAudio(_ inRefCon: UnsafeMutableRawPointer,
     let outputR = outputBuffers[1].mData!.bindMemory(to: Int16.self, capacity: numSamplesToRender)
     
     let baseOffset = Int(Double(inTimeStamp.pointee.mHostTime - audioBuffer.baseTime) * (48000.0 / Double(clockFrequency)))
+    //print(baseOffset)
     
     let bufferSamples = audioBuffer.samples.bytes.bindMemory(to: Int16.self, capacity: audioBuffer.length)
     for i in 0..<numSamplesToRender {
@@ -141,7 +129,9 @@ func outputProjectAudio(_ inRefCon: UnsafeMutableRawPointer,
     }
     
     if (Int(baseOffset) + numSamplesToRender) > audioBuffer.length {
-        audioBuffer.baseTime += U64(audioBuffer.length) * U64(Double(clockFrequency) / 48000.0) 
+        let oldBaseTime = audioBuffer.baseTime
+        audioBuffer.baseTime += U64(audioBuffer.length) * U64(Double(clockFrequency) / 48000.0)
+        print("Updated base time from: \(oldBaseTime) to \(audioBuffer.baseTime)")
     } 
     
     return noErr
@@ -255,13 +245,17 @@ class SynchronizedAudioBuffer {
 var audioBuffer = SynchronizedAudioBuffer(numSamples: 48000)
 
 func writeFloatSamples(_ samples: Data, forHostTime hostTime: U64) {
+    if hostTime < audioBuffer.baseTime {
+        print("WARNING: Attempted to write samples earlier than the base buffer time")
+        return
+    }
     let offset = Int(Double(hostTime - audioBuffer.baseTime) * (48000.0 / Double(clockFrequency))) % audioBuffer.length
     if offset < 0 || offset > audioBuffer.length {
         print("WARNING: sample offset outside of audio buffer boundary")
         return
     }
     let rawInputSamples = samples.bytes.bindMemory(to: Float.self, capacity: samples.count / MemoryLayout<Float>.size)
-    let rawBufferSamples = audioBuffer.samples.bytes.bindMemory(to: Int16.self, capacity: 48000)
+    let rawBufferSamples = audioBuffer.samples.bytes.bindMemory(to: Int16.self, capacity: audioBuffer.length)
     
     let samplesToWrite = samples.count / MemoryLayout<Float>.size
     for i in 0..<samplesToWrite {
@@ -360,17 +354,17 @@ func restartAudio(outputEnabled: Bool, inputEnabled: Bool) {
     startAudio()
 }
 
-var recordingData : Data! = nil
+var recordingSound : Sound! = nil 
 
-func beginRecordingAudio(_ update: @escaping (Sound) -> ()) {
-    recordingData = Data(capacity: 10.megabytes)
+func beginRecordingAudio(_ sound: Sound, _ update: @escaping () -> ()) {
+    recordingSound = sound
+    recordingSound.samples = Data(capacity: 10.megabytes) 
     audioRecordingContext.update = update
     restartAudio(outputEnabled: false, inputEnabled: true)
 }
 
-func stopRecordingAudio(_ completion: (Sound) -> ()) {
+func stopRecordingAudio(_ completion: () -> ()) {
     restartAudio(outputEnabled: true, inputEnabled: false)
-    let sound = Sound(samples: recordingData, bytesPerSample: 2)
-    recordingData = nil
-    completion(sound)
+    recordingSound = nil
+    completion()
 }

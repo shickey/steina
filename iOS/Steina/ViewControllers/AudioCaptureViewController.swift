@@ -311,14 +311,14 @@ class AudioView : UIView {
 }
 
 protocol AudioCaptureViewControllerDelegate {
-    func audioCaptureViewControllerCreatedSound(_ sound: Sound)
+    func audioCaptureViewControllerDidCreateSound(_ sound: Sound)
 }
 
 class AudioCaptureViewController: UIViewController, AudioViewDelegate {
     
     var delegate : AudioCaptureViewControllerDelegate? = nil
 
-    var project : Project! = nil
+    var sound : Sound! = nil
     
     var playingSoundId : PlayingSoundId! = nil
     var recording = false
@@ -329,6 +329,12 @@ class AudioCaptureViewController: UIViewController, AudioViewDelegate {
         super.viewDidLoad()
         
         audioView.delegate = self
+        
+        if (sound == nil) {
+            sound = Sound(bytesPerSample: 2)
+        }
+        
+        audioView.sound = sound
         
         audioRenderContext.callback = { (updatedPlayheads) in
             if let _ = self.playingSoundId, let newPlayhead = updatedPlayheads[self.playingSoundId] {
@@ -342,7 +348,7 @@ class AudioCaptureViewController: UIViewController, AudioViewDelegate {
     
     @IBAction func closeButtonTapped(_ sender: Any) {
         if let d = delegate {
-            d.audioCaptureViewControllerCreatedSound(audioView.sound!)
+            d.audioCaptureViewControllerDidCreateSound(audioView.sound!)
         }
         self.presentingViewController!.dismiss(animated: true, completion: nil)
     }
@@ -350,19 +356,18 @@ class AudioCaptureViewController: UIViewController, AudioViewDelegate {
     @IBAction func recordButtonTapped(_ sender: Any) {
         if !recording {
             audioView.isUserInteractionEnabled = false
-            beginRecordingAudio() { (sound) in
-                self.audioView.sound = sound
+            beginRecordingAudio(sound) {
+                self.audioView.sampleWindow = SampleRange(0, self.sound.length)
+                self.audioView.setNeedsDisplay()
             }
             recording = true
         }
         else {
-            stopRecordingAudio() { (sound) in
-                audioView.sound = sound
+            stopRecordingAudio() {
                 recording = false
                 audioView.isUserInteractionEnabled = true
             }
         }
-        
     }
     
     func audioViewDidSelectSampleRange(audioView: AudioView, sampleRange: SampleRange) {

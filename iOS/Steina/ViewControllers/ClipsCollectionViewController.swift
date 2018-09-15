@@ -11,7 +11,7 @@ import UIKit
 private let reuseIdentifier = "ClipCell"
 
 protocol ClipsCollectionViewControllerDelegate {
-    func clipsControllerDidSelect(clipsController: ClipsCollectionViewController, clipId: ClipId)
+    func clipsControllerDidSelect(clipsController: ClipsCollectionViewController, assetId: AssetId)
 }
 
 class ClipsCollectionViewCell: UICollectionViewCell {
@@ -47,16 +47,24 @@ class ClipsCollectionViewController: UICollectionViewController {
 
 
     override func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return project.clips.count
+        return project.clips.count + project.sounds.count
     }
 
     override func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: indexPath) as! ClipsCollectionViewCell
         
-        let clipId = project.clipIds[indexPath.item]
-        let clip = project.clips[clipId]!
+        if indexPath.item < project.clips.count {
+            // Video Asset
+            let clipId = project.clipIds[indexPath.item]
+            let clip = project.clips[clipId]!
+            
+            cell.thumbnailView.image = clip.thumbnail
+        }
+        else {
+            // Audio Asset
+        }
         
-        cell.thumbnailView.image = clip.thumbnail
+        
         
         if cell.isSelected {
             cell.backgroundColor = UIColor.yellow
@@ -72,8 +80,16 @@ class ClipsCollectionViewController: UICollectionViewController {
     
     override func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         if let d = delegate {
-            let clipId = project.clipIds[indexPath.item]
-            d.clipsControllerDidSelect(clipsController: self, clipId: clipId)
+            var assetId : AssetId = ""
+            if indexPath.item < project.clips.count {
+                // Video Asset
+                assetId = project.clipIds[indexPath.item]
+            }
+            else {
+                // Audio Asset
+                assetId = project.soundIds[indexPath.item]
+            }
+            d.clipsControllerDidSelect(clipsController: self, assetId: assetId)
         }
     }
 

@@ -13,8 +13,9 @@ import QuartzCore
 
 typealias FrameOffset = U32
 typealias FrameLength = U32
-typealias ClipId = String
-typealias SoundId = String
+typealias AssetId = String
+typealias ClipId = AssetId
+typealias SoundId = AssetId
 
 
 let VIDEO_FILE_MAGIC_NUMBER : U32 = 0x000F1DE0
@@ -268,6 +269,69 @@ func loadClip(_ id: String, _ project: Project) {
     let clipData = try! Data(contentsOf: clip.assetUrl)
     deserializeClip(clip, project, clipData)
     addClipToProject(clip, project)
+}
+
+
+/*******************************************************************
+ *
+ * Sound
+ *
+ *******************************************************************/
+
+class Sound {
+    
+    let id : UUID
+    
+    var project : Project? = nil
+    
+    var samples : Data
+    let bytesPerSample : Int
+    var markers : [Int] = []
+    
+    init(id newId: UUID, project newProject: Project, markers newMarkers: [Int]) {
+        id = newId
+        project = newProject
+        samples = Data()
+        bytesPerSample = 2 // @TODO: This is contrived. Do we even really need to keep this property?
+        markers = newMarkers
+    }
+    
+    init(bytesPerSample newBytesPerSample: Int) {
+        id = UUID()
+        bytesPerSample = newBytesPerSample
+        samples = Data()
+    }
+    
+    var length : Int {
+        return samples.count / bytesPerSample
+    }
+    
+    var assetUrl : URL {
+        return DATA_DIRECTORY_URL
+            .appendingPathComponent(project!.id.uuidString)
+            .appendingPathComponent("audio")
+            .appendingPathComponent("\(id.uuidString).sac")
+    }
+}
+
+func addSoundToProject(_ sound: Sound, _ project: Project) {
+    sound.project = project
+    project.sounds[sound.id.uuidString] = sound
+    project.soundIds.append(sound.id.uuidString)
+}
+
+func saveSound(_ sound: Sound) {
+    try! sound.samples.write(to: sound.assetUrl)
+}
+
+func loadSound(_ id: String, _ project: Project, _ markers: [Int]) {
+    let uuid = UUID(uuidString: id)!
+    
+    let sound = Sound(id: uuid, project: project, markers: markers)
+    let soundData = try! Data(contentsOf: sound.assetUrl)
+    sound.samples = soundData
+    
+    addSoundToProject(sound, project)
 }
 
 
