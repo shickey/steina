@@ -196,7 +196,7 @@ class EditorViewController: UIViewController,
     @IBAction func stopButtonTapped(_ sender: Any) {
         runJavascript("vm.stopAll()")
         saveProject()
-        
+        try! audioBuffer.samples.write(to: DATA_DIRECTORY_URL.appendingPathComponent("AUDIO.BIN"))
     }
     
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
@@ -214,21 +214,37 @@ class EditorViewController: UIViewController,
         }
     }
     
+    
+    var nextRenderTimestamp = 0.0
+    var lastTargetTimestamp = 0.0
+    
     var firstTick = true
     
     @objc func tick(_ sender: CADisplayLink) {
         
-        print("\n\n***************************\nTICK\n***************************\n Tick at \(hostTimeForTimestamp(CACurrentMediaTime())) for frame time: \(hostTimeForTimestamp(sender.targetTimestamp))")
+        if firstTick {
+            nextRenderTimestamp = sender.targetTimestamp
+            firstTick = false
+        }
+        
+//        print("\n\n***************************\nTICK\n***************************\n Tick at \(hostTimeForTimestamp(CACurrentMediaTime())) for frame time: \(hostTimeForTimestamp(sender.targetTimestamp))")
+        
+        let timestampOffset = sender.timestamp - lastTargetTimestamp
+//        print("Timestamp diff: \(timestampOffset)    in samples: \(timestampOffset * 48000.0)")
+        
+//        let dt = (sender.targetTimestamp - sender.timestamp) * 1000.0
+        let dt = (sender.targetTimestamp - lastTargetTimestamp)
+//        print("Frame dt: \(sender.targetTimestamp - sender.timestamp)")
+        
+        lastTargetTimestamp = sender.targetTimestamp
         
         previousRenderedIds = renderedIds
         renderedIds = []
         
-        // @TODO: The step rate is hard coded in JS to be 1000 / 30
-        //        but maybe we should pass the dt each time here?
         self.renderDispatchGroup.wait()
-        print("START js execution at \(hostTimeForTimestamp(CACurrentMediaTime()))")
-        runJavascript("Steina.tick(); Steina.getRenderingState()") { ( res , err ) in
-            print("END js execution at \(hostTimeForTimestamp(CACurrentMediaTime()))")
+//        print("START js execution at \(hostTimeForTimestamp(CACurrentMediaTime()))")
+        runJavascript("Steina.tick(\(dt * 1000.0)); Steina.getRenderingState()") { ( res , err ) in
+//            print("END js execution at \(hostTimeForTimestamp(CACurrentMediaTime()))")
             if let realError = err { 
                 print("JS ERROR: \(realError)")
                 return;
@@ -243,17 +259,19 @@ class EditorViewController: UIViewController,
                  * Render Audio
                  *****************/
                 
-                print("START audio render at \(hostTimeForTimestamp(CACurrentMediaTime()))")
+//                print("START audio render at \(hostTimeForTimestamp(CACurrentMediaTime()))")
                 
                 // Create audio mixing buffer
-                let mixingBuffer = Data(count: MemoryLayout<Float>.size * 1600) // 1600 comes from 48000 samples / 30 fps
-                let rawMixingBuffer = mixingBuffer.bytes.bindMemory(to: Float.self, capacity: 1600)
+                let mixingBuffer = Data(count: MemoryLayout<Float>.size * 1700) // 1600 comes from 48000 samples / 30 fps, but we overestimate
+                let rawMixingBuffer = mixingBuffer.bytes.bindMemory(to: Float.self, capacity: 1700)
                 
                 for (_, sound) in playingSounds {
                     // Get properties
                     let soundAssetId   = (sound["audioTargetId"] as! String)
-                    let start          = (sound["prevPlayhead"] as! NSNumber).intValue
-                    let end            = (sound["playhead"] as! NSNumber).intValue
+                    let start          = Int(floor((sound["prevPlayhead"] as! NSNumber).floatValue))
+                    let end            = Int(ceil((sound["playhead"] as! NSNumber).floatValue))
+                    
+//                    print("Playing sound: \(start), \(end), \(end - start)")
                     
                     // Get samples
                     let totalSamples = end - start;
@@ -268,9 +286,12 @@ class EditorViewController: UIViewController,
                 }
                 
                 // Copy samples to audio output buffer
-                writeFloatSamples(mixingBuffer, forHostTime: hostTimeForTimestamp(sender.targetTimestamp))
+                writeFloatSamples(mixingBuffer, forHostTime: hostTimeForTimestamp(self.nextRenderTimestamp))
                 
-                print("END audio render/START video render at \(hostTimeForTimestamp(CACurrentMediaTime()))")
+                self.nextRenderTimestamp += dt
+//                writeFloatSamplesInaccurately(mixingBuffer)
+                
+//                print("END audio render/START video render at \(hostTimeForTimestamp(CACurrentMediaTime()))")
                 
                 /*****************
                  * Render Video
@@ -346,7 +367,7 @@ class EditorViewController: UIViewController,
                 
                 self.renderDispatchGroup.wait()
                 render(numEntitiesToRender)
-                print("END video render at \(hostTimeForTimestamp(CACurrentMediaTime()))")
+//                print("END video render at \(hostTimeForTimestamp(CACurrentMediaTime()))")
             }
             
             

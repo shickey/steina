@@ -143,7 +143,8 @@
              *******************************************************************/
 
             // Create external interface so iOS can call into JS
-            function tick() {
+            function tick(dt) {
+              vm.runtime.currentStepTime = dt;
               vm.runtime._step();
             }
 

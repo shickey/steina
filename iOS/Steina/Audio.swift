@@ -108,7 +108,7 @@ func outputProjectAudio(_ inRefCon: UnsafeMutableRawPointer,
     }
     
     
-    print("Audio output at \(hostTimeForTimestamp(CACurrentMediaTime())) for host time: \(inTimeStamp.pointee.mHostTime)")
+//    print("Audio output at \(hostTimeForTimestamp(CACurrentMediaTime())) for host time: \(inTimeStamp.pointee.mHostTime)")
     
     let numSamplesToRender = Int(inNumberFrames)
     
@@ -122,7 +122,6 @@ func outputProjectAudio(_ inRefCon: UnsafeMutableRawPointer,
     
     let bufferSamples = audioBuffer.samples.bytes.bindMemory(to: Int16.self, capacity: audioBuffer.length)
     for i in 0..<numSamplesToRender {
-        // Downsample to 16-bit
         let sample = bufferSamples[(Int(baseOffset) + i) % audioBuffer.length]
         outputL[i] = sample
         outputR[i] = sample
@@ -231,6 +230,7 @@ func fetchSamples(_ asset: Sound, _ start: Int, _ end: Int) -> Data {
 class SynchronizedAudioBuffer {
     var samples : Data
     var baseTime : U64 = 0
+    var writeCursor : Int = 0
     
     var length : Int {
         return samples.count / 2
@@ -259,9 +259,23 @@ func writeFloatSamples(_ samples: Data, forHostTime hostTime: U64) {
     
     let samplesToWrite = samples.count / MemoryLayout<Float>.size
     for i in 0..<samplesToWrite {
-        let sample = Int16(rawInputSamples[i])
+        let rawSample = Int32(rawInputSamples[i])
+        let sample = Int16(clamping: rawSample)
         rawBufferSamples[(Int(offset) + i) % audioBuffer.length] = sample 
     }
+}
+
+func writeFloatSamplesInaccurately(_ samples: Data) {
+    let rawInputSamples = samples.bytes.bindMemory(to: Float.self, capacity: samples.count / MemoryLayout<Float>.size)
+    let rawBufferSamples = audioBuffer.samples.bytes.bindMemory(to: Int16.self, capacity: audioBuffer.length)
+    
+    let samplesToWrite = samples.count / MemoryLayout<Float>.size
+    for i in 0..<samplesToWrite {
+        let rawSample = Int32(rawInputSamples[i])
+        let sample = Int16(clamping: rawSample)
+        rawBufferSamples[(audioBuffer.writeCursor + i) % audioBuffer.length] = sample 
+    }
+    audioBuffer.writeCursor = (audioBuffer.writeCursor + samplesToWrite) % audioBuffer.length
 }
 
 func initAudioSystem() {
