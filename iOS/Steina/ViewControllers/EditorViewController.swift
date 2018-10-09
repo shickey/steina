@@ -12,7 +12,8 @@ import Dispatch
 import simd
 
 class EditorViewController: UIViewController,
-                            WKScriptMessageHandler, 
+//                            WKScriptMessageHandKBler,
+                            UIWebViewDelegate,
                             MetalViewDelegate,
                             ClipsCollectionViewControllerDelegate, 
                             CaptureViewControllerDelegate,
@@ -38,7 +39,7 @@ class EditorViewController: UIViewController,
     @IBOutlet weak var cameraButton: UIButton!
     @IBOutlet weak var micButton: UIButton!
     @IBOutlet weak var toolbarView: UIView!
-    var webView: WKWebView! = nil
+    var webView: UIWebView! = nil
     var clipsCollectionVC : ClipsCollectionViewController? = nil
     
     override func viewDidLoad() {
@@ -72,16 +73,24 @@ class EditorViewController: UIViewController,
         initMetal(metalView)
         
         // Create web view controller and bind to "steinaMsg" namespace
-        let webViewController = WKUserContentController()
-        webViewController.add(self, name: "cons")
-        webViewController.add(self, name: "steinaMsg")
+//        let webViewController = WKUserContentController()
+//        webViewController.add(self, name: "cons")
+//        webViewController.add(self, name: "steinaMsg")
         
         // Create web view configuration
-        let webViewConfig = WKWebViewConfiguration()
-        webViewConfig.userContentController = webViewController
+//        let webViewConfig = WKWebViewConfiguration()
+//        webViewConfig.userContentController = webViewController
         
         // Init webview and load editor
-        webView = WKWebView(frame: self.webViewContainer.bounds, configuration: webViewConfig)
+//        webView = WKWebView(frame: self.webViewContainer.bounds, configuration: webViewConfig)
+//        webView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+//        webView.scrollView.isScrollEnabled = false
+//        webView.scrollView.panGestureRecognizer.isEnabled = false
+//        webView.scrollView.bounces = false
+        
+        webView = UIWebView(frame: self.webViewContainer.bounds)
+        webView.delegate = self
+//        webView = WKWebView(frame: self.webViewContainer.bounds, configuration: webViewConfig)
         webView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         webView.scrollView.isScrollEnabled = false
         webView.scrollView.panGestureRecognizer.isEnabled = false
@@ -91,9 +100,15 @@ class EditorViewController: UIViewController,
         self.webViewContainer!.addSubview(webView)
 
         // Load blocks editor
-        let webFolder = Bundle.main.url(forResource: "web", withExtension: nil)!
+//        let webFolder = Bundle.main.url(forResource: "web", withExtension: nil)!
         let indexPage = Bundle.main.url(forResource: "web/index", withExtension: "html")!
-        webView.loadFileURL(indexPage, allowingReadAccessTo: webFolder)
+//        webView.loadFileURL(indexPage, allowingReadAccessTo: webFolder)
+        
+        webView.loadRequest(URLRequest(url: indexPage))
+    }
+    
+    func webViewDidFinishLoad(_ webView: UIWebView) {
+        onScratchLoaded()
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -107,6 +122,7 @@ class EditorViewController: UIViewController,
     override func viewWillDisappear(_ animated: Bool) {
         runJavascript("vm.stopAll()")
         stopDisplayLink()
+        clearAudioBuffer()
         saveProject()
         super.viewWillDisappear(animated)
     }
@@ -142,7 +158,7 @@ class EditorViewController: UIViewController,
     func onScratchLoaded() {
         let projectJson = loadProjectJson(project)
         let js = "Steina.loadProject('\(projectJson)')"
-        runJavascript(js) { (_, _) in
+        runJavascript(js) //{ (_, _) in
             self.ready = true
             self.onReady()
             UIView.animate(withDuration: 0.5, animations: { 
@@ -151,15 +167,15 @@ class EditorViewController: UIViewController,
                 self.loadingView.isHidden = true
             })
             
-        }
+//        }
     }
     
     func saveProject() {
         project.thumbnail = getLastRenderedImage()
         saveProjectThumbnail(project)
-        runJavascript("Steina.getProjectJson()") { (res, err) in
-            saveProjectJson(self.project, res as! String) 
-        }
+        let projectJson = runJavascript("Steina.getProjectJson()") //{ (res, err) in
+            saveProjectJson(self.project, projectJson!) 
+//        }
     }
     
     func onReady() {
@@ -180,9 +196,14 @@ class EditorViewController: UIViewController,
         displayLink.remove(from: .current, forMode: .defaultRunLoopMode)
     }
     
-    @inline(__always)
-    func runJavascript(_ js: String, _ completion: ((Any?, Error?) -> Void)? = nil) {
-        webView!.evaluateJavaScript(js, completionHandler: completion)
+//    @inline(__always)
+//    func runJavascript(_ js: String, _ completion: ((Any?, Error?) -> Void)? = nil) {
+//        webView!.evaluateJavaScript(js, completionHandler: completion)
+//    }
+    
+    @inline(__always) @discardableResult
+    func runJavascript(_ js: String) -> String? {
+        return webView!.stringByEvaluatingJavaScript(from: js)
     }
     
     @IBAction func backButtonTapped(_ sender: Any) {
@@ -220,38 +241,44 @@ class EditorViewController: UIViewController,
     
     var firstTick = true
     
+    // Create audio mixing buffer
+    let mixingBuffer = Data(count: MemoryLayout<Float>.size * 4800) // 1600 comes from 48000 samples / 30 fps, but we overestimate
+    
     @objc func tick(_ sender: CADisplayLink) {
+        
+        print("********************TICK********************")
+        DEBUGBeginTimedBlock("Total Frame Execution")
         
         if firstTick {
             nextRenderTimestamp = sender.targetTimestamp
             firstTick = false
         }
         
-//        print("\n\n***************************\nTICK\n***************************\n Tick at \(hostTimeForTimestamp(CACurrentMediaTime())) for frame time: \(hostTimeForTimestamp(sender.targetTimestamp))")
-        
-        let timestampOffset = sender.timestamp - lastTargetTimestamp
-//        print("Timestamp diff: \(timestampOffset)    in samples: \(timestampOffset * 48000.0)")
-        
-//        let dt = (sender.targetTimestamp - sender.timestamp) * 1000.0
-        let dt = (sender.targetTimestamp - lastTargetTimestamp)
-//        print("Frame dt: \(sender.targetTimestamp - sender.timestamp)")
-        
+        let dt = sender.targetTimestamp - lastTargetTimestamp
+        print(String(format: "dt: %.2fms", dt * 1000.0))
+        if dt > 0.1 {
+            print("frame too long. dt: \(dt * 1000.0)")
+        }
         lastTargetTimestamp = sender.targetTimestamp
-        
         previousRenderedIds = renderedIds
         renderedIds = []
         
         self.renderDispatchGroup.wait()
-//        print("START js execution at \(hostTimeForTimestamp(CACurrentMediaTime()))")
-        runJavascript("Steina.tick(\(dt * 1000.0)); Steina.getRenderingState()") { ( res , err ) in
-//            print("END js execution at \(hostTimeForTimestamp(CACurrentMediaTime()))")
-            if let realError = err { 
-                print("JS ERROR: \(realError)")
-                return;
-            }
+        DEBUGBeginTimedBlock("JS Execution")
+        let renderingStateJson = runJavascript("Steina.tick(\(dt * 1000.0)); Steina.getRenderingState()")! //{ ( res , err ) in
+            DEBUGEndTimedBlock()
+//            if let realError = err { 
+//                print("JS ERROR: \(realError)")
+//                return;
+//            }
+        
+        if renderingStateJson != "" {
             
+        
             
-            if let json = res as? Dictionary<String, Any> {
+            let renderingState = try! JSONSerialization.jsonObject(with: renderingStateJson.data(using: .utf8)!, options: [])
+            
+            if let json = renderingState as? Dictionary<String, Any> {
                 let targets = json["videoTargets"] as! Array<Dictionary<String, Any>>
                 let playingSounds = json["playingSounds"] as! Dictionary<String, Dictionary<String, Any>>
                 
@@ -259,11 +286,11 @@ class EditorViewController: UIViewController,
                  * Render Audio
                  *****************/
                 
-//                print("START audio render at \(hostTimeForTimestamp(CACurrentMediaTime()))")
+                DEBUGBeginTimedBlock("Audio Rendering")
                 
-                // Create audio mixing buffer
-                let mixingBuffer = Data(count: MemoryLayout<Float>.size * 1700) // 1600 comes from 48000 samples / 30 fps, but we overestimate
-                let rawMixingBuffer = mixingBuffer.bytes.bindMemory(to: Float.self, capacity: 1700)
+                memset(mixingBuffer.bytes, 0, MemoryLayout<Float>.size * 4800)
+                let rawMixingBuffer = mixingBuffer.bytes.bindMemory(to: Float.self, capacity: 4800)
+                
                 
                 for (_, sound) in playingSounds {
                     // Get properties
@@ -271,12 +298,12 @@ class EditorViewController: UIViewController,
                     let start          = Int(floor((sound["prevPlayhead"] as! NSNumber).floatValue))
                     let end            = Int(ceil((sound["playhead"] as! NSNumber).floatValue))
                     
-//                    print("Playing sound: \(start), \(end), \(end - start)")
-                    
                     // Get samples
-                    let totalSamples = end - start;
+                    let totalSamples = min(end - start, 4800);
                     let asset = self.project.sounds[soundAssetId]!
                     let samples = fetchSamples(asset, start, end)
+                    
+                    print("total samples: \(totalSamples)")
                     
                     // Mix into buffer
                     let rawSamples = samples.bytes.bindMemory(to: Int16.self, capacity: totalSamples)
@@ -285,17 +312,20 @@ class EditorViewController: UIViewController,
                     }
                 }
                 
+                DEBUGBeginTimedBlock("Audio Copying")
                 // Copy samples to audio output buffer
                 writeFloatSamples(mixingBuffer, forHostTime: hostTimeForTimestamp(self.nextRenderTimestamp))
+                DEBUGEndTimedBlock()
                 
                 self.nextRenderTimestamp += dt
-//                writeFloatSamplesInaccurately(mixingBuffer)
                 
-//                print("END audio render/START video render at \(hostTimeForTimestamp(CACurrentMediaTime()))")
+                DEBUGEndTimedBlock()
                 
                 /*****************
                  * Render Video
                  *****************/
+                DEBUGBeginTimedBlock("Video Rendering")
+                
                 var numEntitiesToRender = 0
                 var draggingRenderFrame : RenderFrame? = nil
                 for target in targets {
@@ -365,14 +395,19 @@ class EditorViewController: UIViewController,
                     numEntitiesToRender += 1
                 }
                 
+                DEBUGEndTimedBlock()
+                
                 self.renderDispatchGroup.wait()
+                DEBUGBeginTimedBlock("GPU Rendering")
                 render(numEntitiesToRender)
-//                print("END video render at \(hostTimeForTimestamp(CACurrentMediaTime()))")
+                DEBUGEndTimedBlock()
             }
-            
+//        }
             
         }
         
+        DEBUGEndTimedBlock()
+        print("********************END TICK********************\n")
     }
     
     

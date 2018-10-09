@@ -172,10 +172,10 @@
             }
 
             function getRenderingState() {
-              return {
+              return JSON.stringify({
                 videoTargets: vm.getVideoTargets().map(t => t.toJSON()),
                 playingSounds: vm.runtime.audioState.playing
-              }
+              })
             }
 
             function getProjectJson() {

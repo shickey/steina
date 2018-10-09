@@ -6,10 +6,10 @@
          contextName = "videoClipMakerAlloc():VideoClip.swift">
       </ContextState>
       <ContextState
-         contextName = "closure #1 in CaptureViewController.stopRecording():CaptureViewController.swift">
+         contextName = "renderAudio(_:_:_:_:_:_:):Audio.swift">
       </ContextState>
       <ContextState
-         contextName = "renderAudio(_:_:_:_:_:_:):Audio.swift">
+         contextName = "closure #1 in CaptureViewController.stopRecording():CaptureViewController.swift">
       </ContextState>
       <ContextState
          contextName = "render():MetalWorker.swift">
@@ -18,6 +18,9 @@
                value = "clip">
             </PersistentString>
          </PersistentStrings>
+      </ContextState>
+      <ContextState
+         contextName = "fetchSamples(_:_:_:):Audio.swift">
       </ContextState>
    </ContextStates>
 </VariablesViewState>

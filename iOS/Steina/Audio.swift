@@ -21,6 +21,8 @@ var playingSounds : [PlayingSoundId : PlayingSound] = [:]
 var soundsToStart : [PlayingSound] = []
 var soundsToStop : [PlayingSoundId] = []
 
+var audioSemaphore = DispatchSemaphore(value: 1)
+
 struct SampleRange {
     var start : Int
     var end : Int
@@ -107,8 +109,7 @@ func outputProjectAudio(_ inRefCon: UnsafeMutableRawPointer,
         return noErr
     }
     
-    
-//    print("Audio output at \(hostTimeForTimestamp(CACurrentMediaTime())) for host time: \(inTimeStamp.pointee.mHostTime)")
+    audioSemaphore.wait()
     
     let numSamplesToRender = Int(inNumberFrames)
     
@@ -118,7 +119,6 @@ func outputProjectAudio(_ inRefCon: UnsafeMutableRawPointer,
     let outputR = outputBuffers[1].mData!.bindMemory(to: Int16.self, capacity: numSamplesToRender)
     
     let baseOffset = Int(Double(inTimeStamp.pointee.mHostTime - audioBuffer.baseTime) * (48000.0 / Double(clockFrequency)))
-    //print(baseOffset)
     
     let bufferSamples = audioBuffer.samples.bytes.bindMemory(to: Int16.self, capacity: audioBuffer.length)
     for i in 0..<numSamplesToRender {
@@ -130,8 +130,9 @@ func outputProjectAudio(_ inRefCon: UnsafeMutableRawPointer,
     if (Int(baseOffset) + numSamplesToRender) > audioBuffer.length {
         let oldBaseTime = audioBuffer.baseTime
         audioBuffer.baseTime += U64(audioBuffer.length) * U64(Double(clockFrequency) / 48000.0)
-        print("Updated base time from: \(oldBaseTime) to \(audioBuffer.baseTime)")
     } 
+    
+    audioSemaphore.signal()
     
     return noErr
 }
@@ -242,7 +243,7 @@ class SynchronizedAudioBuffer {
     }
 }
 
-var audioBuffer = SynchronizedAudioBuffer(numSamples: 48000)
+var audioBuffer = SynchronizedAudioBuffer(numSamples: 96000)
 
 func writeFloatSamples(_ samples: Data, forHostTime hostTime: U64) {
     if hostTime < audioBuffer.baseTime {
@@ -254,6 +255,9 @@ func writeFloatSamples(_ samples: Data, forHostTime hostTime: U64) {
         print("WARNING: sample offset outside of audio buffer boundary")
         return
     }
+    
+    audioSemaphore.wait()
+    
     let rawInputSamples = samples.bytes.bindMemory(to: Float.self, capacity: samples.count / MemoryLayout<Float>.size)
     let rawBufferSamples = audioBuffer.samples.bytes.bindMemory(to: Int16.self, capacity: audioBuffer.length)
     
@@ -263,6 +267,8 @@ func writeFloatSamples(_ samples: Data, forHostTime hostTime: U64) {
         let sample = Int16(clamping: rawSample)
         rawBufferSamples[(Int(offset) + i) % audioBuffer.length] = sample 
     }
+    
+    audioSemaphore.signal()
 }
 
 func writeFloatSamplesInaccurately(_ samples: Data) {
@@ -276,6 +282,12 @@ func writeFloatSamplesInaccurately(_ samples: Data) {
         rawBufferSamples[(audioBuffer.writeCursor + i) % audioBuffer.length] = sample 
     }
     audioBuffer.writeCursor = (audioBuffer.writeCursor + samplesToWrite) % audioBuffer.length
+}
+
+func clearAudioBuffer() {
+    audioSemaphore.wait()
+    memset(audioBuffer.samples.bytes, 0, audioBuffer.samples.count)
+    audioSemaphore.signal()
 }
 
 func initAudioSystem() {
