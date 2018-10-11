@@ -336,6 +336,8 @@ class AudioCaptureViewController: UIViewController, AudioViewDelegate {
         
         audioView.sound = sound
         
+        changeAudioOutputSource(.ios)
+        
         audioRenderContext.callback = { (updatedPlayheads) in
             if let _ = self.playingSoundId, let newPlayhead = updatedPlayheads[self.playingSoundId] {
                 self.audioView.currentPlayingSample = newPlayhead
@@ -371,12 +373,12 @@ class AudioCaptureViewController: UIViewController, AudioViewDelegate {
     }
     
     func audioViewDidSelectSampleRange(audioView: AudioView, sampleRange: SampleRange) {
-//        playingSoundId = playSound(audioView.sound!, sampleRange, looped: true)
+        playingSoundId = playSound(audioView.sound!, sampleRange, looped: true)
     }
     
     func audioViewDidDeselectSampleRange(audioView: AudioView) {
-//        stopSound(playingSoundId)
-//        playingSoundId = nil
+        stopSound(playingSoundId)
+        playingSoundId = nil
     }
 
 }

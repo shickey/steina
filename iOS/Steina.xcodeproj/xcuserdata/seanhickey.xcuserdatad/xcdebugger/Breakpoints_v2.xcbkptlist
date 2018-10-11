@@ -24,20 +24,34 @@
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.SymbolicBreakpoint">
          <BreakpointContent
-            shouldBeEnabled = "Yes"
+            shouldBeEnabled = "No"
             ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            symbolName = "malloc_error_break"
+            continueAfterRunningActions = "Yes"
+            symbolName = "changeAudioOutputSource"
             moduleName = "">
+            <Actions>
+               <BreakpointActionProxy
+                  ActionExtensionID = "Xcode.BreakpointAction.DebuggerCommand">
+                  <ActionContent
+                     consoleCommand = "frame info">
+                  </ActionContent>
+               </BreakpointActionProxy>
+            </Actions>
             <Locations>
                <Location
-                  shouldBeEnabled = "Yes"
+                  shouldBeEnabled = "No"
                   ignoreCount = "0"
                   continueAfterRunningActions = "No"
-                  symbolName = "malloc_error_break"
-                  moduleName = "libsystem_malloc.dylib"
+                  symbolName = "Steina.changeAudioOutputSource(Steina.AudioOutputSource) -&gt; ()"
+                  moduleName = "Steina"
                   usesParentBreakpointCondition = "Yes"
-                  offsetFromSymbolStart = "0">
+                  urlString = "file:///Users/seanhickey/Projects/steina/iOS/Steina/Audio.swift"
+                  timestampString = "560817341.437894"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "236"
+                  endingLineNumber = "236"
+                  offsetFromSymbolStart = "24">
                </Location>
             </Locations>
          </BreakpointContent>
@@ -47,117 +61,117 @@
          <BreakpointContent
             shouldBeEnabled = "No"
             ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            symbolName = "free"
+            continueAfterRunningActions = "Yes"
+            symbolName = "outputAudio"
             moduleName = "">
+            <Actions>
+               <BreakpointActionProxy
+                  ActionExtensionID = "Xcode.BreakpointAction.DebuggerCommand">
+                  <ActionContent
+                     consoleCommand = "frame info">
+                  </ActionContent>
+               </BreakpointActionProxy>
+            </Actions>
             <Locations>
                <Location
                   shouldBeEnabled = "No"
                   ignoreCount = "0"
                   continueAfterRunningActions = "No"
-                  symbolName = "CAAutoArrayDelete&lt;PhaseVocoderTwo::PerChannelState&gt;::free()"
-                  moduleName = "AudioToolbox"
+                  symbolName = "Steina.outputAudio(Swift.UnsafeMutableRawPointer, Swift.UnsafeMutablePointer&lt;__C.AudioUnitRenderActionFlags&gt;, Swift.UnsafePointer&lt;__C.AudioTimeStamp&gt;, Swift.UInt32, Swift.UInt32, Swift.Optional&lt;Swift.UnsafeMutablePointer&lt;__C.AudioBufferList&gt;&gt;) -&gt; Swift.Int32"
+                  moduleName = "Steina"
                   usesParentBreakpointCondition = "Yes"
-                  offsetFromSymbolStart = "0">
+                  urlString = "file:///Users/seanhickey/Projects/steina/iOS/Steina/Audio.swift"
+                  timestampString = "560817341.451122"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "133"
+                  endingLineNumber = "133"
+                  offsetFromSymbolStart = "52">
                </Location>
                <Location
                   shouldBeEnabled = "No"
                   ignoreCount = "0"
                   continueAfterRunningActions = "No"
-                  symbolName = "Object::free()"
-                  moduleName = "CoreGraphics"
+                  symbolName = "@objc Steina.outputAudio(Swift.UnsafeMutableRawPointer, Swift.UnsafeMutablePointer&lt;__C.AudioUnitRenderActionFlags&gt;, Swift.UnsafePointer&lt;__C.AudioTimeStamp&gt;, Swift.UInt32, Swift.UInt32, Swift.Optional&lt;Swift.UnsafeMutablePointer&lt;__C.AudioBufferList&gt;&gt;) -&gt; Swift.Int32"
+                  moduleName = "Steina"
                   usesParentBreakpointCondition = "Yes"
-                  offsetFromSymbolStart = "0">
+                  urlString = "file:///Users/seanhickey/Projects/steina/iOS/Steina/Audio.swift"
+                  timestampString = "560817341.45296"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "0"
+                  endingLineNumber = "0"
+                  offsetFromSymbolStart = "8">
                </Location>
+            </Locations>
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.SymbolicBreakpoint">
+         <BreakpointContent
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "Yes"
+            symbolName = "writeFloatSamples"
+            moduleName = "">
+            <Actions>
+               <BreakpointActionProxy
+                  ActionExtensionID = "Xcode.BreakpointAction.DebuggerCommand">
+                  <ActionContent
+                     consoleCommand = "frame info">
+                  </ActionContent>
+               </BreakpointActionProxy>
+            </Actions>
+            <Locations>
                <Location
                   shouldBeEnabled = "No"
                   ignoreCount = "0"
                   continueAfterRunningActions = "No"
-                  symbolName = "CA::AttrList::free()"
-                  moduleName = "QuartzCore"
+                  symbolName = "Steina.writeFloatSamples(Foundation.Data, forHostTime: Swift.UInt64) -&gt; ()"
+                  moduleName = "Steina"
                   usesParentBreakpointCondition = "Yes"
-                  offsetFromSymbolStart = "0">
+                  urlString = "file:///Users/seanhickey/Projects/steina/iOS/Steina/Audio.swift"
+                  timestampString = "560817341.471877"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "267"
+                  endingLineNumber = "267"
+                  offsetFromSymbolStart = "32">
                </Location>
+            </Locations>
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.SymbolicBreakpoint">
+         <BreakpointContent
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "Yes"
+            symbolName = "clearAudioBuffer"
+            moduleName = "">
+            <Actions>
+               <BreakpointActionProxy
+                  ActionExtensionID = "Xcode.BreakpointAction.DebuggerCommand">
+                  <ActionContent
+                     consoleCommand = "frame info">
+                  </ActionContent>
+               </BreakpointActionProxy>
+            </Actions>
+            <Locations>
                <Location
                   shouldBeEnabled = "No"
                   ignoreCount = "0"
                   continueAfterRunningActions = "No"
-                  symbolName = "icu::SimpleDateFormat::NSOverride::free()"
-                  moduleName = "libicucore.A.dylib"
+                  symbolName = "Steina.clearAudioBuffer() -&gt; ()"
+                  moduleName = "Steina"
                   usesParentBreakpointCondition = "Yes"
-                  offsetFromSymbolStart = "0">
-               </Location>
-               <Location
-                  shouldBeEnabled = "No"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "dyld3::TypedContentBuffer::free()"
-                  moduleName = "libdyld.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  offsetFromSymbolStart = "0">
-               </Location>
-               <Location
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "free"
-                  moduleName = "libsystem_malloc.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  offsetFromSymbolStart = "0">
-               </Location>
-               <Location
-                  shouldBeEnabled = "No"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "free"
-                  moduleName = "libsystem_kernel.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  offsetFromSymbolStart = "0">
-               </Location>
-               <Location
-                  shouldBeEnabled = "No"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "free"
-                  moduleName = "libsystem_pthread.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  offsetFromSymbolStart = "0">
-               </Location>
-               <Location
-                  shouldBeEnabled = "No"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "DefaultAllocator::free(void*)"
-                  moduleName = "Security"
-                  usesParentBreakpointCondition = "Yes"
-                  offsetFromSymbolStart = "0">
-               </Location>
-               <Location
-                  shouldBeEnabled = "No"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "SensitiveAllocator::free(void*)"
-                  moduleName = "Security"
-                  usesParentBreakpointCondition = "Yes"
-                  offsetFromSymbolStart = "0">
-               </Location>
-               <Location
-                  shouldBeEnabled = "No"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "bmalloc::DebugHeap::free(void*)"
-                  moduleName = "JavaScriptCore"
-                  usesParentBreakpointCondition = "Yes"
-                  offsetFromSymbolStart = "0">
-               </Location>
-               <Location
-                  shouldBeEnabled = "No"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "SCNMTLTextureCache::free(id&lt;MTLTexture&gt;)"
-                  moduleName = "SceneKit"
-                  usesParentBreakpointCondition = "Yes"
-                  offsetFromSymbolStart = "0">
+                  urlString = "file:///Users/seanhickey/Projects/steina/iOS/Steina/Audio.swift"
+                  timestampString = "560817341.484115"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "293"
+                  endingLineNumber = "293"
+                  offsetFromSymbolStart = "16">
                </Location>
             </Locations>
          </BreakpointContent>

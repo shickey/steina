@@ -12,7 +12,7 @@ import Dispatch
 import simd
 
 class EditorViewController: UIViewController,
-//                            WKScriptMessageHandKBler,
+//                            WKScriptMessageHandler,
                             UIWebViewDelegate,
                             MetalViewDelegate,
                             ClipsCollectionViewControllerDelegate, 
@@ -92,9 +92,9 @@ class EditorViewController: UIViewController,
         webView.delegate = self
 //        webView = WKWebView(frame: self.webViewContainer.bounds, configuration: webViewConfig)
         webView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-        webView.scrollView.isScrollEnabled = false
-        webView.scrollView.panGestureRecognizer.isEnabled = false
-        webView.scrollView.bounces = false
+        // webView.scrollView.isScrollEnabled = false
+        // webView.scrollView.panGestureRecognizer.isEnabled = false
+        // webView.scrollView.bounces = false
         
         // Add subview
         self.webViewContainer!.addSubview(webView)
@@ -114,6 +114,7 @@ class EditorViewController: UIViewController,
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         arrangeViewsForSize(view.bounds.size)
+        changeAudioOutputSource(.project)
         if ready {
             onReady()
         }
