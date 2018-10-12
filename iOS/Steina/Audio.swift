@@ -43,8 +43,21 @@ class PlayingSound {
     }
 }
 
+class RecordingBuffer {
+    var data : RawPtr 
+    var samples : Int = 0
+    
+    init(_ size: Int) {
+        data = malloc(size)
+    }
+    
+    deinit {
+        free(data)
+    }
+}
+
 class AudioRecordingContext {
-    var update : (() -> ())? = nil
+    var update : ((RecordingBuffer) -> ())? = nil
 }
 
 class AudioRenderContext {
@@ -76,7 +89,7 @@ var audioUnit : AudioComponentInstance! = nil
 var audioRenderContext = AudioRenderContext()
 var audioRecordingContext = AudioRecordingContext()
 var playingSounds : [PlayingSoundId : PlayingSound] = [:]
-var recordingSound : Sound! = nil 
+var recordingBuffer : RecordingBuffer! = nil
 
 var soundsToStart : [PlayingSound] = []
 var soundsToStop : [PlayingSoundId] = []
@@ -108,16 +121,19 @@ func inputAudio(_ inRefCon: UnsafeMutableRawPointer,
     AudioUnitRender(audioUnit, audioUnitRenderActionFlags, inTimeStamp, inBusNumber, inNumberFrames, &audioBufferList)
     
     let audioData = audioBufferList.mBuffers.mData!.bindMemory(to: Float.self, capacity: Int(inNumberFrames))
+    let recordingSamples = recordingBuffer.data.bindMemory(to: Int16.self, capacity: recordingBuffer.samples + Int(inNumberFrames))
     
     for i in 0..<Int(inNumberFrames) {
-        var sample = Int16(audioData[i] * Float(Int16.max))
-        let bufferPtr = UnsafeBufferPointer(start: &sample, count: 1)
-        recordingSound.samples.append(bufferPtr)
+        let sample = Int16(audioData[i] * Float(Int16.max))
+        recordingSamples[recordingBuffer.samples] = sample
+        recordingBuffer.samples += 1
     }
     
     if let update = recordingContext.update {
         DispatchQueue.main.async {
-            update()
+            if recordingBuffer != nil {
+                update(recordingBuffer)
+            }
         }
     }
     
@@ -159,7 +175,6 @@ func outputAudio(_ inRefCon: UnsafeMutableRawPointer,
             }
             
             if (Int(baseOffset) + numSamplesToRender) > audioBuffer.length {
-                let oldBaseTime = audioBuffer.baseTime
                 audioBuffer.baseTime += U64(audioBuffer.length) * U64(Double(clockFrequency) / 48000.0)
             }
 
@@ -383,15 +398,14 @@ func restartAudio(outputEnabled: Bool, inputEnabled: Bool) {
     startAudio()
 }
 
-func beginRecordingAudio(_ sound: Sound, _ update: @escaping () -> ()) {
-    recordingSound = sound
-    recordingSound.samples = Data(capacity: 10.megabytes) 
+func beginRecordingAudio(_ update: @escaping (_ recordingBuffer : RecordingBuffer) -> ()) {
+    recordingBuffer = RecordingBuffer(25.megabytes)
     audioRecordingContext.update = update
     restartAudio(outputEnabled: false, inputEnabled: true)
 }
 
-func stopRecordingAudio(_ completion: () -> ()) {
+func stopRecordingAudio(_ completion: (RecordingBuffer) -> ()) {
     restartAudio(outputEnabled: true, inputEnabled: false)
-    recordingSound = nil
-    completion()
+    completion(recordingBuffer)
+    recordingBuffer = nil
 }

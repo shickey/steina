@@ -358,14 +358,16 @@ class AudioCaptureViewController: UIViewController, AudioViewDelegate {
     @IBAction func recordButtonTapped(_ sender: Any) {
         if !recording {
             audioView.isUserInteractionEnabled = false
-            beginRecordingAudio(sound) {
+            beginRecordingAudio() { (recordingBuffer) in
+                self.sound.samples = Data(bytes: recordingBuffer.data, count: recordingBuffer.samples * 2)
                 self.audioView.sampleWindow = SampleRange(0, self.sound.length)
                 self.audioView.setNeedsDisplay()
             }
             recording = true
         }
         else {
-            stopRecordingAudio() {
+            stopRecordingAudio() { recordingBuffer in
+                self.sound.samples = Data(bytes: recordingBuffer.data, count: recordingBuffer.samples * 2)
                 recording = false
                 audioView.isUserInteractionEnabled = true
             }

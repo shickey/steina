@@ -10,6 +10,9 @@ import UIKit
 import WebKit
 import Dispatch
 import simd
+import os.signpost
+
+let logger = OSLog(subsystem: "edu.mit.media.llk.Steina", category: "Timing")
 
 class EditorViewController: UIViewController,
 //                            WKScriptMessageHandler,
@@ -247,6 +250,7 @@ class EditorViewController: UIViewController,
     
     @objc func tick(_ sender: CADisplayLink) {
         
+        os_signpost(.begin, log: logger, name: "Frame")
         print("********************TICK********************")
         DEBUGBeginTimedBlock("Total Frame Execution")
         
@@ -266,7 +270,9 @@ class EditorViewController: UIViewController,
         
         self.renderDispatchGroup.wait()
         DEBUGBeginTimedBlock("JS Execution")
+        os_signpost(.begin, log: logger, name: "JS")
         let renderingStateJson = runJavascript("Steina.tick(\(dt * 1000.0)); Steina.getRenderingState()")! //{ ( res , err ) in
+            os_signpost(.end, log: logger, name: "JS")
             DEBUGEndTimedBlock()
 //            if let realError = err { 
 //                print("JS ERROR: \(realError)")
@@ -288,6 +294,7 @@ class EditorViewController: UIViewController,
                  *****************/
                 
                 DEBUGBeginTimedBlock("Audio Rendering")
+                os_signpost(.begin, log: logger, name: "Audio Render")
                 
                 memset(mixingBuffer.bytes, 0, MemoryLayout<Float>.size * 4800)
                 let rawMixingBuffer = mixingBuffer.bytes.bindMemory(to: Float.self, capacity: 4800)
@@ -314,18 +321,22 @@ class EditorViewController: UIViewController,
                 }
                 
                 DEBUGBeginTimedBlock("Audio Copying")
+                os_signpost(.begin, log: logger, name: "Audio Write")
                 // Copy samples to audio output buffer
                 writeFloatSamples(mixingBuffer, forHostTime: hostTimeForTimestamp(self.nextRenderTimestamp))
+                os_signpost(.end, log: logger, name: "Audio Write")
                 DEBUGEndTimedBlock()
                 
                 self.nextRenderTimestamp += dt
                 
+                os_signpost(.end, log: logger, name: "Audio Render")
                 DEBUGEndTimedBlock()
                 
                 /*****************
                  * Render Video
                  *****************/
                 DEBUGBeginTimedBlock("Video Rendering")
+                os_signpost(.begin, log: logger, name: "Video Render")
                 
                 var numEntitiesToRender = 0
                 var draggingRenderFrame : RenderFrame? = nil
@@ -396,17 +407,20 @@ class EditorViewController: UIViewController,
                     numEntitiesToRender += 1
                 }
                 
-                DEBUGEndTimedBlock()
-                
                 self.renderDispatchGroup.wait()
+                os_signpost(.end, log: logger, name: "Video Render")
+                
                 DEBUGBeginTimedBlock("GPU Rendering")
+                os_signpost(.begin, log: logger, name: "GPU Kickoff")
                 render(numEntitiesToRender)
+                os_signpost(.end, log: logger, name: "GPU Kickoff")
                 DEBUGEndTimedBlock()
             }
 //        }
             
         }
         
+        os_signpost(.end, log: logger, name: "Frame")
         DEBUGEndTimedBlock()
         print("********************END TICK********************\n")
     }

@@ -62,6 +62,7 @@ class ClipsCollectionViewController: UICollectionViewController {
         }
         else {
             // Audio Asset
+            cell.thumbnailView.image = UIImage(named: "audio")!
         }
         
         
@@ -87,7 +88,7 @@ class ClipsCollectionViewController: UICollectionViewController {
             }
             else {
                 // Audio Asset
-                assetId = project.soundIds[indexPath.item]
+                assetId = project.soundIds[indexPath.item - project.clipIds.count]
             }
             d.clipsControllerDidSelect(clipsController: self, assetId: assetId)
         }
