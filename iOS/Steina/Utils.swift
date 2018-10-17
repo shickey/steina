@@ -72,3 +72,20 @@ func hostTimeForTimestamp(_ timestamp: CFTimeInterval) -> U64 {
     return U64(timestamp * Double(clockFrequency))
 }
 
+@inline(__always)
+func timestampForHostTime(_ hostTime: U64) -> CFTimeInterval {
+    return Double(hostTime) / Double(clockFrequency)
+}
+
+@inline(__always)
+func timeIntervalInSecondsBetweenHostTimes(_ hostTimeA: U64, _ hostTimeB: U64) -> Double {
+    if hostTimeA < hostTimeB {
+        let diff = hostTimeB - hostTimeA
+        return Double(diff) / Double(clockFrequency)
+    }
+    else {
+        let diff = hostTimeA - hostTimeB
+        return Double(diff) / Double(clockFrequency)
+    }
+}
+

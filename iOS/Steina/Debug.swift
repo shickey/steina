@@ -27,5 +27,5 @@ func DEBUGBeginTimedBlock(_ name: String) {
 
 func DEBUGEndTimedBlock() {
     let frame = debugTimingStack.popLast()!
-    print(String(format: "%@: %.2fms", frame.name, (CACurrentMediaTime() - frame.start) * 1000.0))
+//    print(String(format: "%@: %.2fms", frame.name, (CACurrentMediaTime() - frame.start) * 1000.0))
 }

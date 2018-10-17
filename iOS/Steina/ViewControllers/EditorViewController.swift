@@ -15,7 +15,6 @@ import os.signpost
 let logger = OSLog(subsystem: "edu.mit.media.llk.Steina", category: "Timing")
 
 class EditorViewController: UIViewController,
-//                            WKScriptMessageHandler,
                             UIWebViewDelegate,
                             MetalViewDelegate,
                             ClipsCollectionViewControllerDelegate, 
@@ -69,43 +68,21 @@ class EditorViewController: UIViewController,
         }
         catch {}
         
-        
         metalView.metalLayer.drawableSize = CGSize(width: 640, height: 480)
         metalView.delegate = self
         
         initMetal(metalView)
         
-        // Create web view controller and bind to "steinaMsg" namespace
-//        let webViewController = WKUserContentController()
-//        webViewController.add(self, name: "cons")
-//        webViewController.add(self, name: "steinaMsg")
-        
-        // Create web view configuration
-//        let webViewConfig = WKWebViewConfiguration()
-//        webViewConfig.userContentController = webViewController
-        
         // Init webview and load editor
-//        webView = WKWebView(frame: self.webViewContainer.bounds, configuration: webViewConfig)
-//        webView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-//        webView.scrollView.isScrollEnabled = false
-//        webView.scrollView.panGestureRecognizer.isEnabled = false
-//        webView.scrollView.bounces = false
-        
         webView = UIWebView(frame: self.webViewContainer.bounds)
         webView.delegate = self
-//        webView = WKWebView(frame: self.webViewContainer.bounds, configuration: webViewConfig)
         webView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-        // webView.scrollView.isScrollEnabled = false
-        // webView.scrollView.panGestureRecognizer.isEnabled = false
-        // webView.scrollView.bounces = false
         
         // Add subview
         self.webViewContainer!.addSubview(webView)
 
         // Load blocks editor
-//        let webFolder = Bundle.main.url(forResource: "web", withExtension: nil)!
         let indexPage = Bundle.main.url(forResource: "web/index", withExtension: "html")!
-//        webView.loadFileURL(indexPage, allowingReadAccessTo: webFolder)
         
         webView.loadRequest(URLRequest(url: indexPage))
     }
@@ -162,24 +139,21 @@ class EditorViewController: UIViewController,
     func onScratchLoaded() {
         let projectJson = loadProjectJson(project)
         let js = "Steina.loadProject('\(projectJson)')"
-        runJavascript(js) //{ (_, _) in
-            self.ready = true
-            self.onReady()
-            UIView.animate(withDuration: 0.5, animations: { 
-                self.loadingView.alpha = 0.0
-            }, completion: { (_) in
-                self.loadingView.isHidden = true
-            })
-            
-//        }
+        runJavascript(js)
+        self.ready = true
+        self.onReady()
+        UIView.animate(withDuration: 0.5, animations: { 
+            self.loadingView.alpha = 0.0
+        }, completion: { (_) in
+            self.loadingView.isHidden = true
+        })
     }
     
     func saveProject() {
         project.thumbnail = getLastRenderedImage()
         saveProjectThumbnail(project)
-        let projectJson = runJavascript("Steina.getProjectJson()") //{ (res, err) in
-            saveProjectJson(self.project, projectJson!) 
-//        }
+        let projectJson = runJavascript("Steina.getProjectJson()")
+        saveProjectJson(self.project, projectJson!) 
     }
     
     func onReady() {
@@ -199,11 +173,6 @@ class EditorViewController: UIViewController,
     func stopDisplayLink() {
         displayLink.remove(from: .current, forMode: .defaultRunLoopMode)
     }
-    
-//    @inline(__always)
-//    func runJavascript(_ js: String, _ completion: ((Any?, Error?) -> Void)? = nil) {
-//        webView!.evaluateJavaScript(js, completionHandler: completion)
-//    }
     
     @inline(__always) @discardableResult
     func runJavascript(_ js: String) -> String? {
@@ -239,30 +208,24 @@ class EditorViewController: UIViewController,
         }
     }
     
-    
     var nextRenderTimestamp = 0.0
     var lastTargetTimestamp = 0.0
     
-    var firstTick = true
-    
     // Create audio mixing buffer
-    let mixingBuffer = Data(count: MemoryLayout<Float>.size * 4800) // 1600 comes from 48000 samples / 30 fps, but we overestimate
+    let mixingBuffer = Data(count: MemoryLayout<Float>.size * 4800) // We allocate enough for 3 frames of audio and hard cap it there
     
     @objc func tick(_ sender: CADisplayLink) {
         
         os_signpost(.begin, log: logger, name: "Frame")
-        print("********************TICK********************")
         DEBUGBeginTimedBlock("Total Frame Execution")
         
-        if firstTick {
-            nextRenderTimestamp = sender.targetTimestamp
-            firstTick = false
-        }
-        
         let dt = sender.targetTimestamp - lastTargetTimestamp
-        print(String(format: "dt: %.2fms", dt * 1000.0))
+        
+        // @TODO This probably isn't the best way to deal with dropped video frames in the audio stream
+        //       but it's an (arguably) reasonable first approximation
         if dt > 0.1 {
             print("frame too long. dt: \(dt * 1000.0)")
+            nextRenderTimestamp = sender.targetTimestamp
         }
         lastTargetTimestamp = sender.targetTimestamp
         previousRenderedIds = renderedIds
@@ -271,17 +234,11 @@ class EditorViewController: UIViewController,
         self.renderDispatchGroup.wait()
         DEBUGBeginTimedBlock("JS Execution")
         os_signpost(.begin, log: logger, name: "JS")
-        let renderingStateJson = runJavascript("Steina.tick(\(dt * 1000.0)); Steina.getRenderingState()")! //{ ( res , err ) in
-            os_signpost(.end, log: logger, name: "JS")
-            DEBUGEndTimedBlock()
-//            if let realError = err { 
-//                print("JS ERROR: \(realError)")
-//                return;
-//            }
+        let renderingStateJson = runJavascript("Steina.tick(\(dt * 1000.0)); Steina.getRenderingState()")!
+        os_signpost(.end, log: logger, name: "JS")
+        DEBUGEndTimedBlock()
         
         if renderingStateJson != "" {
-            
-        
             
             let renderingState = try! JSONSerialization.jsonObject(with: renderingStateJson.data(using: .utf8)!, options: [])
             
@@ -310,8 +267,6 @@ class EditorViewController: UIViewController,
                     let totalSamples = min(end - start, 4800);
                     let asset = self.project.sounds[soundAssetId]!
                     let samples = fetchSamples(asset, start, end)
-                    
-                    print("total samples: \(totalSamples)")
                     
                     // Mix into buffer
                     let rawSamples = samples.bytes.bindMemory(to: Int16.self, capacity: totalSamples)
@@ -416,42 +371,12 @@ class EditorViewController: UIViewController,
                 os_signpost(.end, log: logger, name: "GPU Kickoff")
                 DEBUGEndTimedBlock()
             }
-//        }
             
         }
         
         os_signpost(.end, log: logger, name: "Frame")
         DEBUGEndTimedBlock()
-        print("********************END TICK********************\n")
     }
-    
-    
-    /**********************************************************************
-     *
-     * WKUserContentControllerDelegate
-     *
-     **********************************************************************/
-    
-    func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
-        // @TODO: Ewwwwwwwwww. Clean this mess up.
-        if message.name == "steinaMsg" {
-            if let body = message.body as? NSDictionary {
-                if let message = body.object(forKey: "message") as? String {
-                    if message == "READY" {
-                        onScratchLoaded()
-                    }
-                }
-            }
-        }
-        else if message.name == "cons" {
-            if let body = message.body as? NSDictionary {
-                if let message = body.object(forKey: "message") as? String {
-                    print("JS MESSAGE: \(message)")
-                }
-            }
-        }
-    }
-    
     
     /**********************************************************************
      *

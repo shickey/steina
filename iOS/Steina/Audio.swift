@@ -10,6 +10,7 @@ import Foundation
 import AudioUnit
 import AVFoundation
 import QuartzCore
+import os.signpost
 
 typealias PlayingSoundId = UUID
 
@@ -94,8 +95,6 @@ var recordingBuffer : RecordingBuffer! = nil
 var soundsToStart : [PlayingSound] = []
 var soundsToStop : [PlayingSoundId] = []
 
-var audioSemaphore = DispatchSemaphore(value: 1)
-
 var audioBuffer = SynchronizedAudioBuffer(numSamples: 96000)
 
 var audioOutputSource = AudioOutputSource.ios
@@ -146,8 +145,8 @@ func outputAudio(_ inRefCon: UnsafeMutableRawPointer,
                  _ inBusNumber: UInt32,
                  _ inNumberFrames: UInt32,
                  _ ioData: UnsafeMutablePointer<AudioBufferList>?) -> OSStatus {
-    audioSemaphore.wait()
-    defer { audioSemaphore.signal() }
+    os_signpost(.begin, log: logger, name: "Audio Output")
+    defer { os_signpost(.end, log: logger, name: "Audio Output") }
 
     switch audioOutputSource {
         case .project:
@@ -165,16 +164,19 @@ func outputAudio(_ inRefCon: UnsafeMutableRawPointer,
             let outputL = outputBuffers[0].mData!.bindMemory(to: Int16.self, capacity: numSamplesToRender)
             let outputR = outputBuffers[1].mData!.bindMemory(to: Int16.self, capacity: numSamplesToRender)
             
-            let baseOffset = Int(Double(inTimeStamp.pointee.mHostTime - audioBuffer.baseTime) * (48000.0 / Double(clockFrequency)))
+            let baseOffset = Int(Double(inTimeStamp.pointee.mHostTime - audioBuffer.baseTime) * (48000.0 / Double(clockFrequency))) 
             
+            os_signpost(.begin, log: logger, name: "Audio Output - Samples Copy")
             let bufferSamples = audioBuffer.samples.bytes.bindMemory(to: Int16.self, capacity: audioBuffer.length)
             for i in 0..<numSamplesToRender {
                 let sample = bufferSamples[(Int(baseOffset) + i) % audioBuffer.length]
                 outputL[i] = sample
                 outputR[i] = sample
             }
+            os_signpost(.end, log: logger, name: "Audio Output - Samples Copy")
             
             if (Int(baseOffset) + numSamplesToRender) > audioBuffer.length {
+                os_signpost(.event, log: logger, name: "Audio Output - Buffer Base Wrapped")
                 audioBuffer.baseTime += U64(audioBuffer.length) * U64(Double(clockFrequency) / 48000.0)
             }
 
@@ -246,15 +248,11 @@ func outputAudio(_ inRefCon: UnsafeMutableRawPointer,
 }
 
 func changeAudioOutputSource(_ source: AudioOutputSource) {
-    audioSemaphore.wait()
-
     if source != audioOutputSource {
-        // Clear audio buffer
-        memset(audioBuffer.samples.bytes, 0, audioBuffer.samples.count)
+        clearAudioBuffer()
         audioOutputSource = source
+        firstTick = true
     }
-
-    audioSemaphore.signal()
 }
 
 func playSound(_ sound: Sound, _ range: SampleRange, looped: Bool) -> PlayingSoundId {
@@ -278,16 +276,16 @@ func fetchSamples(_ asset: Sound, _ start: Int, _ end: Int) -> Data {
 
 func writeFloatSamples(_ samples: Data, forHostTime hostTime: U64) {
     if hostTime < audioBuffer.baseTime {
+        os_signpost(.event, log: logger, name: "Audio Output - SAMPLE WRITE TOO EARLY")
         print("WARNING: Attempted to write samples earlier than the base buffer time")
         return
     }
     let offset = Int(Double(hostTime - audioBuffer.baseTime) * (48000.0 / Double(clockFrequency))) % audioBuffer.length
     if offset < 0 || offset > audioBuffer.length {
         print("WARNING: sample offset outside of audio buffer boundary")
+        os_signpost(.event, log: logger, name: "Audio Output - SAMPLE OFFSET OUTSIDE BUFFER BOUNDS")
         return
     }
-    
-    audioSemaphore.wait()
     
     let rawInputSamples = samples.bytes.bindMemory(to: Float.self, capacity: samples.count / MemoryLayout<Float>.size)
     let rawBufferSamples = audioBuffer.samples.bytes.bindMemory(to: Int16.self, capacity: audioBuffer.length)
@@ -299,13 +297,10 @@ func writeFloatSamples(_ samples: Data, forHostTime hostTime: U64) {
         rawBufferSamples[(Int(offset) + i) % audioBuffer.length] = sample 
     }
     
-    audioSemaphore.signal()
 }
 
 func clearAudioBuffer() {
-    audioSemaphore.wait()
     memset(audioBuffer.samples.bytes, 0, audioBuffer.samples.count)
-    audioSemaphore.signal()
 }
 
 func initAudioSystem() {
@@ -366,8 +361,6 @@ func initAudioSystem() {
     
    var renderCallbackStruct = AURenderCallbackStruct(inputProc: outputAudio, inputProcRefCon: &audioRenderContext)
    AudioUnitSetProperty(audioUnit, kAudioUnitProperty_SetRenderCallback, kAudioUnitScope_Input, 0, &renderCallbackStruct, UInt32(MemoryLayout<AURenderCallbackStruct>.size))
-    // var renderCallbackStruct = AURenderCallbackStruct(inputProc: outputProjectAudio, inputProcRefCon: nil)
-    // AudioUnitSetProperty(audioUnit, kAudioUnitProperty_SetRenderCallback, kAudioUnitScope_Input, 0, &renderCallbackStruct, UInt32(MemoryLayout<AURenderCallbackStruct>.size))
     
     var inputCallbackStruct = AURenderCallbackStruct(inputProc: inputAudio, inputProcRefCon: &audioRecordingContext)
     AudioUnitSetProperty(audioUnit, kAudioOutputUnitProperty_SetInputCallback, kAudioUnitScope_Output, 1, &inputCallbackStruct, UInt32(MemoryLayout<AURenderCallbackStruct>.size))
