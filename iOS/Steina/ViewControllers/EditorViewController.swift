@@ -463,6 +463,8 @@ class EditorViewController: UIViewController,
      **********************************************************************/
     
     func audioCaptureViewControllerDidCreateSound(_ sound: Sound) {
+        if sound.length == 0 { return }
+        
         if sound.project == nil {
             addSoundToProject(sound, project)
         }
