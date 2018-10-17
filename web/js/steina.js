@@ -14,28 +14,28 @@
 
         var defaultProject = {
           "targets": [
-          {
-            "isStage": true,
-            "name": "Stage",
-            "variables": {},
-            "lists": {},
-            "broadcasts": {},
-            "blocks": {},
-            "currentCostume": 0,
-            "costumes": [
             {
-              "assetId": "739b5e2a2435f6e1ec2993791b423146",
-              "name": "backdrop1",
-              "bitmapResolution": 1,
-              "md5ext": "739b5e2a2435f6e1ec2993791b423146.png",
-              "dataFormat": "png",
-              "rotationCenterX": 240,
-              "rotationCenterY": 180
+              "isStage": true,
+              "name": "Stage",
+              "variables": {},
+              "lists": {},
+              "broadcasts": {},
+              "blocks": {},
+              "currentCostume": 0,
+              "costumes": [
+                {
+                  "assetId": "739b5e2a2435f6e1ec2993791b423146",
+                  "name": "backdrop1",
+                  "bitmapResolution": 1,
+                  "md5ext": "739b5e2a2435f6e1ec2993791b423146.png",
+                  "dataFormat": "png",
+                  "rotationCenterX": 240,
+                  "rotationCenterY": 180
+                }
+              ],
+              "sounds": [],
+              "volume": 100,
             }
-            ],
-            "sounds": [],
-            "volume": 100,
-          }
           ],
           "meta": {
             "semver": "3.0.0",
@@ -183,7 +183,8 @@
               var json = {
                 renderingOrder: [],
                 videoTargets: {},
-                audioTargets: {}
+                audioTargets: {},
+                broadcastVariables: {}
               }
               var videoTargets = vm.getVideoTargets()
               videoTargets.forEach(t => {
@@ -194,6 +195,13 @@
               audioTargets.forEach(t => {
                 json.audioTargets[t.id] = t
               });
+              var broadcastVars = vm.runtime.getTargetForStage().variables;
+              for (var id in broadcastVars) {
+                var broadcastVar = broadcastVars[id];
+                if (broadcastVar.type == 'broadcast_msg') {
+                  json.broadcastVariables[id] = broadcastVar;
+                }
+              }
               return JSON.stringify(json);
             }
 
@@ -207,6 +215,14 @@
               for (targetId in project.audioTargets) {
                 var target = project.audioTargets[targetId];
                 vm.inflateAudioTarget(targetId, target);
+              }
+              if (project.hasOwnProperty('broadcastVariables')) {
+                var broadcastVars = project.broadcastVariables;
+                var stage = vm.runtime.getTargetForStage();
+                for (var id in broadcastVars) {
+                  var varJson = broadcastVars[id];
+                  stage.createVariable(id, varJson.name, varJson.type);
+                }
               }
             }
 
