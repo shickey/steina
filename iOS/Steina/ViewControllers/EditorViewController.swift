@@ -48,25 +48,9 @@ class EditorViewController: UIViewController,
         super.viewDidLoad()
         
         // Load clips and sounds into memory
-        do {
-            let projectJsonData = try Data(contentsOf: project.jsonUrl)
-            let projectJson = try JSONSerialization.jsonObject(with: projectJsonData, options: [])
-            let jsonDict = projectJson as! NSDictionary
-            let videoTargets = jsonDict["videoTargets"] as! NSDictionary
-            for (videoTargetId, _) in videoTargets {
-                let videoTargetIdStr = videoTargetId as! String
-                loadClip(videoTargetIdStr, project) 
-            }
-            let audioTargets = jsonDict["audioTargets"] as! NSDictionary
-            for (audioTargetId, audioTargetAny) in audioTargets {
-                let audioTargetIdStr = audioTargetId as! String
-                let audioTarget = audioTargetAny as! Dictionary<String, Any>
-                let nsMarkers = audioTarget["markers"] as! [NSNumber]
-                let markers = nsMarkers.map({ $0.intValue })
-                loadSound(audioTargetIdStr, project, markers) 
-            }
+        if !project.assetsLoaded {
+            loadProjectAssets(project)
         }
-        catch {}
         
         metalView.metalLayer.drawableSize = CGSize(width: 640, height: 480)
         metalView.delegate = self
@@ -403,9 +387,11 @@ class EditorViewController: UIViewController,
             dragStartTimestamp = CACurrentMediaTime()
             draggingVideoId = draggingId        
             runJavascript("Steina.beginDraggingVideo('\(draggingVideoId!)', \(unprojected.x), \(unprojected.y))")
-            if let clipsVC = clipsCollectionVC, let idx = project.clipIds.index(of: draggingId) {
-                clipsVC.collectionView!.selectItem(at: IndexPath(item: idx, section: 0), animated: true, scrollPosition: .centeredHorizontally)
-            }
+//            DispatchQueue.main.async {
+//                if let clipsVC = self.clipsCollectionVC, let idx = self.project.clipIds.index(of: draggingId) {
+//                    clipsVC.collectionView!.selectItem(at: IndexPath(item: idx, section: 0), animated: true, scrollPosition: .centeredHorizontally)
+//                }
+//            }
         }
     }
     
@@ -419,6 +405,7 @@ class EditorViewController: UIViewController,
     }
     
     func metalViewEndedTouch(_ metalView: MetalView, location: CGPoint) {
+        print("touch ended \(draggingVideoId)")
         guard draggingVideoId != nil else { return }
         
         runJavascript("Steina.endDraggingVideo('\(draggingVideoId!)')")

@@ -348,6 +348,7 @@ class Project {
     var soundIds : [SoundId] = []
     var sounds : [SoundId : Sound] = [:]
     var thumbnail : UIImage? = nil
+    var assetsLoaded : Bool = false
     
     init(id projectId: UUID) {
         id = projectId
@@ -390,6 +391,32 @@ func saveProjectJson(_ project: Project, _ json: String) {
     try! json.write(to: project.jsonUrl, atomically: true, encoding: .utf8)
 }
 
+func loadProjectAssets(_ project: Project) {
+    if project.assetsLoaded { return }
+    
+    do {
+        let projectJsonData = try Data(contentsOf: project.jsonUrl)
+        let projectJson = try JSONSerialization.jsonObject(with: projectJsonData, options: [])
+        let jsonDict = projectJson as! NSDictionary
+        let videoTargets = jsonDict["videoTargets"] as! NSDictionary
+        for (videoTargetId, _) in videoTargets {
+            let videoTargetIdStr = videoTargetId as! String
+            loadClip(videoTargetIdStr, project) 
+        }
+        let audioTargets = jsonDict["audioTargets"] as! NSDictionary
+        for (audioTargetId, audioTargetAny) in audioTargets {
+            let audioTargetIdStr = audioTargetId as! String
+            let audioTarget = audioTargetAny as! Dictionary<String, Any>
+            let nsMarkers = audioTarget["markers"] as! [NSNumber]
+            let markers = nsMarkers.map({ $0.intValue })
+            loadSound(audioTargetIdStr, project, markers) 
+        }
+    }
+    catch {}
+    
+    project.assetsLoaded = true
+}
+
 
 /*******************************************************************
  *
@@ -406,6 +433,7 @@ class SteinaStore {
     static func insertProject() -> Project {
         let projectId = UUID()
         let project = Project(id: projectId)
+        project.assetsLoaded = true
         projects.add(project)
         
         // Create directory structure
