@@ -243,7 +243,8 @@ class EditorViewController: UIViewController,
             let renderingState = try! JSONSerialization.jsonObject(with: renderingStateJson.data(using: .utf8)!, options: [])
             
             if let json = renderingState as? Dictionary<String, Any> {
-                let targets = json["videoTargets"] as! Array<Dictionary<String, Any>>
+                let videoTargets = json["videoTargets"] as! Array<Dictionary<String, Any>>
+                let audioTargets = json["audioTargets"] as! Dictionary<String, Dictionary<String, Any>>
                 let playingSounds = json["playingSounds"] as! Dictionary<String, Dictionary<String, Any>>
                 
                 /*****************
@@ -268,10 +269,13 @@ class EditorViewController: UIViewController,
                     let asset = self.project.sounds[soundAssetId]!
                     let samples = fetchSamples(asset, start, end)
                     
+                    let target = audioTargets[soundAssetId]!
+                    let volume = (target["volume"] as! NSNumber).floatValue / Float(100.0)
+                    
                     // Mix into buffer
                     let rawSamples = samples.bytes.bindMemory(to: Int16.self, capacity: totalSamples)
                     for i in 0..<totalSamples {
-                        rawMixingBuffer[i] += Float(rawSamples[i])
+                        rawMixingBuffer[i] += Float(rawSamples[i]) * volume
                     }
                 }
                 
@@ -295,7 +299,7 @@ class EditorViewController: UIViewController,
                 
                 var numEntitiesToRender = 0
                 var draggingRenderFrame : RenderFrame? = nil
-                for target in targets {
+                for target in videoTargets {
                     // Check for visibility, bail early if nothing to render
                     let visible = target["visible"] as! Bool
                     if !visible { continue; } // Don't render anything if the video isn't visible

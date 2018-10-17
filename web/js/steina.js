@@ -174,6 +174,7 @@
             function getRenderingState() {
               return JSON.stringify({
                 videoTargets: vm.getVideoTargets().map(t => t.toJSON()),
+                audioTargets: vm.getAudioTargetsRenderingInfo(),
                 playingSounds: vm.runtime.audioState.playing
               })
             }
