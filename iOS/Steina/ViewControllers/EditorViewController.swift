@@ -387,11 +387,6 @@ class EditorViewController: UIViewController,
             dragStartTimestamp = CACurrentMediaTime()
             draggingVideoId = draggingId        
             runJavascript("Steina.beginDraggingVideo('\(draggingVideoId!)', \(unprojected.x), \(unprojected.y))")
-//            DispatchQueue.main.async {
-//                if let clipsVC = self.clipsCollectionVC, let idx = self.project.clipIds.index(of: draggingId) {
-//                    clipsVC.collectionView!.selectItem(at: IndexPath(item: idx, section: 0), animated: true, scrollPosition: .centeredHorizontally)
-//                }
-//            }
         }
     }
     
@@ -405,13 +400,19 @@ class EditorViewController: UIViewController,
     }
     
     func metalViewEndedTouch(_ metalView: MetalView, location: CGPoint) {
-        print("touch ended \(draggingVideoId)")
         guard draggingVideoId != nil else { return }
         
-        runJavascript("Steina.endDraggingVideo('\(draggingVideoId!)')")
-        
+        var shouldUpdateDragTarget = true
         if CACurrentMediaTime() - dragStartTimestamp < 0.1 {
             runJavascript("Steina.tapVideo('\(draggingVideoId!)')")
+            shouldUpdateDragTarget = false;
+        }
+        
+        runJavascript("Steina.endDraggingVideo('\(draggingVideoId!)', \(shouldUpdateDragTarget ? "true" : "false"))")
+        if shouldUpdateDragTarget {
+            if let clipsVC = self.clipsCollectionVC, let idx = self.project.clipIds.index(of: draggingVideoId) {
+                clipsVC.collectionView!.selectItem(at: IndexPath(item: idx, section: 0), animated: true, scrollPosition: .centeredHorizontally)
+            }
         }
         
         dragStartTimestamp = nil

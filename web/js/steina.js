@@ -240,8 +240,8 @@
               });
             }
 
-            function endDraggingVideo(id) {
-              vm.stopDrag(id);
+            function endDraggingVideo(id, updateDragTarget = true) {
+              vm.stopDrag(id, updateDragTarget);
             }
 
             function tapVideo(id) {
