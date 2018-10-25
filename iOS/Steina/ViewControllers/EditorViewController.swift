@@ -10,9 +10,6 @@ import UIKit
 import WebKit
 import Dispatch
 import simd
-import os.signpost
-
-let logger = OSLog(subsystem: "edu.mit.media.llk.Steina", category: "Timing")
 
 class EditorViewController: UIViewController,
                             UIWebViewDelegate,
@@ -200,8 +197,7 @@ class EditorViewController: UIViewController,
     
     @objc func tick(_ sender: CADisplayLink) {
         
-        os_signpost(.begin, log: logger, name: "Frame")
-        DEBUGBeginTimedBlock("Total Frame Execution")
+        DEBUGBeginTimedBlock("Frame")
         
         let dt = sender.targetTimestamp - lastTargetTimestamp
         
@@ -216,11 +212,9 @@ class EditorViewController: UIViewController,
         renderedIds = []
         
         self.renderDispatchGroup.wait()
-        DEBUGBeginTimedBlock("JS Execution")
-        os_signpost(.begin, log: logger, name: "JS")
+        DEBUGBeginTimedBlock("JS")
         let renderingStateJson = runJavascript("Steina.tick(\(dt * 1000.0)); Steina.getRenderingState()")!
-        os_signpost(.end, log: logger, name: "JS")
-        DEBUGEndTimedBlock()
+        DEBUGEndTimedBlock("JS")
         
         if renderingStateJson != "" {
             
@@ -235,8 +229,7 @@ class EditorViewController: UIViewController,
                  * Render Audio
                  *****************/
                 
-                DEBUGBeginTimedBlock("Audio Rendering")
-                os_signpost(.begin, log: logger, name: "Audio Render")
+                DEBUGBeginTimedBlock("Audio Render")
                 
                 memset(mixingBuffer.bytes, 0, MemoryLayout<Float>.size * 4800)
                 let rawMixingBuffer = mixingBuffer.bytes.bindMemory(to: Float.self, capacity: 4800)
@@ -263,23 +256,19 @@ class EditorViewController: UIViewController,
                     }
                 }
                 
-                DEBUGBeginTimedBlock("Audio Copying")
-                os_signpost(.begin, log: logger, name: "Audio Write")
+                DEBUGBeginTimedBlock("Audio Write")
                 // Copy samples to audio output buffer
                 writeFloatSamples(mixingBuffer, forHostTime: hostTimeForTimestamp(self.nextRenderTimestamp))
-                os_signpost(.end, log: logger, name: "Audio Write")
-                DEBUGEndTimedBlock()
+                DEBUGEndTimedBlock("Audio Write")
                 
                 self.nextRenderTimestamp += dt
                 
-                os_signpost(.end, log: logger, name: "Audio Render")
-                DEBUGEndTimedBlock()
+                DEBUGEndTimedBlock("Audio Render")
                 
                 /*****************
                  * Render Video
                  *****************/
-                DEBUGBeginTimedBlock("Video Rendering")
-                os_signpost(.begin, log: logger, name: "Video Render")
+                DEBUGBeginTimedBlock("Video Render")
                 
                 var numEntitiesToRender = 0
                 var draggingRenderFrame : RenderFrame? = nil
@@ -351,19 +340,16 @@ class EditorViewController: UIViewController,
                 }
                 
                 self.renderDispatchGroup.wait()
-                os_signpost(.end, log: logger, name: "Video Render")
+                DEBUGEndTimedBlock("Video Render")
                 
-                DEBUGBeginTimedBlock("GPU Rendering")
-                os_signpost(.begin, log: logger, name: "GPU Kickoff")
+                DEBUGBeginTimedBlock("GPU Kickoff")
                 render(numEntitiesToRender)
-                os_signpost(.end, log: logger, name: "GPU Kickoff")
-                DEBUGEndTimedBlock()
+                DEBUGEndTimedBlock("GPU Kickoff")
             }
             
         }
         
-        os_signpost(.end, log: logger, name: "Frame")
-        DEBUGEndTimedBlock()
+        DEBUGEndTimedBlock("Frame")
     }
     
     /**********************************************************************
@@ -403,7 +389,7 @@ class EditorViewController: UIViewController,
         guard draggingVideoId != nil else { return }
         
         var shouldUpdateDragTarget = true
-        if CACurrentMediaTime() - dragStartTimestamp < 0.1 {
+        if CACurrentMediaTime() - dragStartTimestamp < 0.25 {
             runJavascript("Steina.tapVideo('\(draggingVideoId!)')")
             shouldUpdateDragTarget = false;
         }

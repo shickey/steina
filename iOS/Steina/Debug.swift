@@ -8,24 +8,26 @@
 
 import Foundation
 import QuartzCore
+import os.signpost
 
-struct DebugTimingFrame {
-    let name : String
-    let start : CFTimeInterval
-    
-    init(_ newName: String) {
-        name = newName
-        start = CACurrentMediaTime()
+#if DEBUG
+let logger = OSLog(subsystem: "edu.mit.media.llk.Steina", category: "Timing")
+#endif
+
+@inline(__always)
+func DEBUGBeginTimedBlock(_ name: StaticString) {
+    #if DEBUG
+    if #available(iOS 12.0, *) {
+        os_signpost(.begin, log: logger, name: name)
     }
+    #endif
 }
 
-var debugTimingStack : [DebugTimingFrame] = []
-
-func DEBUGBeginTimedBlock(_ name: String) {
-    debugTimingStack.append(DebugTimingFrame(name))
-}
-
-func DEBUGEndTimedBlock() {
-    let frame = debugTimingStack.popLast()!
-//    print(String(format: "%@: %.2fms", frame.name, (CACurrentMediaTime() - frame.start) * 1000.0))
+@inline(__always)
+func DEBUGEndTimedBlock(_ name: StaticString) {
+    #if DEBUG
+    if #available(iOS 12.0, *) {
+        os_signpost(.end, log: logger, name: name)
+    }
+    #endif
 }

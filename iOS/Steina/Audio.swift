@@ -10,7 +10,7 @@ import Foundation
 import AudioUnit
 import AVFoundation
 import QuartzCore
-import os.signpost
+
 
 typealias PlayingSoundId = UUID
 
@@ -145,8 +145,8 @@ func outputAudio(_ inRefCon: UnsafeMutableRawPointer,
                  _ inBusNumber: UInt32,
                  _ inNumberFrames: UInt32,
                  _ ioData: UnsafeMutablePointer<AudioBufferList>?) -> OSStatus {
-    os_signpost(.begin, log: logger, name: "Audio Output")
-    defer { os_signpost(.end, log: logger, name: "Audio Output") }
+    DEBUGBeginTimedBlock("Audio Output")
+    defer { DEBUGEndTimedBlock("Audio Output") }
 
     switch audioOutputSource {
         case .project:
@@ -166,17 +166,16 @@ func outputAudio(_ inRefCon: UnsafeMutableRawPointer,
             
             let baseOffset = Int(Double(inTimeStamp.pointee.mHostTime - audioBuffer.baseTime) * (48000.0 / Double(clockFrequency))) 
             
-            os_signpost(.begin, log: logger, name: "Audio Output - Samples Copy")
+            DEBUGBeginTimedBlock("Audio Output - Samples Copy")
             let bufferSamples = audioBuffer.samples.bytes.bindMemory(to: Int16.self, capacity: audioBuffer.length)
             for i in 0..<numSamplesToRender {
                 let sample = bufferSamples[(Int(baseOffset) + i) % audioBuffer.length]
                 outputL[i] = sample
                 outputR[i] = sample
             }
-            os_signpost(.end, log: logger, name: "Audio Output - Samples Copy")
+            DEBUGEndTimedBlock("Audio Output - Samples Copy")
             
             if (Int(baseOffset) + numSamplesToRender) > audioBuffer.length {
-                os_signpost(.event, log: logger, name: "Audio Output - Buffer Base Wrapped")
                 audioBuffer.baseTime += U64(audioBuffer.length) * U64(Double(clockFrequency) / 48000.0)
             }
 
@@ -276,14 +275,12 @@ func fetchSamples(_ asset: Sound, _ start: Int, _ end: Int) -> Data {
 
 func writeFloatSamples(_ samples: Data, forHostTime hostTime: U64) {
     if hostTime < audioBuffer.baseTime {
-        os_signpost(.event, log: logger, name: "Audio Output - SAMPLE WRITE TOO EARLY")
         print("WARNING: Attempted to write samples earlier than the base buffer time")
         return
     }
     let offset = Int(Double(hostTime - audioBuffer.baseTime) * (48000.0 / Double(clockFrequency))) % audioBuffer.length
     if offset < 0 || offset > audioBuffer.length {
         print("WARNING: sample offset outside of audio buffer boundary")
-        os_signpost(.event, log: logger, name: "Audio Output - SAMPLE OFFSET OUTSIDE BUFFER BOUNDS")
         return
     }
     
