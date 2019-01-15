@@ -100,10 +100,9 @@ fragment float4 passthrough_fragment(VertexOut v [[ stage_in ]],
         float whirlActual = uniforms.effects.whirl * whirlFactor * whirlFactor;
         float sinWhirl = sin(whirlActual);
         float cosWhirl = cos(whirlActual);
-        float2x2 rotationMatrix = float2x2(
-                                   cosWhirl, -sinWhirl,
-                                   sinWhirl, cosWhirl
-                                   );
+        float2 rot1 = float2(cosWhirl, -sinWhirl);
+        float2 rot2 = float2(sinWhirl, cosWhirl);
+        float2x2 rotationMatrix = float2x2(rot1, rot2);
         
         texCoord = rotationMatrix * offset + kCenter;
     }

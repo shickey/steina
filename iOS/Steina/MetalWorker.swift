@@ -156,12 +156,12 @@ var decompressors : Set<tjhandle> = Set()
 var decompressorSemaphore = DispatchSemaphore(value: NUM_DECOMPRESSORS)
 let decompressorLockQueue = DispatchQueue(label: "edu.mit.media.llk.Steina.Decompressors")
 
-var captureScope : MTLCaptureScope! = nil
+//var captureScope : MTLCaptureScope! = nil
 
 func initMetal(_ hostView: MetalView) {
     
-    captureScope = MTLCaptureManager.shared().makeCaptureScope(device: device)
-    captureScope.label = "Steina Debug Scope"
+//    captureScope = MTLCaptureManager.shared().makeCaptureScope(device: device)
+//    captureScope.label = "Steina Debug Scope"
     
     // Set up JPEG decompressors
     for _ in 0..<NUM_DECOMPRESSORS {
@@ -356,7 +356,7 @@ func pushRenderFrame(_ renderFrame: RenderFrame, at renderingIndex: Int) {
 func render(_ numEntities: Int) {
     assert(metalLayer != nil)
     
-    captureScope.begin()
+//    captureScope.begin()
     
     if let drawable = metalLayer.nextDrawable() {
         let pass = MTLRenderPassDescriptor()
@@ -408,6 +408,6 @@ func render(_ numEntities: Int) {
         commandBuffer.commit()
     }
     
-    captureScope.end()
+//    captureScope.end()
     
 }

@@ -12,13 +12,14 @@ body {
 /**
  * Toolbox
  */
-#toolbox {
+#video-toolbox {
     display: none;
 }
 
-/**
- * Blockly
- */
+#audio-toolbox {
+    display: none;
+}
+
 #blocks {
     position: absolute;
     left: 0;
@@ -28,12 +29,64 @@ body {
     font-family: "Helvetica Neue", Helvetica, sans-serif;
 }
 
+.scratchCategoryMenu {
+    width: 64px;
+    background-color: #1e2a3f;
+    color: white;
+}
+
+.scratchCategoryMenuItem.categorySelected {
+    background-color: #2a3b5c;
+}
+
 .blocklyToolboxDiv {
-    display: none;
+    background-color: #1e2a3f;
+    transition: left .3s linear;
+}
+
+.categoriesOpen {
+    left: 0 !important;
+}
+
+.categoriesHalfOpen {
+    left: -64px !important;
+}
+
+.categoriesClosed {
+    left: -364px !important;
+}
+
+#blocks-collapse {
+    position: absolute;
+    left: 364px;
+    top: 0;
+    width: 64px;
+    height: 64px;
+    background-color: #283856;
+    opacity: .8;
+    transition: left .3s linear;
+    border-radius: 0 12px 12px 0;
+}
+
+#blocks-collapse.collapseOpen {
+    left: 364px;
+}
+
+#blocks-collapse.collapseHalfOpen {
+    left: 300px;
+}
+
+#blocks-collapse.collapseClosed {
+    left: 0px;
+}
+
+.blocks-collapse-icon {
+    padding: 12px;
 }
 
 .blocklyFlyout {
-    transform: none !important;
+    transition: transform .3s linear;
+    transform: translate(64px, 0) !important;
 }
 
 .blocklyMainBackground {
@@ -46,4 +99,16 @@ body {
 
 .blocklyScrollbarVertical {
     display: none !important;
+}
+
+.flyoutOpen {
+    transform: translate(64px, 0) !important;
+}
+
+.flyoutHalfOpen {
+    transform: translate(0px, 0) !important;
+}
+
+.flyoutClosed {
+    transform: translate(-300px, 0) !important;
 }

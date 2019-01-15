@@ -38,11 +38,19 @@ class EditorViewController: UIViewController,
     @IBOutlet weak var cameraButton: UIButton!
     @IBOutlet weak var micButton: UIButton!
     @IBOutlet weak var toolbarView: UIView!
+    @IBOutlet weak var assetsView: UIView!
+    
     var webView: UIWebView! = nil
     var clipsCollectionVC : ClipsCollectionViewController? = nil
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        // Move the loading view to cover the whole screen.
+        // We do this in code instead of the storyboard so that
+        // we don't have to move the loading view in the storyboard
+        // to make changes to other UI elements
+        loadingView.frame = CGRect(origin: .zero, size: loadingView.frame.size)
         
         // Load clips and sounds into memory
         if !project.assetsLoaded {
@@ -100,15 +108,17 @@ class EditorViewController: UIViewController,
             // Portrait
             self.toolbarView.alpha = 1.0
             self.webView.alpha = 1.0
+            self.assetsView.alpha = 1.0
             let remainingHeight = size.height - self.toolbarView.frame.size.height - self.webView.frame.size.height
             let aspectWidth = ceil((4.0 / 3.0) * remainingHeight)
-            let x = (size.width - aspectWidth) / 2.0
+            let x = size.width - aspectWidth
             self.metalView.frame = CGRect(x: x, y: self.toolbarView.frame.size.height, width: aspectWidth, height: remainingHeight)
         }
         else {
             // Landscape
             self.toolbarView.alpha = 0.0
             self.webView.alpha = 0.0
+            self.assetsView.alpha = 0.0
             let height = size.height
             let aspectWidth = ceil((4.0 / 3.0) * height)
             let x = (size.width - aspectWidth) / 2.0

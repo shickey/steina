@@ -21,18 +21,129 @@
 
     <category name="Events" colour="#FFD500" secondaryColour="#CC9900">
       <block type="event_whenflagclicked"></block>
-      <block type="event_whenbroadcastreceived"></block>
-      <block type="event_broadcast">
-        <value name="BROADCAST_INPUT">
-          <shadow type="event_broadcast_menu"></shadow>
+      <block type="steina_whenTapped"></block>
+    </category>
+
+    <category name="Video" colour="#FF6680" secondaryColour="#FF4D6A">
+
+      <block type="steina_playEntireVideoUntilDone"></block>
+
+      <block type="steina_playForwardUntilDone"></block>
+
+      <block type="steina_playBackwardUntilDone"></block>
+
+      <block type="steina_setPlayRate">
+        <value name="RATE">
+          <shadow type="math_number">
+            <field name="NUM">100</field>
+          </shadow>
         </value>
       </block>
-      <block type="event_broadcastandwait">
-        <value name="BROADCAST_INPUT">
-          <shadow type="event_broadcast_menu"></shadow>
+
+      <block type="steina_startPlaying"></block>
+
+      <block type="steina_stopPlaying"></block>
+
+      <block type="steina_goToFrame">
+        <value name="FRAME">
+          <shadow type="math_number">
+            <field name="NUM">1</field>
+          </shadow>
+        </value>
+      </block>
+
+      <block type="steina_changeEffectBy">
+        <value name="EFFECT">
+          <shadow type="steina_menu_effects" />
+        </value>
+        <value name="CHANGE">
+          <shadow type="math_number">
+            <field name="NUM">5</field>
+          </shadow>
+        </value>
+      </block>
+
+      <block type="steina_setEffectTo">
+        <value name="EFFECT">
+          <shadow type="steina_menu_effects" />
+        </value>
+        <value name="VALUE">
+          <shadow type="math_number">
+            <field name="NUM">5</field>
+          </shadow>
+        </value>
+      </block>
+
+      <block type="steina_clearVideoEffects"></block>
+
+    </category>
+
+    <category name="Control" colour="#FFAB19" secondaryColour="#CF8B17">
+
+      <block type="control_wait">
+        <value name="DURATION">
+          <shadow type="math_positive_number">
+            <field name="NUM">1</field>
+          </shadow>
+        </value>
+      </block>
+
+      <block type="control_repeat">
+        <value name="TIMES">
+          <shadow type="math_whole_number">
+            <field name="NUM">4</field>
+          </shadow>
+        </value>
+      </block>
+
+      <block type="control_forever"></block>
+
+      <block type="control_if"></block>
+      <block type="control_if_else"></block>
+
+    </category>
+
+    <category name="Motion" colour="#4C97FF" secondaryColour="#3373CC">
+      <block type="motion_movesteps">
+        <value name="STEPS">
+          <shadow type="math_number">
+            <field name="NUM">10</field>
+          </shadow>
+        </value>
+      </block>
+      <block type="motion_turnright">
+        <value name="DEGREES">
+          <shadow type="math_number">
+            <field name="NUM">15</field>
+          </shadow>
+        </value>
+      </block>
+      <block type="motion_turnleft">
+        <value name="DEGREES">
+          <shadow type="math_number">
+            <field name="NUM">15</field>
+          </shadow>
         </value>
       </block>
     </category>
+
+    <category name="Looks" colour="#9966FF" secondaryColour="#774DCB">
+      <block type="looks_setsizeto">
+        <value name="SIZE">
+          <shadow type="math_number">
+            <field name="NUM">100</field>
+          </shadow>
+        </value>
+      </block>
+      <block type="looks_changesizeby">
+        <value name="CHANGE">
+          <shadow type="math_number">
+            <field name="NUM">10</field>
+          </shadow>
+        </value>
+      </block>
+    </category>
+
 
     <category name="Video" colour="#FF6680" secondaryColour="#FF4D6A">
 
@@ -110,6 +221,21 @@
 
       <block type="steina_getPlayRate"></block>
 
+    </category>
+
+    <category name="Events" colour="#FFD500" secondaryColour="#CC9900">
+      <block type="event_whenflagclicked"></block>
+      <block type="event_whenbroadcastreceived"></block>
+      <block type="event_broadcast">
+        <value name="BROADCAST_INPUT">
+          <shadow type="event_broadcast_menu"></shadow>
+        </value>
+      </block>
+      <block type="event_broadcastandwait">
+        <value name="BROADCAST_INPUT">
+          <shadow type="event_broadcast_menu"></shadow>
+        </value>
+      </block>
     </category>
 
     <category name="Motion" colour="#4C97FF" secondaryColour="#3373CC">
@@ -570,6 +696,56 @@
 
   <!-- Blocks -->
   <div id="blocks"></div>
+  <div id="blocks-collapse" onclick="changeFlyoutState()">
+    <div class="blocks-collapse-icon">
+      <img src="img/block-menu-collapse.svg">
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    const FLYOUT_STATES = {
+      open: "OPEN",
+      halfOpen: "HALF-OPEN",
+      closed: "CLOSED"
+    };
+
+    var flyoutState = FLYOUT_STATES.open;
+
+    function changeFlyoutState() {
+      var flyoutEl = document.getElementsByClassName('blocklyFlyout')[0];
+      var categoriesEl = document.getElementsByClassName('blocklyToolboxDiv')[0];
+      var collapseEl = document.getElementById('blocks-collapse');
+
+      if (flyoutState == FLYOUT_STATES.open) {
+        flyoutState = FLYOUT_STATES.halfOpen;
+        flyoutEl.classList.remove('flyoutOpen');
+        flyoutEl.classList.add('flyoutHalfOpen');
+        categoriesEl.classList.remove('categoriesOpen');
+        categoriesEl.classList.add('categoriesHalfOpen');
+        collapseEl.classList.remove('collapseOpen');
+        collapseEl.classList.add('collapseHalfOpen');
+      }
+      else if (flyoutState == FLYOUT_STATES.halfOpen) {
+        flyoutState = FLYOUT_STATES.closed;
+        flyoutEl.classList.remove('flyoutHalfOpen');
+        flyoutEl.classList.add('flyoutClosed');
+        categoriesEl.classList.remove('categoriesHalfOpen');
+        categoriesEl.classList.add('categoriesClosed');
+        collapseEl.classList.remove('collapseHalfOpen');
+        collapseEl.classList.add('collapseClosed');
+      }
+      else if (flyoutState == FLYOUT_STATES.closed) {
+        flyoutState = FLYOUT_STATES.open;
+        flyoutEl.classList.remove('flyoutClosed');
+        flyoutEl.classList.add('flyoutOpen');
+        categoriesEl.classList.remove('categoriesClosed');
+        categoriesEl.classList.add('categoriesOpen');
+        collapseEl.classList.remove('collapseClosed');
+        collapseEl.classList.add('collapseOpen');
+      }
+    }
+
+  </script>
 
   <!-- Scratch VM -->
   <script src="./lib/scratch-vm.min.js"></script>
