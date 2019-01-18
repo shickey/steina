@@ -267,7 +267,8 @@ class CaptureViewController: UIViewController, AVCaptureVideoDataOutputSampleBuf
         recording = true
         framesWritten = 0
         
-        clip = createClipInProject(project)
+        let clipId = UUID()
+        clip = Clip(id: clipId, project: project)
         clip.mask = maskData
         clip.width = U32(maskBounds.size.width)
         clip.height = U32(maskBounds.size.height)
@@ -308,6 +309,7 @@ class CaptureViewController: UIViewController, AVCaptureVideoDataOutputSampleBuf
                     }
                 }
                 else {
+                    addClipToProject(self.clip, self.project)
                     self.clip.thumbnail = generateThumbnailForClip(self.clip)
                     saveClip(self.clip)
                     

@@ -441,7 +441,7 @@ func duplicateProjectAsset(_ project: Project, _ assetId: AssetId, _ newAssetId:
         try! FileManager.default.copyItem(at: oldUrl, to: newUrl)
         loadClip(newAssetId, project)
     }
-    else if let idx = project.soundIds.firstIndex(of: assetId) {
+    else if let _ = project.soundIds.firstIndex(of: assetId) {
         let sound = project.sounds[assetId]
         assert(sound != nil)
         let oldUrl = sound!.assetUrl

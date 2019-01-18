@@ -39,7 +39,7 @@ class ProjectCollectionViewController: UICollectionViewController {
         }
         else if let projectCell = sender as? ProjectCell {
             let indexPath = collectionView!.indexPath(for: projectCell)!
-            dest.project = projects[indexPath.item] as! Project
+            dest.project = (projects[indexPath.item] as! Project)
         }
         
     }
