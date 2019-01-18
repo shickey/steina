@@ -70,16 +70,18 @@
             window.workspace = workspace;
 
             // Get XML toolbox definition
+            var emptyToolbox = document.getElementById('empty-toolbox');
             var videoToolbox = document.getElementById('video-toolbox');
             var audioToolbox = document.getElementById('audio-toolbox');
+            window.emptyToolbox = emptyToolbox;
             window.videoToolbox = videoToolbox;
             window.audioToolbox = audioToolbox;
 
             vm.addListener('EXTENSION_ADDED', (blocksInfo) => {
                 // Generate the proper blocks and refresh the toolbox
                 Blockly.defineBlocksWithJsonArray(blocksInfo.map(blockInfo => blockInfo.json));
-                workspace.updateToolbox(videoToolbox);
-              });
+                workspace.updateToolbox(emptyToolbox);
+            });
 
             vm.extensionManager.loadExtensionURL('steina');
 
@@ -117,8 +119,12 @@
 
             vm.on('targetsUpdate', (data) => {
               var editingTargetId = data.editingTarget;
+              console.log("Editing target: " + editingTargetId);
               var target = vm.runtime.getTargetById(editingTargetId);
-              if (target.hasOwnProperty('fps')) { // Kind of a janky way of determining video vs audio target
+              if (target.isStage) {
+                workspace.updateToolbox(emptyToolbox);
+              }
+              else if (target.hasOwnProperty('fps')) { // Kind of a janky way of determining video vs audio target
                 workspace.updateToolbox(videoToolbox);
               }
               else {
@@ -155,12 +161,16 @@
               })
             }
 
-            function getVideoTargets() {
-              return vm.getVideoTargets().map(t => t.toJSON());
-            }
-
             function createAudioTarget(id, audioInfo) {
               vm.createAudioTarget(id, audioInfo);
+            }
+
+            function deleteTarget(id) {
+              return vm.deleteVideoOrAudioTarget(id); // Returns the id of the newly selected asset, if it exists
+            }
+
+            function getVideoTargets() {
+              return vm.getVideoTargets().map(t => t.toJSON());
             }
 
             function getAudioTargets() {
@@ -252,8 +262,9 @@
             window.Steina = {
               tick,
               createVideoTarget,
-              getVideoTargets,
               createAudioTarget,
+              deleteTarget,
+              getVideoTargets,
               getAudioTargets,
               getPlayingSounds,
               getRenderingState,

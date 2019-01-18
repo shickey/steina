@@ -19,11 +19,12 @@ class EditorViewController: UIViewController,
                             AudioCaptureViewControllerDelegate {
     
     var project : Project! = nil
+    var selectedAssetId : AssetId? = nil
     
     var displayLink : CADisplayLink! = nil
     var ready = false
     var draggingVideoId : ClipId! = nil
-    var dragStartTimestamp : CFTimeInterval! = nil 
+    var dragStartTimestamp : CFTimeInterval! = nil
     var previousRenderedIds : [ClipId] = []
     var renderedIds : [ClipId] = []
     var renderingQueue : DispatchQueue = DispatchQueue(label: "edu.mit.media.llk.Steina.Render", qos: .default, attributes: .concurrent, autoreleaseFrequency: DispatchQueue.AutoreleaseFrequency.workItem, target: nil)
@@ -181,7 +182,17 @@ class EditorViewController: UIViewController,
     @IBAction func stopButtonTapped(_ sender: Any) {
         runJavascript("vm.stopAll()")
         saveProject()
-        try! audioBuffer.samples.write(to: DATA_DIRECTORY_URL.appendingPathComponent("AUDIO.BIN"))
+    }
+    
+    @IBAction func trashButtonTapped(_ sender: Any) {
+        if let selected = selectedAssetId {
+            let nextSelectedId = runJavascript("Steina.deleteTarget(\"\(selected)\")")
+            deleteProjectAsset(project, selected)
+            clipsCollectionVC!.collectionView!.reloadData()
+            if let nextId = nextSelectedId {
+                clipsCollectionVC!.selectAsset(nextId)
+            }
+        }
     }
     
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
@@ -437,8 +448,10 @@ class EditorViewController: UIViewController,
      *
      **********************************************************************/
     
+    // @TODO: Should we implement deselection as well?
     func clipsControllerDidSelect(clipsController: ClipsCollectionViewController, assetId: AssetId) {
         runJavascript("vm.setEditingTarget(\"\(assetId)\")")
+        selectedAssetId = assetId
     }
     
     

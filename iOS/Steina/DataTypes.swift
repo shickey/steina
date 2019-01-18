@@ -417,6 +417,21 @@ func loadProjectAssets(_ project: Project) {
     project.assetsLoaded = true
 }
 
+func deleteProjectAsset(_ project: Project, _ assetId: AssetId) {
+    if let idx = project.clipIds.firstIndex(of: assetId) {
+        project.clipIds.remove(at: idx)
+        let clip = project.clips.removeValue(forKey: assetId)
+        assert(clip != nil)
+        try! FileManager.default.removeItem(at: clip!.assetUrl)
+    }
+    else if let idx = project.soundIds.firstIndex(of: assetId) {
+        project.soundIds.remove(at: idx)
+        let sound = project.sounds.removeValue(forKey: assetId)
+        assert(sound != nil)
+        try! FileManager.default.removeItem(at: sound!.assetUrl)
+    }
+}
+
 
 /*******************************************************************
  *

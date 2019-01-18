@@ -38,6 +38,17 @@ class ClipsCollectionViewController: UICollectionViewController {
     override func viewWillAppear(_ animated: Bool) {
         collectionView?.reloadData()
     }
+    
+    func selectAsset(_ assetId: AssetId) {
+        if let idx = project.clipIds.firstIndex(of: assetId) {
+            let indexPath = IndexPath(item: idx, section: 0)
+            collectionView!.selectItem(at: indexPath, animated: true, scrollPosition: .centeredVertically)
+        }
+        else if let idx = project.soundIds.firstIndex(of: assetId) {
+            let indexPath = IndexPath(item: project.clips.count + idx, section: 0)
+            collectionView!.selectItem(at: indexPath, animated: true, scrollPosition: .centeredVertically)
+        }
+    }
 
     // UICollectionViewDataSource
 
