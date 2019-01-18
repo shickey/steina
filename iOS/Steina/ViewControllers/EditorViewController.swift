@@ -195,6 +195,16 @@ class EditorViewController: UIViewController,
         }
     }
     
+    @IBAction func duplicateButtonTapped(_ sender: Any) {
+        if let selected = selectedAssetId {
+            let newId = UUID().uuidString
+            runJavascript("Steina.duplicateTarget(\"\(selected)\", \"\(newId)\")")
+            duplicateProjectAsset(project, selected, newId)
+            clipsCollectionVC!.collectionView!.reloadData()
+            clipsCollectionVC!.selectAsset(newId)
+        }
+    }
+    
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         if let clipsVC = segue.destination as? ClipsCollectionViewController {
             clipsVC.delegate = self

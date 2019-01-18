@@ -432,6 +432,25 @@ func deleteProjectAsset(_ project: Project, _ assetId: AssetId) {
     }
 }
 
+func duplicateProjectAsset(_ project: Project, _ assetId: AssetId, _ newAssetId: AssetId) {
+    if let _ = project.clipIds.firstIndex(of: assetId) {
+        let clip = project.clips[assetId]
+        assert(clip != nil)
+        let oldUrl = clip!.assetUrl
+        let newUrl = oldUrl.deletingLastPathComponent().appendingPathComponent("\(newAssetId).svc")
+        try! FileManager.default.copyItem(at: oldUrl, to: newUrl)
+        loadClip(newAssetId, project)
+    }
+    else if let idx = project.soundIds.firstIndex(of: assetId) {
+        let sound = project.sounds[assetId]
+        assert(sound != nil)
+        let oldUrl = sound!.assetUrl
+        let newUrl = oldUrl.deletingLastPathComponent().appendingPathComponent("\(newAssetId).sac")
+        try! FileManager.default.copyItem(at: oldUrl, to: newUrl)
+        loadSound(newAssetId, project, sound!.markers) // @TODO: This should do a proper array copy, but worth double checking once asset re-editing is implemented
+    }
+}
+
 
 /*******************************************************************
  *

@@ -231,6 +231,9 @@
                                         <rect key="frame" x="0.0" y="150" width="64" height="60"/>
                                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                         <state key="normal" image="duplicate"/>
+                                        <connections>
+                                            <action selector="duplicateButtonTapped:" destination="BYZ-38-t0r" eventType="touchUpInside" id="J4a-gc-yFH"/>
+                                        </connections>
                                     </button>
                                     <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="srK-UJ-FuJ" userLabel="Edit">
                                         <rect key="frame" x="0.0" y="210" width="64" height="60"/>

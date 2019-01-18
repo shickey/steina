@@ -169,6 +169,10 @@
               return vm.deleteVideoOrAudioTarget(id); // Returns the id of the newly selected asset, if it exists
             }
 
+            function duplicateTarget(id, newId) {
+              vm.duplicateVideoOrAudioTarget(id, newId);
+            }
+
             function getVideoTargets() {
               return vm.getVideoTargets().map(t => t.toJSON());
             }
@@ -264,6 +268,7 @@
               createVideoTarget,
               createAudioTarget,
               deleteTarget,
+              duplicateTarget,
               getVideoTargets,
               getAudioTargets,
               getPlayingSounds,
