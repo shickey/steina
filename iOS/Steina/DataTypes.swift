@@ -433,6 +433,9 @@ func deleteProjectAsset(_ project: Project, _ assetId: AssetId) {
 }
 
 func duplicateProjectAsset(_ project: Project, _ assetId: AssetId, _ newAssetId: AssetId) {
+    // @TODO: We could get more clever about this and have multiple in-memory assets
+    // point to the same on-disk asset, but then deletion gets complicated and maybe it
+    // just isn't worth it
     if let _ = project.clipIds.firstIndex(of: assetId) {
         let clip = project.clips[assetId]
         assert(clip != nil)

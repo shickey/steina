@@ -17,7 +17,24 @@ class ProjectCell : UICollectionViewCell {
 
 class AddProjectCell : UICollectionViewCell {}
 
-class ProjectCollectionViewController: UICollectionViewController {
+class EqualSpacingFlowLayout : UICollectionViewFlowLayout {
+    
+    override func prepare() {
+        super.prepare()
+        
+        let itemsPerRow = Int(collectionViewContentSize.width) / Int(itemSize.width)
+        let leftoverPixels = Int(collectionViewContentSize.width) % Int(itemSize.width)
+        
+        let spacing = CGFloat(Int(CGFloat(leftoverPixels) / CGFloat(itemsPerRow + 1)))
+        
+        sectionInset = UIEdgeInsets(top: spacing, left: spacing, bottom: spacing, right: spacing)
+        minimumLineSpacing = spacing
+        minimumInteritemSpacing = spacing
+    }
+    
+}
+
+class ProjectCollectionViewController : UICollectionViewController {
     
     var projects : NSMutableArray! = nil
 
@@ -39,7 +56,7 @@ class ProjectCollectionViewController: UICollectionViewController {
         }
         else if let projectCell = sender as? ProjectCell {
             let indexPath = collectionView!.indexPath(for: projectCell)!
-            dest.project = (projects[indexPath.item] as! Project)
+            dest.project = (projects[indexPath.item - 1] as! Project)
         }
         
     }
@@ -56,11 +73,11 @@ class ProjectCollectionViewController: UICollectionViewController {
     }
 
     override func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        if indexPath.item == projects.count {
+        if indexPath.item == 0 {
             return collectionView.dequeueReusableCell(withReuseIdentifier: addReuseIdentifier, for: indexPath) as! AddProjectCell
         }
         
-        let project = projects[indexPath.item] as! Project
+        let project = projects[indexPath.item - 1] as! Project
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: projectReuseIdentifier, for: indexPath) as! ProjectCell
         cell.projectThumbnail.image = project.thumbnail
     
