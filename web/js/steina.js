@@ -70,17 +70,15 @@
             window.workspace = workspace;
 
             // Get XML toolbox definition
-            var emptyToolbox = document.getElementById('empty-toolbox');
             var videoToolbox = document.getElementById('video-toolbox');
             var audioToolbox = document.getElementById('audio-toolbox');
-            window.emptyToolbox = emptyToolbox;
             window.videoToolbox = videoToolbox;
             window.audioToolbox = audioToolbox;
 
             vm.addListener('EXTENSION_ADDED', (blocksInfo) => {
                 // Generate the proper blocks and refresh the toolbox
                 Blockly.defineBlocksWithJsonArray(blocksInfo.map(blockInfo => blockInfo.json));
-                workspace.updateToolbox(emptyToolbox);
+                workspace.updateToolbox(videoToolbox);
             });
 
             vm.extensionManager.loadExtensionURL('steina');
@@ -119,15 +117,20 @@
 
             vm.on('targetsUpdate', (data) => {
               var editingTargetId = data.editingTarget;
-              console.log("Editing target: " + editingTargetId);
               var target = vm.runtime.getTargetById(editingTargetId);
+              var overlay = document.getElementById('blocks-overlay');
               if (target.isStage) {
-                workspace.updateToolbox(emptyToolbox);
+                overlay.classList.remove("hide-overlay");
+                overlay.classList.add("show-overlay");
               }
               else if (target.hasOwnProperty('fps')) { // Kind of a janky way of determining video vs audio target
+                overlay.classList.remove("show-overlay");
+                overlay.classList.add("hide-overlay");
                 workspace.updateToolbox(videoToolbox);
               }
               else {
+                overlay.classList.remove("show-overlay");
+                overlay.classList.add("hide-overlay");
                 workspace.updateToolbox(audioToolbox);
               }
             });

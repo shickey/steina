@@ -168,7 +168,7 @@
                             <view contentMode="scaleToFill" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Q4n-1e-bpP">
                                 <rect key="frame" x="0.0" y="440" width="768" height="504"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                                <color key="backgroundColor" red="0.20000000000000001" green="0.2784313725" blue="0.4431372549" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                <color key="backgroundColor" red="0.070588235289999995" green="0.1019607843" blue="0.14901960780000001" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                             </view>
                             <view contentMode="scaleToFill" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5Tz-4t-7AA">
                                 <rect key="frame" x="0.0" y="0.0" width="768" height="80"/>
@@ -178,17 +178,17 @@
                                         <rect key="frame" x="20" y="14" width="52" height="52"/>
                                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                     </imageView>
-                                    <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" image="scene-button" translatesAutoresizingMaskIntoConstraints="NO" id="nzx-W6-B3y" userLabel="Scene Background">
+                                    <imageView hidden="YES" userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" image="scene-button" translatesAutoresizingMaskIntoConstraints="NO" id="nzx-W6-B3y" userLabel="Scene Background">
                                         <rect key="frame" x="306" y="22" width="156" height="36"/>
                                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                     </imageView>
-                                    <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" image="top-bar-button" translatesAutoresizingMaskIntoConstraints="NO" id="w0B-gK-c7y" userLabel="Fullscreen Background">
+                                    <imageView hidden="YES" userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" image="top-bar-button" translatesAutoresizingMaskIntoConstraints="NO" id="w0B-gK-c7y" userLabel="Fullscreen Background">
                                         <rect key="frame" x="568" y="14" width="52" height="52"/>
                                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                     </imageView>
                                     <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" image="greenflag-button" translatesAutoresizingMaskIntoConstraints="NO" id="Wgt-ch-LZy" userLabel="Stop/Green Flag Background">
                                         <rect key="frame" x="638" y="14" width="110" height="52"/>
-                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                        <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxY="YES"/>
                                     </imageView>
                                     <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="YjR-xY-aFj" userLabel="Projects">
                                         <rect key="frame" x="20" y="14" width="52" height="52"/>
@@ -198,21 +198,21 @@
                                             <action selector="backButtonTapped:" destination="BYZ-38-t0r" eventType="touchUpInside" id="DMe-0N-voU"/>
                                         </connections>
                                     </button>
-                                    <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="C2c-uT-zrX" userLabel="Scene">
+                                    <button hidden="YES" opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="C2c-uT-zrX" userLabel="Scene">
                                         <rect key="frame" x="306" y="22" width="156" height="36"/>
                                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                         <state key="normal" title="Scene 1">
                                             <color key="titleColor" red="0.070588235294117646" green="0.10196078431372549" blue="0.14901960784313725" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                         </state>
                                     </button>
-                                    <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Iv8-sZ-ZbP" userLabel="Fullscreen">
+                                    <button hidden="YES" opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Iv8-sZ-ZbP" userLabel="Fullscreen">
                                         <rect key="frame" x="568" y="14" width="52" height="52"/>
                                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                         <state key="normal" image="fullscreen-icon"/>
                                     </button>
                                     <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="x3O-mT-naH" userLabel="Stop">
                                         <rect key="frame" x="638" y="14" width="54" height="52"/>
-                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                        <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxY="YES"/>
                                         <state key="normal" image="stop"/>
                                         <connections>
                                             <action selector="stopButtonTapped:" destination="BYZ-38-t0r" eventType="touchUpInside" id="rWu-28-Ts4"/>
@@ -220,7 +220,7 @@
                                     </button>
                                     <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Otc-3E-WcH" userLabel="Green Flag">
                                         <rect key="frame" x="694" y="14" width="54" height="52"/>
-                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                        <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxY="YES"/>
                                         <state key="normal" image="greenflag"/>
                                         <connections>
                                             <action selector="greenFlagButtonTapped:" destination="BYZ-38-t0r" eventType="touchUpInside" id="5c1-8X-6Fg"/>
@@ -286,8 +286,16 @@
                                             <action selector="trashButtonTapped:" destination="BYZ-38-t0r" eventType="touchUpInside" id="Ija-ze-CaJ"/>
                                         </connections>
                                     </button>
+                                    <imageView hidden="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" image="left-arrow" translatesAutoresizingMaskIntoConstraints="NO" id="cRf-fx-GQh" userLabel="left-arrow-1">
+                                        <rect key="frame" x="78" y="38" width="66" height="35"/>
+                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                    </imageView>
+                                    <imageView hidden="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" image="left-arrow" translatesAutoresizingMaskIntoConstraints="NO" id="Ote-QJ-qXr" userLabel="left-arrow-2">
+                                        <rect key="frame" x="78" y="103" width="66" height="35"/>
+                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                    </imageView>
                                 </subviews>
-                                <color key="backgroundColor" red="0.070588235294117646" green="0.10196078431372549" blue="0.14901960784313725" alpha="1" colorSpace="calibratedRGB"/>
+                                <color key="backgroundColor" red="0.070588235289999995" green="0.1019607843" blue="0.14901960780000001" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                             </view>
                             <view contentMode="scaleToFill" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="r7b-w5-iT2">
                                 <rect key="frame" x="0.0" y="1024" width="768" height="944"/>
@@ -300,6 +308,16 @@
                                 </subviews>
                                 <color key="backgroundColor" red="0.20000000000000001" green="0.2784313725" blue="0.4431372549" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                             </view>
+                            <view alpha="0.0" contentMode="scaleToFill" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="nX9-oI-aOT" userLabel="Rotate Icon">
+                                <rect key="frame" x="218" y="372" width="330" height="209"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxX="YES" flexibleMinY="YES" flexibleMaxY="YES"/>
+                                <subviews>
+                                    <imageView userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" image="rotate" translatesAutoresizingMaskIntoConstraints="NO" id="DhE-S1-xGj">
+                                        <rect key="frame" x="10" y="22" width="311" height="165"/>
+                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                    </imageView>
+                                </subviews>
+                            </view>
                         </subviews>
                         <color key="backgroundColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                     </view>
@@ -307,17 +325,23 @@
                         <outlet property="assetsView" destination="OfW-2I-pZz" id="yFx-FN-yi7"/>
                         <outlet property="cameraButton" destination="cHo-ls-Imi" id="taJ-yO-j8h"/>
                         <outlet property="greenFlagButton" destination="Otc-3E-WcH" id="Udt-RK-oSL"/>
+                        <outlet property="helpArrowBottom" destination="Ote-QJ-qXr" id="yOG-RQ-vdT"/>
+                        <outlet property="helpArrowTop" destination="cRf-fx-GQh" id="6ju-Aw-3qG"/>
                         <outlet property="loadingView" destination="r7b-w5-iT2" id="utK-KH-5J9"/>
                         <outlet property="metalView" destination="CLU-6X-PVr" id="MZJ-cV-w3I"/>
                         <outlet property="micButton" destination="6oP-wb-M0N" id="ZCp-uS-i3V"/>
+                        <outlet property="projectsButton" destination="YjR-xY-aFj" id="zgh-3y-2I7"/>
+                        <outlet property="projectsButtonBackground" destination="d8x-Xn-3Vx" id="oy0-qc-QrD"/>
+                        <outlet property="rotateHelpIcon" destination="nX9-oI-aOT" id="Fbk-gD-Aqa"/>
                         <outlet property="stopButton" destination="x3O-mT-naH" id="qWK-yl-eoK"/>
+                        <outlet property="stopGreenFlagButtonBackground" destination="Wgt-ch-LZy" id="oKp-YR-e0f"/>
                         <outlet property="toolbarView" destination="5Tz-4t-7AA" id="3Sg-sc-qGv"/>
                         <outlet property="webViewContainer" destination="Q4n-1e-bpP" id="hAx-Ax-eCx"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="dkx-z0-nzr" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="23" y="30"/>
+            <point key="canvasLocation" x="22.65625" y="29.882812499999996"/>
         </scene>
         <!--Clips Collection View Controller-->
         <scene sceneID="fEv-a7-dLN">
@@ -457,9 +481,11 @@
         <image name="fullscreen-icon" width="31" height="32"/>
         <image name="greenflag" width="33" height="36"/>
         <image name="greenflag-button" width="110" height="52"/>
+        <image name="left-arrow" width="288" height="192"/>
         <image name="mic" width="32" height="43"/>
         <image name="projects-icon" width="32" height="32"/>
         <image name="record" width="50" height="50"/>
+        <image name="rotate" width="429" height="178"/>
         <image name="scene-button" width="156" height="36"/>
         <image name="stop" width="35" height="36"/>
         <image name="toolbar-bkgd" width="64" height="300"/>

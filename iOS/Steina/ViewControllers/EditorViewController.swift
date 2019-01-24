@@ -40,6 +40,13 @@ class EditorViewController: UIViewController,
     @IBOutlet weak var micButton: UIButton!
     @IBOutlet weak var toolbarView: UIView!
     @IBOutlet weak var assetsView: UIView!
+    @IBOutlet weak var projectsButton: UIButton!
+    @IBOutlet weak var projectsButtonBackground: UIImageView!
+    @IBOutlet weak var stopGreenFlagButtonBackground: UIImageView!
+    @IBOutlet weak var rotateHelpIcon: UIView!
+    @IBOutlet weak var helpArrowTop: UIImageView!
+    @IBOutlet weak var helpArrowBottom: UIImageView!
+    
     
     var webView: UIWebView! = nil
     var clipsCollectionVC : ClipsCollectionViewController? = nil
@@ -101,30 +108,38 @@ class EditorViewController: UIViewController,
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
         coordinator.animate(alongsideTransition: { (_) in
             self.arrangeViewsForSize(size)
-        }, completion: nil)
+        }, completion: { (_) in 
+            self.updateHelpAnimations()
+        })
     }
     
     func arrangeViewsForSize(_ size: CGSize) {
         if size.width < size.height {
             // Portrait
-            self.toolbarView.alpha = 1.0
-            self.webView.alpha = 1.0
+            self.toolbarView.backgroundColor = UIColor(red: 40.0 / 255.0, green: 56.0 / 255.0, blue: 86.0 / 255.0, alpha: 1.0)
+            self.projectsButton.alpha = 1.0
+            self.projectsButtonBackground.alpha = 1.0
+            self.stopGreenFlagButtonBackground.alpha = 1.0
+            self.webViewContainer.alpha = 1.0
             self.assetsView.alpha = 1.0
-            let remainingHeight = size.height - self.toolbarView.frame.size.height - self.webView.frame.size.height
+            self.rotateHelpIcon.alpha = 0.0
+            let remainingHeight = size.height - self.toolbarView.frame.size.height - self.webViewContainer.frame.size.height
             let aspectWidth = ceil((4.0 / 3.0) * remainingHeight)
             let x = size.width - aspectWidth
             self.metalView.frame = CGRect(x: x, y: self.toolbarView.frame.size.height, width: aspectWidth, height: remainingHeight)
         }
         else {
             // Landscape
-            self.toolbarView.alpha = 0.0
-            self.webView.alpha = 0.0
+            self.toolbarView.backgroundColor = UIColor(red: 18.0 / 255.0, green: 18.0 / 255.0, blue: 24.0 / 255.0, alpha: 1.0)
+            self.projectsButton.alpha = 0.0
+            self.projectsButtonBackground.alpha = 0.0
+            self.stopGreenFlagButtonBackground.alpha = 0.0
+            self.webViewContainer.alpha = 0.0
             self.assetsView.alpha = 0.0
-            let height = size.height
+            let height = size.height  - self.toolbarView.bounds.size.height
             let aspectWidth = ceil((4.0 / 3.0) * height)
             let x = (size.width - aspectWidth) / 2.0
-            self.metalView.frame = CGRect(x: x, y: 0, width: aspectWidth, height: height)
-            self.metalView.layer.frame = self.metalView.frame
+            self.metalView.frame = CGRect(x: x, y: self.toolbarView.bounds.size.height, width: aspectWidth, height: height)
         }
     }
     
@@ -138,7 +153,38 @@ class EditorViewController: UIViewController,
             self.loadingView.alpha = 0.0
         }, completion: { (_) in
             self.loadingView.isHidden = true
+            self.updateHelpAnimations()
         })
+    }
+    
+    func updateHelpAnimations() {
+        if self.project.clips.count == 0 && self.project.sounds.count == 0 {
+            if self.view.bounds.size.width < self.view.bounds.size.height {
+                // Portrait
+                self.helpArrowTop.isHidden = false
+                self.helpArrowBottom.isHidden = false
+                self.helpArrowTop.center.x = 102
+                self.helpArrowBottom.center.x = 102
+                UIView.animate(withDuration: 0.5, delay: 0, options: [.repeat, .autoreverse, .curveEaseInOut], animations: { 
+                    self.helpArrowTop.center.x += 15
+                    self.helpArrowBottom.center.x += 15
+                }, completion: nil)
+            }
+            else {
+                // Landscape
+                self.rotateHelpIcon.alpha = 0.0
+                self.rotateHelpIcon.isHidden = false
+                UIView.animate(withDuration: 1.5, animations: { 
+                    self.rotateHelpIcon.alpha = 1.0
+                })
+            }
+        }
+        else {
+            self.rotateHelpIcon.alpha = 0.0
+            self.rotateHelpIcon.isHidden = true
+            self.helpArrowTop.isHidden = true
+            self.helpArrowBottom.isHidden = true
+        }
     }
     
     func saveProject() {
@@ -192,6 +238,8 @@ class EditorViewController: UIViewController,
             if let nextId = nextSelectedId {
                 clipsCollectionVC!.selectAsset(nextId)
             }
+            updateHelpAnimations() // If the last asset gets deleted, trigger the help animations again
+            saveProject()
         }
     }
     
@@ -473,6 +521,7 @@ class EditorViewController: UIViewController,
     
     func captureViewControllerDidCreateClip(captureViewController: CaptureViewController, clip: Clip) {
         runJavascript("Steina.createVideoTarget(\"\(clip.id.uuidString)\", 30, \(clip.frames));")
+        updateHelpAnimations()
     }
     
     /**********************************************************************
@@ -491,6 +540,7 @@ class EditorViewController: UIViewController,
         
         let markersString = "[\(sound.markers.map({ String($0) }).joined(separator: ","))]"
         runJavascript("Steina.createAudioTarget(\"\(sound.id.uuidString)\", {totalSamples: \(sound.length), markers: \(markersString) })")
+        updateHelpAnimations()
     }
     
 }
