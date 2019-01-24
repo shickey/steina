@@ -747,6 +747,11 @@
       }
     }
 
+    var overlay = document.getElementById('blocks-overlay');
+    overlay.addEventListener('touchmove', function(event) {
+        event.preventDefault();
+    }, false);
+
   </script>
 
   <!-- Scratch VM -->
