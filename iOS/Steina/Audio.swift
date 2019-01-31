@@ -14,19 +14,7 @@ import QuartzCore
 
 typealias PlayingSoundId = UUID
 
-struct SampleRange {
-    var start : Int
-    var end : Int
-    
-    var size : Int {
-        return end - start
-    }
-    
-    init(_ newStart: Int, _ newEnd: Int) {
-        start = newStart
-        end = newEnd
-    }
-}
+typealias SampleRange = Region
 
 class PlayingSound {
     let id : PlayingSoundId

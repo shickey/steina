@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A32EED0A22022F850025B3E5 /* AssetEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A32EED0922022F850025B3E5 /* AssetEditorView.swift */; };
 		A34478DE2139C68400545288 /* AudioCaptureViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A34478DD2139C68400545288 /* AudioCaptureViewController.swift */; };
 		A34478E02139C9B300545288 /* cyndi.wav in Resources */ = {isa = PBXBuildFile; fileRef = A34478DF2139C9B300545288 /* cyndi.wav */; };
 		A344790621402C4A00545288 /* Audio.swift in Sources */ = {isa = PBXBuildFile; fileRef = A344790521402C4A00545288 /* Audio.swift */; };
@@ -31,6 +32,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		A32EED0922022F850025B3E5 /* AssetEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssetEditorView.swift; sourceTree = "<group>"; };
 		A34478DD2139C68400545288 /* AudioCaptureViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioCaptureViewController.swift; sourceTree = "<group>"; };
 		A34478DF2139C9B300545288 /* cyndi.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = cyndi.wav; sourceTree = "<group>"; };
 		A344790521402C4A00545288 /* Audio.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Audio.swift; sourceTree = "<group>"; };
@@ -94,6 +96,7 @@
 			children = (
 				A398F7AE20A4D69700C60946 /* ViewControllers */,
 				A3C7C6F720C0488E009E08EF /* DrawMaskView.swift */,
+				A32EED0922022F850025B3E5 /* AssetEditorView.swift */,
 				A398F79720A346BB00C60946 /* AppDelegate.swift */,
 				A398F7BE20B3210500C60946 /* MetalWorker.swift */,
 				A398F7CE20B5B89D00C60946 /* DataTypes.swift */,
@@ -214,6 +217,7 @@
 			files = (
 				A398F7BB20AA4DC100C60946 /* ClipsCollectionViewController.swift in Sources */,
 				A3C7C6F820C0488E009E08EF /* DrawMaskView.swift in Sources */,
+				A32EED0A22022F850025B3E5 /* AssetEditorView.swift in Sources */,
 				A398F7CF20B5B89D00C60946 /* DataTypes.swift in Sources */,
 				A398F7C320B4582900C60946 /* CaptureViewController.swift in Sources */,
 				A34478DE2139C68400545288 /* AudioCaptureViewController.swift in Sources */,
