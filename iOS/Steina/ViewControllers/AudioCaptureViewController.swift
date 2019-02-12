@@ -103,7 +103,6 @@ class AudioCaptureViewController: UIViewController, AssetEditorViewDataSource {
         
         assetEditorView.dataSource = self
         assetEditorView.markers = [] //[100000, 500000, 1000000]
-        // Do any additional setup after loading the view.
     }
     
     @IBAction func closeButtonTapped(_ sender: Any) {

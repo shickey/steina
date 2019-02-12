@@ -19,132 +19,10 @@
 
   <!-- Video Toolbox -->
   <xml id="video-toolbox">
-
     <category name="Events" colour="#FFD500" secondaryColour="#CC9900">
       <block type="event_whenflagclicked"></block>
       <block type="steina_whenTapped"></block>
     </category>
-
-    <category name="Video" colour="#FF6680" secondaryColour="#FF4D6A">
-
-      <block type="steina_playEntireVideoUntilDone"></block>
-
-      <block type="steina_playForwardUntilDone"></block>
-
-      <block type="steina_playBackwardUntilDone"></block>
-
-      <block type="steina_setPlayRate">
-        <value name="RATE">
-          <shadow type="math_number">
-            <field name="NUM">100</field>
-          </shadow>
-        </value>
-      </block>
-
-      <block type="steina_startPlaying"></block>
-
-      <block type="steina_stopPlaying"></block>
-
-      <block type="steina_goToFrame">
-        <value name="FRAME">
-          <shadow type="math_number">
-            <field name="NUM">1</field>
-          </shadow>
-        </value>
-      </block>
-
-      <block type="steina_changeEffectBy">
-        <value name="EFFECT">
-          <shadow type="steina_menu_effects" />
-        </value>
-        <value name="CHANGE">
-          <shadow type="math_number">
-            <field name="NUM">5</field>
-          </shadow>
-        </value>
-      </block>
-
-      <block type="steina_setEffectTo">
-        <value name="EFFECT">
-          <shadow type="steina_menu_effects" />
-        </value>
-        <value name="VALUE">
-          <shadow type="math_number">
-            <field name="NUM">5</field>
-          </shadow>
-        </value>
-      </block>
-
-      <block type="steina_clearVideoEffects"></block>
-
-    </category>
-
-    <category name="Control" colour="#FFAB19" secondaryColour="#CF8B17">
-
-      <block type="control_wait">
-        <value name="DURATION">
-          <shadow type="math_positive_number">
-            <field name="NUM">1</field>
-          </shadow>
-        </value>
-      </block>
-
-      <block type="control_repeat">
-        <value name="TIMES">
-          <shadow type="math_whole_number">
-            <field name="NUM">4</field>
-          </shadow>
-        </value>
-      </block>
-
-      <block type="control_forever"></block>
-
-      <block type="control_if"></block>
-      <block type="control_if_else"></block>
-
-    </category>
-
-    <category name="Motion" colour="#4C97FF" secondaryColour="#3373CC">
-      <block type="motion_movesteps">
-        <value name="STEPS">
-          <shadow type="math_number">
-            <field name="NUM">10</field>
-          </shadow>
-        </value>
-      </block>
-      <block type="motion_turnright">
-        <value name="DEGREES">
-          <shadow type="math_number">
-            <field name="NUM">15</field>
-          </shadow>
-        </value>
-      </block>
-      <block type="motion_turnleft">
-        <value name="DEGREES">
-          <shadow type="math_number">
-            <field name="NUM">15</field>
-          </shadow>
-        </value>
-      </block>
-    </category>
-
-    <category name="Looks" colour="#9966FF" secondaryColour="#774DCB">
-      <block type="looks_setsizeto">
-        <value name="SIZE">
-          <shadow type="math_number">
-            <field name="NUM">100</field>
-          </shadow>
-        </value>
-      </block>
-      <block type="looks_changesizeby">
-        <value name="CHANGE">
-          <shadow type="math_number">
-            <field name="NUM">10</field>
-          </shadow>
-        </value>
-      </block>
-    </category>
-
 
     <category name="Video" colour="#FF6680" secondaryColour="#FF4D6A">
 
@@ -221,22 +99,6 @@
       <block type="steina_getTotalFrames"></block>
 
       <block type="steina_getPlayRate"></block>
-
-    </category>
-
-    <category name="Events" colour="#FFD500" secondaryColour="#CC9900">
-      <block type="event_whenflagclicked"></block>
-      <block type="event_whenbroadcastreceived"></block>
-      <block type="event_broadcast">
-        <value name="BROADCAST_INPUT">
-          <shadow type="event_broadcast_menu"></shadow>
-        </value>
-      </block>
-      <block type="event_broadcastandwait">
-        <value name="BROADCAST_INPUT">
-          <shadow type="event_broadcast_menu"></shadow>
-        </value>
-      </block>
     </category>
 
     <category name="Motion" colour="#4C97FF" secondaryColour="#3373CC">
@@ -379,7 +241,20 @@
 
       <block type="control_if"></block>
       <block type="control_if_else"></block>
+    </category>
 
+    <category name="Messages" colour="#FFD500" secondaryColour="#CC9900">
+      <block type="event_whenbroadcastreceived"></block>
+      <block type="event_broadcast">
+        <value name="BROADCAST_INPUT">
+          <shadow type="event_broadcast_menu"></shadow>
+        </value>
+      </block>
+      <block type="event_broadcastandwait">
+        <value name="BROADCAST_INPUT">
+          <shadow type="event_broadcast_menu"></shadow>
+        </value>
+      </block>
     </category>
 
     <category name="Operators" colour="#40BF4A" secondaryColour="#389438">
