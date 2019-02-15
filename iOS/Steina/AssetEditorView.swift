@@ -25,8 +25,9 @@ class AssetEditorView : UIView {
     var dataSource : AssetEditorViewDataSource! = nil {
         didSet {
             if let ds = dataSource {
-                unitRange = ds.totalRange(for: self)
-                visibleRange = unitRange
+                totalRange = ds.totalRange(for: self)
+                trimmedRange = totalRange
+                visibleRange = totalRange
                 setNeedsDisplay()
             }
         }
@@ -37,7 +38,8 @@ class AssetEditorView : UIView {
     let markerHeight : CGFloat = 40.0
     let markerWidth : CGFloat = 40.0 / 2.0
     
-    var unitRange : EditorRange = EditorRange(0, 0)
+    var totalRange : EditorRange = EditorRange(0, 0)
+    var trimmedRange : EditorRange = EditorRange(0, 0)
     var visibleRange : EditorRange = EditorRange(0, 0)
     var playhead : Int = 0 {
         didSet {
@@ -60,6 +62,8 @@ class AssetEditorView : UIView {
         case none
         case draggingPlayhead
         case draggingMarker
+        case draggingStartTrimmer
+        case draggingEndTrimmer
         case panning
         case zooming
         case possiblyAddingMarker
@@ -145,7 +149,7 @@ class AssetEditorView : UIView {
                 }
                 if idx == markers.count - 1 {
                     // Add a final range
-                    ranges.append(EditorRange(marker, unitRange.end))
+                    ranges.append(EditorRange(marker, totalRange.end))
                 }
             }
             else {
@@ -171,42 +175,46 @@ class AssetEditorView : UIView {
                 let location = touch.location(in: self)
                 if location.y <= gutterHeight || location.y >= bounds.size.height - gutterHeight {
                     // In the gutter
-                    if let (idx, _) = markerForViewLocation(location) {
+                    
+                    let trimmerDistanceThreshold = markerWidth // in pixels, a little bigger than standard markers
+                    let startTrimmerX = xPositionForUnit(trimmedRange.start)
+                    let endTrimmerX = xPositionForUnit(trimmedRange.end)
+                    
+                    if startTrimmerX != nil && abs(startTrimmerX! - location.x) < trimmerDistanceThreshold {
+                        touchState = .draggingStartTrimmer
+                        activeTouches.insert(touch)
+                    }
+                    else if endTrimmerX != nil && abs(endTrimmerX! - location.x) < trimmerDistanceThreshold {
+                        touchState = .draggingEndTrimmer
+                        activeTouches.insert(touch)
+                    }
+                    else if let (idx, _) = markerForViewLocation(location) {
                         touchState = .draggingMarker
                         draggingMarkerIdx = idx
                         activeTouches.insert(touch)
                     } 
                     else {
-                        // Check to see if touching marker add button
                         let x = location.x
                         let y = location.y
-                        let playheadDistanceThreshold : CGFloat = 30.0 // in pixels
-                        
-                        let playheadX = xPositionForUnit(playhead)
-                        if  playheadX != nil && abs(playheadX! - x) < playheadDistanceThreshold && y < gutterHeight {
-                            touchState = .possiblyAddingMarker
-                            activeTouches.insert(touch)
+
+                        // Check for touching play buttons
+                        let playButtonDistanceThreshold : CGFloat = gutterHeight * (2.0 / 5.0) // in pixels
+                        let ranges = rangesForVisibleRegions()
+                        let playRegions = fullRangesForVisibleRegions()
+                        let midpoints = ranges.map { (range) -> CGFloat in
+                            let midUnit = Int(CGFloat(range.start + range.end) / 2.0)
+                            return xPositionForUnit(midUnit)!
                         }
-                        else {
-                            // Check for touching play buttons
-                            let playButtonDistanceThreshold : CGFloat = gutterHeight * (2.0 / 5.0) // in pixels
-                            let ranges = rangesForVisibleRegions()
-                            let playRegions = fullRangesForVisibleRegions()
-                            let midpoints = ranges.map { (range) -> CGFloat in
-                                let midUnit = Int(CGFloat(range.start + range.end) / 2.0)
-                                return xPositionForUnit(midUnit)!
-                            }
-                            for (idx, midpoint) in midpoints.enumerated() {
-                                if abs(midpoint - x) < playButtonDistanceThreshold  && abs((bounds.height - (gutterHeight / 2.0)) - y) < playButtonDistanceThreshold {
-                                    touchState = .touchingPlayButton
-                                    activeTouches.insert(touch)
-                                    activePlayButtonRegion = playRegions[idx]
-                                    if let ds = dataSource {
-                                        ds.assetEditorTappedPlayButton(for: self, range: activePlayButtonRegion)
-                                    }
-                                    break
-                                } 
-                            }
+                        for (idx, midpoint) in midpoints.enumerated() {
+                            if abs(midpoint - x) < playButtonDistanceThreshold  && abs((bounds.height - (gutterHeight / 2.0)) - y) < playButtonDistanceThreshold {
+                                touchState = .touchingPlayButton
+                                activeTouches.insert(touch)
+                                activePlayButtonRegion = playRegions[idx]
+                                if let ds = dataSource {
+                                    ds.assetEditorTappedPlayButton(for: self, range: activePlayButtonRegion)
+                                }
+                                break
+                            } 
                         }
                     }
                 }
@@ -290,6 +298,71 @@ class AssetEditorView : UIView {
                 let unit = unitForXPosition(location.x)!
                 playhead = unit
             }
+            
+            if playhead < trimmedRange.start {
+               playhead = trimmedRange.start 
+            }
+            else if playhead > trimmedRange.end {
+                playhead = trimmedRange.end
+            }
+            
+            self.setNeedsDisplay()
+        }
+        else if touchState == .draggingStartTrimmer {
+            let touch = activeTouches.first!
+            let location = touch.location(in: self)
+            
+            if location.x < 0 {
+                let unit = unitForXPosition(0)!
+                trimmedRange.start = unit
+            }
+            else if location.x > bounds.size.width {
+                let unit = unitForXPosition(bounds.size.width)!
+                trimmedRange.start = unit
+            }
+            else {
+                let unit = unitForXPosition(location.x)!
+                trimmedRange.start = unit
+            }
+            
+            // Don't drag past end trimmer
+            if trimmedRange.start > trimmedRange.end {
+                trimmedRange.start = trimmedRange.end
+            }
+            
+            // Update playhead
+            if playhead < trimmedRange.start {
+                playhead = trimmedRange.start
+            }
+            self.setNeedsDisplay()
+        }
+        else if touchState == .draggingEndTrimmer {
+            let touch = activeTouches.first!
+            let location = touch.location(in: self)
+            
+            if location.x < 0 {
+                let unit = unitForXPosition(0)!
+                trimmedRange.end = unit
+            }
+            else if location.x > bounds.size.width {
+                let unit = unitForXPosition(bounds.size.width)!
+                trimmedRange.end = unit
+            }
+            else {
+                let unit = unitForXPosition(location.x)!
+                trimmedRange.end = unit
+            }
+            
+            // Don't drag past start trimmer
+            if trimmedRange.end < trimmedRange.start {
+                trimmedRange.end = trimmedRange.start
+            }
+            
+            // Update playhead
+            if playhead > trimmedRange.end {
+                playhead = trimmedRange.end
+            }
+            
             self.setNeedsDisplay()
         }
         else if touchState == .draggingMarker {
@@ -317,8 +390,8 @@ class AssetEditorView : UIView {
             let unitOffsetForTouch = Int(location.x * unitsPerPixel)
             var startUnit = max(panStartUnit - unitOffsetForTouch, 0)
             var endUnit = startUnit + totalUnitsInWindow
-            if endUnit > unitRange.size {
-                endUnit = unitRange.size
+            if endUnit > totalRange.size {
+                endUnit = totalRange.size
                 startUnit = endUnit - totalUnitsInWindow
             }
             visibleRange = EditorRange(startUnit, endUnit)
@@ -347,8 +420,8 @@ class AssetEditorView : UIView {
                 firstUnit = 0
             }
             var lastUnit = firstUnit + totalUnitsInWindow
-            if lastUnit > unitRange.size {
-                lastUnit = unitRange.size
+            if lastUnit > totalRange.size {
+                lastUnit = totalRange.size
             }
             visibleRange = EditorRange(firstUnit, lastUnit)
             if let ds = dataSource {
@@ -424,19 +497,83 @@ class AssetEditorView : UIView {
           
         let context = UIGraphicsGetCurrentContext()!
         
-        // Draw the markers
+        // Draw the trimmers and markers
         context.setLineWidth(2.0)
-        context.setLineDash(phase: 0, lengths: [10.0, 3.0])
         if showMarkers {
+            
+            // Grey out the trimmed out regions, if necessary
+            if trimmedRange.start >= visibleRange.start && trimmedRange.start <= visibleRange.end {
+                let trimmerPosition = xPositionForUnit(trimmedRange.start)!
+                let rect = CGRect(x: 0, y: gutterHeight, width: trimmerPosition, height: bounds.height - (2.0 * gutterHeight))
+                context.setFillColor(red: 0.5, green: 0.5, blue: 0.5, alpha: 0.7)
+                context.fill(rect)
+            }
+            if trimmedRange.end >= visibleRange.start && trimmedRange.end <= visibleRange.end {
+                let trimmerPosition = xPositionForUnit(trimmedRange.end)!
+                let rect = CGRect(x: trimmerPosition, y: gutterHeight, width: bounds.width - trimmerPosition, height: bounds.height - (2.0 * gutterHeight))
+                context.setFillColor(red: 0.5, green: 0.5, blue: 0.5, alpha: 0.7)
+                context.fill(rect)
+            }
+            
+            context.setStrokeColor(UIColor.red.cgColor)
+            context.setFillColor(UIColor.red.cgColor)
+            
+            // Start Trimmer
+            let startTrimX = xPositionForUnit(trimmedRange.start)!
+            context.beginPath()
+            context.move(to: CGPoint(x: CGFloat(startTrimX), y: gutterHeight))
+            context.addLine(to: CGPoint(x: CGFloat(startTrimX), y: rect.size.height - gutterHeight))
+            context.strokePath()
+            
+            context.beginPath()
+            context.move(to: CGPoint(x: CGFloat(startTrimX), y: markerHeight))
+            context.addLine(to: CGPoint(x: CGFloat(startTrimX) + (markerWidth / 2.0), y: markerHeight - (markerWidth / 2.0)))
+            context.addLine(to: CGPoint(x: CGFloat(startTrimX) + (markerWidth / 2.0), y: 0))
+            context.addLine(to: CGPoint(x: CGFloat(startTrimX), y: 0))
+            context.closePath()
+            context.fillPath()
+            
+            context.beginPath()
+            context.move(to: CGPoint(x: CGFloat(startTrimX), y: rect.size.height - markerHeight))
+            context.addLine(to: CGPoint(x: CGFloat(startTrimX), y: rect.size.height))
+            context.addLine(to: CGPoint(x: CGFloat(startTrimX) + (markerWidth / 2.0), y: rect.size.height))
+            context.addLine(to: CGPoint(x: CGFloat(startTrimX) + (markerWidth / 2.0), y: rect.size.height - (markerHeight - (markerWidth / 2.0))))
+            context.closePath()
+            context.fillPath()
+            
+            // End Trimmer
+            let endTrimX = xPositionForUnit(trimmedRange.end)!
+            
+            context.beginPath()
+            context.move(to: CGPoint(x: CGFloat(endTrimX), y: gutterHeight))
+            context.addLine(to: CGPoint(x: CGFloat(endTrimX), y: rect.size.height - gutterHeight))
+            context.strokePath()
+            
+            context.beginPath()
+            context.move(to: CGPoint(x: CGFloat(endTrimX), y: markerHeight))
+            context.addLine(to: CGPoint(x: CGFloat(endTrimX), y: 0))
+            context.addLine(to: CGPoint(x: CGFloat(endTrimX) - (markerWidth / 2.0), y: 0))
+            context.addLine(to: CGPoint(x: CGFloat(endTrimX) - (markerWidth / 2.0), y: markerHeight - (markerWidth / 2.0)))
+            context.closePath()
+            context.fillPath()
+            
+            context.beginPath()
+            context.move(to: CGPoint(x: CGFloat(endTrimX), y: rect.size.height - markerHeight))
+            context.addLine(to: CGPoint(x: CGFloat(endTrimX) - (markerWidth / 2.0), y: rect.size.height - (markerHeight - (markerWidth / 2.0))))
+            context.addLine(to: CGPoint(x: CGFloat(endTrimX) - (markerWidth / 2.0), y: rect.size.height))
+            context.addLine(to: CGPoint(x: CGFloat(endTrimX), y: rect.size.height))
+            context.closePath()
+            context.fillPath()
+            
             for (idx, marker) in markers.enumerated() {
                 if let markerX = xPositionForUnit(marker) {
+                    context.setLineDash(phase: 0, lengths: [10.0, 3.0])
                     context.setStrokeColor(UIColor.red.cgColor)
                     context.setFillColor(UIColor.red.cgColor)
                     
-                    context.setLineDash(phase: 0, lengths: [10.0, 3.0])
                     context.beginPath()
-                    context.move(to: CGPoint(x: CGFloat(markerX), y: 0.0))
-                    context.addLine(to: CGPoint(x: CGFloat(markerX), y: rect.size.height))
+                    context.move(to: CGPoint(x: CGFloat(markerX), y: gutterHeight))
+                    context.addLine(to: CGPoint(x: CGFloat(markerX), y: rect.size.height - gutterHeight))
                     context.strokePath()
                     
                     // Draw handles
@@ -458,7 +595,7 @@ class AssetEditorView : UIView {
                     context.addLine(to: CGPoint(x: CGFloat(markerX) + (markerWidth / 2.0), y: rect.size.height))
                     context.addLine(to: CGPoint(x: CGFloat(markerX) + (markerWidth / 2.0), y: rect.size.height - (markerHeight - (markerWidth / 2.0))))
                     context.closePath()
-                    context.fillPath()    
+                    context.fillPath()
                     
                     // Draw labels
                     let label = "\(idx + 1)" // Scratch uses 1-based indexing
@@ -518,25 +655,6 @@ class AssetEditorView : UIView {
                 context.move(to: CGPoint(x: CGFloat(playheadX) - 10.0, y: rect.size.height - gutterHeight - 2.0))
                 context.addLine(to: CGPoint(x: CGFloat(playheadX) + 10.0, y: rect.size.height - gutterHeight - 2.0))
                 context.strokePath()
-                
-                // Draw add marker icon
-                context.setLineWidth(2.0)
-                let iconCenter = CGPoint(x: playheadX, y: gutterHeight / 2.0)
-                var addMarkerRect = CGRect(origin: iconCenter, size: .zero)
-                let inset = gutterHeight * (2.0 / 5.0)
-                addMarkerRect = addMarkerRect.insetBy(dx: -inset, dy: -inset)
-                context.addEllipse(in: addMarkerRect)
-                context.strokePath()
-                // Plus symbol
-                context.beginPath()
-                context.move(to: CGPoint(x: iconCenter.x - inset / 2.0, y: iconCenter.y))
-                context.addLine(to: CGPoint(x: iconCenter.x + inset / 2.0, y: iconCenter.y))
-                context.strokePath()
-                context.beginPath()
-                context.move(to: CGPoint(x: iconCenter.x, y: iconCenter.y - inset / 2.0))
-                context.addLine(to: CGPoint(x: iconCenter.x, y: iconCenter.y + inset / 2.0))
-                context.strokePath()
-                
             }
         }
     }

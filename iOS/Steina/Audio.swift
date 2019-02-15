@@ -245,7 +245,7 @@ func changeAudioOutputSource(_ source: AudioOutputSource) {
 func playSound(_ sound: Sound, _ range: SampleRange, looped: Bool) -> PlayingSoundId {
     // The sounds to start playing get added to the playing sound array at the beginning
     // of the next audio render loop
-    let playingSound = PlayingSound(sound: sound, range: range, shouldLoop: true)
+    let playingSound = PlayingSound(sound: sound, range: range, shouldLoop: looped)
     soundsToStart.append(playingSound)
     return playingSound.id
 }
