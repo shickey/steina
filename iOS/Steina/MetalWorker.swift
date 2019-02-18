@@ -14,9 +14,9 @@ import simd
 let MAX_RENDERED_ENTITIES = 100
 
 protocol MetalViewDelegate {
-    func metalViewBeganTouch(_ metalView: MetalView, location: CGPoint)
-    func metalViewMovedTouch(_ metalView: MetalView, location: CGPoint)
-    func metalViewEndedTouch(_ metalView: MetalView, location: CGPoint)
+    func metalViewBeganTouches(_ metalView: MetalView, _ touches: Set<UITouch>)
+    func metalViewMovedTouches(_ metalView: MetalView, _ touches: Set<UITouch>)
+    func metalViewEndedTouches(_ metalView: MetalView, _ touches: Set<UITouch>)
 }
 
 class MetalView : UIView {
@@ -32,30 +32,26 @@ class MetalView : UIView {
     }
     
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        let location = touches.first!.location(in: self);
         if let d = delegate {
-            d.metalViewBeganTouch(self, location: location)
+            d.metalViewBeganTouches(self, touches)
         }
     }
     
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
-        let location = touches.first!.location(in: self);
         if let d = delegate {
-            d.metalViewMovedTouch(self, location: location)
+            d.metalViewMovedTouches(self, touches)
         }
     }
     
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
-        let location = touches.first!.location(in: self);
         if let d = delegate {
-            d.metalViewEndedTouch(self, location: location)
+            d.metalViewEndedTouches(self, touches)
         }
     }
     
     override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
-        let location = touches.first!.location(in: self);
         if let d = delegate {
-            d.metalViewEndedTouch(self, location: location)
+            d.metalViewEndedTouches(self, touches)
         }
     }
 }

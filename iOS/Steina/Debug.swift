@@ -9,18 +9,18 @@
 import Foundation
 import QuartzCore
 #if DEBUG
-//import os.signpost
+import os.signpost
 #endif
 
 #if DEBUG
-//let logger = OSLog(subsystem: "edu.mit.media.llk.Steina", category: "Timing")
+let logger = OSLog(subsystem: "edu.mit.media.llk.Steina", category: "Timing")
 #endif
 
 @inline(__always)
 func DEBUGBeginTimedBlock(_ name: StaticString) {
     #if DEBUG
     if #available(iOS 12.0, *) {
-//        os_signpost(.begin, log: logger, name: name)
+        os_signpost(.begin, log: logger, name: name)
     }
     #endif
 }
@@ -29,7 +29,7 @@ func DEBUGBeginTimedBlock(_ name: StaticString) {
 func DEBUGEndTimedBlock(_ name: StaticString) {
     #if DEBUG
     if #available(iOS 12.0, *) {
-//        os_signpost(.end, log: logger, name: name)
+        os_signpost(.end, log: logger, name: name)
     }
     #endif
 }

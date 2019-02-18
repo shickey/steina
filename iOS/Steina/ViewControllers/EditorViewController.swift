@@ -11,6 +11,30 @@ import WebKit
 import Dispatch
 import simd
 
+struct MetalViewTouchState {
+    enum VideoTargetState {
+        case none
+        case dragging
+        case transforming
+    }
+    var activeTouches : [UITouch] = []
+    var videoTargetState = VideoTargetState.none
+    var videoTargetId : ClipId! = nil
+    
+    // Single finger dragging
+    var initialDragOffset : CGPoint! = nil
+    var dragStartTimestamp : CFTimeInterval? = nil
+    
+    // Two finger transform
+    var initialPosition : CGPoint! = nil
+    var initialRotation : CGFloat! = nil
+    var initialScale : CGFloat! = nil
+    
+    var initialTouchDistance : CGFloat! = nil
+    var initialTouchAngle : CGFloat! = nil
+    var initialTouchMidpoint : CGPoint! = nil
+}
+
 class EditorViewController: UIViewController,
                             UIWebViewDelegate,
                             MetalViewDelegate,
@@ -23,13 +47,13 @@ class EditorViewController: UIViewController,
     
     var displayLink : CADisplayLink! = nil
     var ready = false
-    var draggingVideoId : ClipId! = nil
-    var dragStartTimestamp : CFTimeInterval! = nil
+    
+    var touchState = MetalViewTouchState()
     var previousRenderedIds : [ClipId] = []
     var renderedIds : [ClipId] = []
     var renderingQueue : DispatchQueue = DispatchQueue(label: "edu.mit.media.llk.Steina.Render", qos: .default, attributes: .concurrent, autoreleaseFrequency: DispatchQueue.AutoreleaseFrequency.workItem, target: nil)
     let renderDispatchGroup = DispatchGroup()
-    let unproject = orthographicUnprojection(left: -320.0, right: 320.0, top: 240.0, bottom: -240.0, near: 1.0, far: -1.0)
+    let unprojection = orthographicUnprojection(left: -320.0, right: 320.0, top: 240.0, bottom: -240.0, near: 1.0, far: -1.0)
     
     @IBOutlet weak var metalView: MetalView!
     @IBOutlet weak var webViewContainer: UIView!
@@ -390,7 +414,7 @@ class EditorViewController: UIViewController,
                     let renderFrame = RenderFrame(clip: videoClip, frameNumber: frameNumber, transform: transform, effects: renderingEffects)
                     
                     // If a target is being dragged, we defer drawing it until the end so that it draws on top of everything else
-                    if self.draggingVideoId == clipId {
+                    if self.touchState.videoTargetId == clipId {
                         draggingRenderFrame = renderFrame
                         continue
                     }
@@ -437,51 +461,256 @@ class EditorViewController: UIViewController,
      *
      **********************************************************************/
     
-    func metalViewBeganTouch(_ metalView: MetalView, location: CGPoint) {
+    func metalViewBeganTouches(_ metalView: MetalView, _ touches: Set<UITouch>) {
+        DEBUGBeginTimedBlock("Touch Began")
         
         let drawableSize = metalView.metalLayer.drawableSize
-        let x = (location.x / metalView.bounds.size.width) * (drawableSize.width)
-        let y = (location.y / metalView.bounds.size.height) * (drawableSize.height)
         
-        if let draggingId = videoTargetAtLocation(CGPoint(x: x, y: y)) {
-            
-            let projectedX = (2.0 * (location.x / metalView.bounds.size.width)) - 1.0
-            let projectedY = ((2.0 * (location.y / metalView.bounds.size.height)) - 1.0) * -1.0 // Invert y
-            let unprojected = unproject * float4(Float(projectedX), Float(projectedY), 1.0, 1.0)
-            
-            dragStartTimestamp = CACurrentMediaTime()
-            draggingVideoId = draggingId        
-            runJavascript("Steina.beginDraggingVideo('\(draggingVideoId!)', \(unprojected.x), \(unprojected.y))")
-        }
-    }
-    
-    func metalViewMovedTouch(_ metalView: MetalView, location: CGPoint) {
-        guard draggingVideoId != nil else { return }
-        
-        let x = (2.0 * (location.x / metalView.bounds.size.width)) - 1.0
-        let y = ((2.0 * (location.y / metalView.bounds.size.height)) - 1.0) * -1.0 // Invert y
-        let unprojected = unproject * float4(Float(x), Float(y), 1.0, 1.0)
-        runJavascript("Steina.updateDraggingVideo('\(draggingVideoId!)', \(unprojected.x), \(unprojected.y))")
-    }
-    
-    func metalViewEndedTouch(_ metalView: MetalView, location: CGPoint) {
-        guard draggingVideoId != nil else { return }
-        
-        var shouldUpdateDragTarget = true
-        if CACurrentMediaTime() - dragStartTimestamp < 0.25 {
-            runJavascript("Steina.tapVideo('\(draggingVideoId!)')")
-            shouldUpdateDragTarget = false;
-        }
-        
-        runJavascript("Steina.endDraggingVideo('\(draggingVideoId!)', \(shouldUpdateDragTarget ? "true" : "false"))")
-        if shouldUpdateDragTarget {
-            if let clipsVC = self.clipsCollectionVC, let idx = self.project.clipIds.index(of: draggingVideoId) {
-                clipsVC.collectionView!.selectItem(at: IndexPath(item: idx, section: 0), animated: true, scrollPosition: .centeredHorizontally)
+        // Trigger "when touched" hats
+        for touch in touches {
+            let location = touch.location(in: metalView)
+            let x = (location.x / metalView.bounds.size.width) * (drawableSize.width)
+            let y = (location.y / metalView.bounds.size.height) * (drawableSize.height)
+            if let touchedTarget = videoTargetAtLocation(CGPoint(x: x, y: y)) {
+                runJavascript("Steina.tapVideo('\(touchedTarget)')")
             }
         }
         
-        dragStartTimestamp = nil
-        draggingVideoId = nil
+        if touchState.videoTargetState == .transforming { return }
+        
+        if touchState.videoTargetState == .none {
+            if touches.count == 1 {
+                let touch = touches.first!
+                let location = touch.location(in: metalView)
+                let x = (location.x / metalView.bounds.size.width) * (drawableSize.width)
+                let y = (location.y / metalView.bounds.size.height) * (drawableSize.height)
+                if let touchedTarget = videoTargetAtLocation(CGPoint(x: x, y: y)) {
+                    // Begin dragging
+                    touchState.activeTouches.append(touch)
+                    touchState.videoTargetId = touchedTarget
+                    touchState.videoTargetState = .dragging
+                    
+                    let transformJson = runJavascript("Steina.getDraggingVideoTransform('\(touchState.videoTargetId!)')")!
+                    let transformObj = try! JSONSerialization.jsonObject(with: transformJson.data(using: .utf8)!, options: [])
+                    
+                    let transform = transformObj as! Dictionary<String, NSNumber>
+                    let initialX = CGFloat(transform["x"]!.floatValue)
+                    let initialY = CGFloat(transform["y"]!.floatValue)
+                    
+                    let unprojected = unproject(location: location, in: metalView)
+                    touchState.initialDragOffset = CGPoint(x: CGFloat(unprojected.x) - initialX, y: CGFloat(unprojected.y) - initialY)
+                    touchState.dragStartTimestamp = CACurrentMediaTime()
+                    runJavascript("Steina.beginDraggingVideo('\(touchedTarget)')")
+                }
+            }
+            else {
+                // For now, just check the first two touches.
+                // @TODO: I guess we could do some sort of thing where we check if any pair
+                //        of touches is touching the same target? Seems like overkill for the moment, though
+                let touch1 = touches[touches.startIndex]
+                let touch2 = touches[touches.index(after: touches.startIndex)]
+                let location1 = touch1.location(in: metalView)
+                let location2 = touch2.location(in: metalView)
+                let x1 = (location1.x / metalView.bounds.size.width) * (drawableSize.width)
+                let y1 = (location1.y / metalView.bounds.size.height) * (drawableSize.height)
+                let x2 = (location2.x / metalView.bounds.size.width) * (drawableSize.width)
+                let y2 = (location2.y / metalView.bounds.size.height) * (drawableSize.height)
+                let touchedTarget1 = videoTargetAtLocation(CGPoint(x: x1, y: y1))
+                let touchedTarget2 = videoTargetAtLocation(CGPoint(x: x2, y: y2))
+                
+                if touchedTarget1 == nil && touchedTarget2 == nil { return }
+                if touchedTarget1 == touchedTarget2 {
+                    // Two-finger video touch: begin transforming
+                    
+                    touchState.videoTargetId = touchedTarget1
+                    
+                    let unprojected1 = unproject(location: location1, in: metalView)
+                    let unprojected2 = unproject(location: location2, in: metalView)
+                    
+                    let transformJson = runJavascript("Steina.getDraggingVideoTransform('\(touchState.videoTargetId!)')")!
+                    let transformObj = try! JSONSerialization.jsonObject(with: transformJson.data(using: .utf8)!, options: [])
+                    
+                    let transform = transformObj as! Dictionary<String, NSNumber>
+                    let initialX = CGFloat(transform["x"]!.floatValue)
+                    let initialY = CGFloat(transform["y"]!.floatValue)
+                    let initialR = CGFloat(transform["rot"]!.floatValue)
+                    let initialS = CGFloat(transform["scale"]!.floatValue)
+                    
+                    touchState.initialPosition = CGPoint(x: initialX, y: initialY)
+                    touchState.initialRotation = initialR
+                    touchState.initialScale = initialS
+                    
+                    touchState.initialTouchDistance = CGFloat(distance(unprojected1, unprojected2))
+                    touchState.initialTouchAngle = radiansToDegrees(CGFloat(atan2(-(unprojected2.y - unprojected1.y), unprojected2.x - unprojected1.x)))
+                    touchState.initialTouchMidpoint = CGPoint(x: CGFloat(unprojected1.x + unprojected2.x) / CGFloat(2.0), y: CGFloat(unprojected1.y + unprojected2.y) / CGFloat(2.0))
+                    
+                    touchState.activeTouches.append(touch1)
+                    touchState.activeTouches.append(touch2)
+                    touchState.videoTargetState = .transforming
+                    
+                    runJavascript("Steina.beginDraggingVideo('\(touchedTarget1!)')")
+                }
+                else {
+                    // At least one of these is guaranteed to be not nil at this point
+                    let touchedTarget = touchedTarget1 != nil ? touchedTarget1! : touchedTarget2!
+                    let activeTouch   = touchedTarget1 != nil ? touch1 : touch2
+                    let location      = touchedTarget1 != nil ? location1 : location2
+                    
+                    // Begin dragging
+                    touchState.activeTouches.append(activeTouch)
+                    touchState.videoTargetId = touchedTarget
+                    touchState.videoTargetState = .dragging
+                    
+                    let transformJson = runJavascript("Steina.getDraggingVideoTransform('\(touchState.videoTargetId!)')")!
+                    let transformObj = try! JSONSerialization.jsonObject(with: transformJson.data(using: .utf8)!, options: [])
+                    
+                    let transform = transformObj as! Dictionary<String, NSNumber>
+                    let initialX = CGFloat(transform["x"]!.floatValue)
+                    let initialY = CGFloat(transform["y"]!.floatValue)
+                    
+                    let unprojected = unproject(location: location, in: metalView)
+                    touchState.initialDragOffset = CGPoint(x: CGFloat(unprojected.x) - initialX, y: CGFloat(unprojected.y) - initialY)
+                    touchState.dragStartTimestamp = CACurrentMediaTime()
+                    runJavascript("Steina.beginDraggingVideo('\(touchedTarget)')")
+                }
+            }
+        }
+        else {
+            // Touch state is already dragging
+            assert(touchState.videoTargetState == .dragging)
+            
+            let drawableSize = metalView.metalLayer.drawableSize
+            
+            let touch = touches.first!
+            let location = touch.location(in: metalView)
+            let x = (location.x / metalView.bounds.size.width) * (drawableSize.width)
+            let y = (location.y / metalView.bounds.size.height) * (drawableSize.height)
+            if let touchedTarget = videoTargetAtLocation(CGPoint(x: x, y: y)) {
+                // If the new touch is touching the same target as the previous, begin transforming
+                if touchedTarget == touchState.videoTargetId {
+                    
+                    let touch1 = touchState.activeTouches.first!
+                    let touch2 = touch
+                    let location1 = touch1.location(in: metalView)
+                    let location2 = touch2.location(in: metalView)
+                    let unprojected1 = unproject(location: location1, in: metalView)
+                    let unprojected2 = unproject(location: location2, in: metalView)
+                    
+                    let transformJson = runJavascript("Steina.getDraggingVideoTransform('\(touchState.videoTargetId!)')")!
+                    let transformObj = try! JSONSerialization.jsonObject(with: transformJson.data(using: .utf8)!, options: [])
+                    
+                    let transform = transformObj as! Dictionary<String, NSNumber>
+                    let initialX = CGFloat(transform["x"]!.floatValue)
+                    let initialY = CGFloat(transform["y"]!.floatValue)
+                    let initialR = CGFloat(transform["rot"]!.floatValue)
+                    let initialS = CGFloat(transform["scale"]!.floatValue)
+                    
+                    touchState.initialDragOffset = nil
+                    touchState.dragStartTimestamp = nil
+                    
+                    touchState.initialPosition = CGPoint(x: initialX, y: initialY)
+                    touchState.initialRotation = initialR
+                    touchState.initialScale = initialS
+                    
+                    touchState.initialTouchDistance = CGFloat(distance(unprojected1, unprojected2))
+                    touchState.initialTouchAngle = radiansToDegrees(CGFloat(atan2(-(unprojected2.y - unprojected1.y), unprojected2.x - unprojected1.x)))
+                    touchState.initialTouchMidpoint = CGPoint(x: CGFloat(unprojected1.x + unprojected2.x) / CGFloat(2.0), y: CGFloat(unprojected1.y + unprojected2.y) / CGFloat(2.0))
+                    
+                    touchState.activeTouches.append(touch)
+                    touchState.videoTargetState = .transforming
+                }
+            }
+        }
+        DEBUGEndTimedBlock("Touch Began")
+    }
+    
+    func metalViewMovedTouches(_ metalView: MetalView, _ touches: Set<UITouch>) {
+        DEBUGBeginTimedBlock("Touch Moved")
+        if touchState.videoTargetState == .none || touchState.activeTouches.filter({ touches.contains($0) }).count == 0 { return }
+        
+        if touchState.videoTargetState == .dragging {
+            let touch = touchState.activeTouches.first!
+            let location = touch.location(in: metalView)
+            let unprojected = unproject(location: location, in: metalView)
+            
+            let offset = touchState.initialDragOffset!
+            let translation = CGPoint(x: CGFloat(unprojected.x) - offset.x, y: CGFloat(unprojected.y) - offset.y)
+            
+            runJavascript("Steina.updateDraggingVideo('\(touchState.videoTargetId!)', \(translation.x), \(translation.y))")
+        }
+        else if touchState.videoTargetState == .transforming {
+            let touch1 = touchState.activeTouches[touchState.activeTouches.startIndex]
+            let touch2 = touchState.activeTouches[touchState.activeTouches.index(after: touchState.activeTouches.startIndex)]
+            let location1 = touch1.location(in: metalView)
+            let location2 = touch2.location(in: metalView)
+            let unprojected1 = unproject(location: location1, in: metalView)
+            let unprojected2 = unproject(location: location2, in: metalView)
+            
+            let scaleFactor = CGFloat(distance(unprojected1, unprojected2)) / touchState.initialTouchDistance
+            let scale = touchState.initialScale * scaleFactor
+            
+            let touchAngle = radiansToDegrees(CGFloat(atan2(-(unprojected2.y - unprojected1.y), unprojected2.x - unprojected1.x)))
+            let rotation = touchState.initialRotation - (touchState.initialTouchAngle - CGFloat(touchAngle))
+            
+            let midpoint = CGPoint(x: CGFloat(unprojected1.x + unprojected2.x) / CGFloat(2.0), y: CGFloat(unprojected1.y + unprojected2.y) / CGFloat(2.0))
+            
+            let translation = CGPoint(x: touchState.initialPosition.x - (touchState.initialTouchMidpoint.x - midpoint.x), y: touchState.initialPosition.y - (touchState.initialTouchMidpoint.y - midpoint.y))
+            
+            runJavascript("Steina.updateDraggingVideo('\(touchState.videoTargetId!)', \(translation.x), \(translation.y), \(rotation), \(scale))")
+        }
+        DEBUGEndTimedBlock("Touch Moved")
+    }
+    
+    func metalViewEndedTouches(_ metalView: MetalView, _ touches: Set<UITouch>) {
+        DEBUGBeginTimedBlock("Touch Ended")
+        if touchState.videoTargetState == .none { return }
+        
+        touchState.activeTouches.removeAll { touches.contains($0) }
+        if touchState.activeTouches.count == 0 {
+            touchState.videoTargetState = .none
+            DEBUGBeginTimedBlock("End Dragging Video")
+            var updateEditingTarget = false
+            if let startTimestamp = touchState.dragStartTimestamp {
+                if CACurrentMediaTime() - startTimestamp > 0.2 {
+                    updateEditingTarget = true
+                }
+            }
+            runJavascript("Steina.endDraggingVideo('\(touchState.videoTargetId!)', \(updateEditingTarget ? "true" : "false"))")
+            DEBUGEndTimedBlock("End Dragging Video")
+            touchState.videoTargetId = nil
+            touchState.initialDragOffset = nil
+            touchState.initialPosition = nil
+            touchState.initialRotation = nil
+            touchState.initialScale = nil
+            touchState.initialTouchDistance = nil
+            touchState.initialTouchAngle = nil
+            touchState.initialTouchMidpoint = nil
+        }
+        else if touchState.videoTargetState == .transforming && touchState.activeTouches.count == 1 {
+            // Transition back to dragging
+            let touch = touchState.activeTouches.first!
+            let location = touch.location(in: metalView)
+            
+            touchState.initialPosition = nil
+            touchState.initialRotation = nil
+            touchState.initialScale = nil
+            touchState.initialTouchDistance = nil
+            touchState.initialTouchAngle = nil
+            touchState.initialTouchMidpoint = nil
+            
+            let transformJson = runJavascript("Steina.getDraggingVideoTransform('\(touchState.videoTargetId!)')")!
+            let transformObj = try! JSONSerialization.jsonObject(with: transformJson.data(using: .utf8)!, options: [])
+            
+            let transform = transformObj as! Dictionary<String, NSNumber>
+            let initialX = CGFloat(transform["x"]!.floatValue)
+            let initialY = CGFloat(transform["y"]!.floatValue)
+            
+            let unprojected = unproject(location: location, in: metalView)
+            touchState.initialDragOffset = CGPoint(x: CGFloat(unprojected.x) - initialX, y: CGFloat(unprojected.y) - initialY)
+            touchState.videoTargetState = .dragging
+            
+        }
+        DEBUGEndTimedBlock("Touch Ended")
     }
     
     func videoTargetAtLocation(_ location: CGPoint) -> ClipId? {
@@ -497,6 +726,12 @@ class EditorViewController: UIViewController,
         }
         let id = previousRenderedIds[idx]
         return id
+    }
+    
+    func unproject(location: CGPoint, in metalView: MetalView) -> float4 {
+        let projectedX = (2.0 * (location.x / metalView.bounds.size.width)) - 1.0
+        let projectedY = ((2.0 * (location.y / metalView.bounds.size.height)) - 1.0) * -1.0 // Invert y
+        return unprojection * float4(Float(projectedX), Float(projectedY), 1.0, 1.0)
     }
     
     

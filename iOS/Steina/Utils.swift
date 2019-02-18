@@ -16,6 +16,16 @@ import QuartzCore
  **********************************************/
 
 @inline(__always)
+func radiansToDegrees(_ radians: CGFloat) -> CGFloat {
+    return radians * CGFloat(180.0) / .pi
+}
+
+@inline(__always)
+func degreesToRadians(_ degrees: CGFloat) -> CGFloat {
+    return degrees * .pi / CGFloat(180.0)
+}
+
+@inline(__always)
 func distance(_ point1: CGPoint, _ point2: CGPoint) -> CGFloat {
     let yDiffSquared = ((point2.y - point1.y) * (point2.y - point1.y))
     let xDiffSquared = ((point2.x - point1.x) * (point2.x - point1.x))

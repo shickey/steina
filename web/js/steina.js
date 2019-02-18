@@ -243,22 +243,33 @@
               }
             }
 
-            function beginDraggingVideo(id, x, y) {
-              var target = vm.runtime.getTargetById(id);
-              target.dragOffsetX = target.x - x;
-              target.dragOffsetY = target.y - y;
+            function beginDraggingVideo(id) {
               vm.startDrag(id);
+              var target = vm.runtime.getTargetById(id);
             }
 
-            function updateDraggingVideo(id, x, y) {
+            function updateDraggingVideo(id, x, y, rot, scale) {
               vm.updateDrag({
                 x: x,
-                y: y
+                y: y,
+                rot: rot,
+                scale: scale
               });
             }
 
             function endDraggingVideo(id, updateDragTarget = true) {
               vm.stopDrag(id, updateDragTarget);
+            }
+
+            function getDraggingVideoTransform(id) {
+              var target = vm.runtime.getTargetById(id);
+              var transform = {
+                x: target.x,
+                y: target.y,
+                rot: target.direction,
+                scale: target.size
+              }
+              return JSON.stringify(transform)
             }
 
             function tapVideo(id) {
@@ -281,6 +292,7 @@
               beginDraggingVideo,
               updateDraggingVideo,
               endDraggingVideo,
+              getDraggingVideoTransform,
               tapVideo
             }
 
