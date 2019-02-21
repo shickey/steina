@@ -354,16 +354,16 @@ class Project {
         id = projectId
     }
     
+    var projectFolderUrl : URL {
+        return DATA_DIRECTORY_URL.appendingPathComponent(id.uuidString)
+    }
+    
     var jsonUrl : URL {
-        return DATA_DIRECTORY_URL
-            .appendingPathComponent(id.uuidString)
-            .appendingPathComponent("project.json")
+        return projectFolderUrl.appendingPathComponent("project.json")
     }
     
     var thumbnailUrl : URL {
-        return DATA_DIRECTORY_URL
-            .appendingPathComponent(id.uuidString)
-            .appendingPathComponent("thumb.png")
+        return projectFolderUrl.appendingPathComponent("thumb.png")
     }
 }
 

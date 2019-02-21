@@ -19,7 +19,7 @@
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <view contentMode="scaleToFill" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Ny8-Yb-Uji" customClass="AudioView" customModule="Steina" customModuleProvider="target">
-                                <rect key="frame" x="20" y="220" width="728" height="500"/>
+                                <rect key="frame" x="20" y="219" width="728" height="500"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxX="YES" flexibleMinY="YES" flexibleMaxY="YES"/>
                                 <color key="backgroundColor" red="0.3529411764705882" green="0.49019607843137253" blue="0.7803921568627451" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                             </view>
@@ -236,14 +236,6 @@
                                         <rect key="frame" x="20" y="14" width="52" height="52"/>
                                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                     </imageView>
-                                    <imageView hidden="YES" userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" image="scene-button" translatesAutoresizingMaskIntoConstraints="NO" id="nzx-W6-B3y" userLabel="Scene Background">
-                                        <rect key="frame" x="306" y="22" width="156" height="36"/>
-                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                    </imageView>
-                                    <imageView hidden="YES" userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" image="top-bar-button" translatesAutoresizingMaskIntoConstraints="NO" id="w0B-gK-c7y" userLabel="Fullscreen Background">
-                                        <rect key="frame" x="568" y="14" width="52" height="52"/>
-                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                    </imageView>
                                     <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" image="greenflag-button" translatesAutoresizingMaskIntoConstraints="NO" id="Wgt-ch-LZy" userLabel="Stop/Green Flag Background">
                                         <rect key="frame" x="638" y="14" width="110" height="52"/>
                                         <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxY="YES"/>
@@ -255,18 +247,6 @@
                                         <connections>
                                             <action selector="backButtonTapped:" destination="BYZ-38-t0r" eventType="touchUpInside" id="DMe-0N-voU"/>
                                         </connections>
-                                    </button>
-                                    <button hidden="YES" opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="C2c-uT-zrX" userLabel="Scene">
-                                        <rect key="frame" x="306" y="22" width="156" height="36"/>
-                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                        <state key="normal" title="Scene 1">
-                                            <color key="titleColor" red="0.070588235294117646" green="0.10196078431372549" blue="0.14901960784313725" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-                                        </state>
-                                    </button>
-                                    <button hidden="YES" opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Iv8-sZ-ZbP" userLabel="Fullscreen">
-                                        <rect key="frame" x="568" y="14" width="52" height="52"/>
-                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                        <state key="normal" image="fullscreen-icon"/>
                                     </button>
                                     <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="x3O-mT-naH" userLabel="Stop">
                                         <rect key="frame" x="638" y="14" width="54" height="52"/>
@@ -282,6 +262,18 @@
                                         <state key="normal" image="greenflag"/>
                                         <connections>
                                             <action selector="greenFlagButtonTapped:" destination="BYZ-38-t0r" eventType="touchUpInside" id="5c1-8X-6Fg"/>
+                                        </connections>
+                                    </button>
+                                    <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" image="top-bar-button" translatesAutoresizingMaskIntoConstraints="NO" id="jYP-LF-6yX" userLabel="Share Background">
+                                        <rect key="frame" x="91" y="14" width="52" height="52"/>
+                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                    </imageView>
+                                    <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="jzI-kw-qCu" userLabel="Share">
+                                        <rect key="frame" x="91" y="14" width="52" height="52"/>
+                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                        <state key="normal" image="share"/>
+                                        <connections>
+                                            <action selector="shareButtonTapped:" destination="BYZ-38-t0r" eventType="touchUpInside" id="9wl-Nc-MGW"/>
                                         </connections>
                                     </button>
                                 </subviews>
@@ -392,6 +384,8 @@
                         <outlet property="projectsButton" destination="YjR-xY-aFj" id="zgh-3y-2I7"/>
                         <outlet property="projectsButtonBackground" destination="d8x-Xn-3Vx" id="oy0-qc-QrD"/>
                         <outlet property="rotateHelpIcon" destination="nX9-oI-aOT" id="Fbk-gD-Aqa"/>
+                        <outlet property="shareButton" destination="jzI-kw-qCu" id="QYO-fO-b8i"/>
+                        <outlet property="shareButtonBackground" destination="jYP-LF-6yX" id="toX-MK-xcf"/>
                         <outlet property="stopButton" destination="x3O-mT-naH" id="qWK-yl-eoK"/>
                         <outlet property="stopGreenFlagButtonBackground" destination="Wgt-ch-LZy" id="oKp-YR-e0f"/>
                         <outlet property="toolbarView" destination="5Tz-4t-7AA" id="3Sg-sc-qGv"/>
@@ -417,7 +411,7 @@
                             <inset key="sectionInset" minX="5" minY="0.0" maxX="5" maxY="0.0"/>
                         </collectionViewFlowLayout>
                         <cells>
-                            <collectionViewCell opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" reuseIdentifier="ClipCell" id="yhg-ai-5RJ" customClass="ClipsCollectionViewCell" customModule="Steina" customModuleProvider="target">
+                            <collectionViewCell opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" misplaced="YES" reuseIdentifier="ClipCell" id="yhg-ai-5RJ" customClass="ClipsCollectionViewCell" customModule="Steina" customModuleProvider="target">
                                 <rect key="frame" x="5" y="0.0" width="100" height="75"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxX="YES" flexibleMinY="YES" flexibleMaxY="YES"/>
                                 <view key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" insetsLayoutMarginsFromSafeArea="NO">
@@ -537,7 +531,6 @@
         <image name="close" width="50" height="50"/>
         <image name="duplicate" width="38" height="38"/>
         <image name="edit" width="40" height="40"/>
-        <image name="fullscreen-icon" width="31" height="32"/>
         <image name="greenflag" width="33" height="36"/>
         <image name="greenflag-button" width="110" height="52"/>
         <image name="left-arrow" width="288" height="192"/>
@@ -545,7 +538,7 @@
         <image name="projects-icon" width="32" height="32"/>
         <image name="record" width="50" height="50"/>
         <image name="rotate" width="429" height="178"/>
-        <image name="scene-button" width="156" height="36"/>
+        <image name="share" width="26" height="33"/>
         <image name="stop" width="35" height="36"/>
         <image name="toolbar-bkgd" width="64" height="300"/>
         <image name="top-bar-button" width="52" height="52"/>

@@ -3,3 +3,4 @@
 //
 
 #import "turbojpeg.h"
+#import "ZipArchive.h"

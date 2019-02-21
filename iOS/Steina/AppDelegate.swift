@@ -7,7 +7,8 @@
 //
 
 import UIKit
-//import CoreData
+
+let ImportedProjectNotification = Notification(name: Notification.Name(rawValue: "BricoleurImportedProject"))
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -15,6 +16,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var window: UIWindow?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
+        cleanUpAirdropInbox()
+        
         // Preload project manifest and thumbnails
         SteinaStore.loadProjectsManifest()
         for untypedProject in SteinaStore.projects {
@@ -27,6 +30,42 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         startAudio()
         
         return true
+    }
+    
+    func application(_ app: UIApplication, open url: URL, options: [UIApplicationOpenURLOptionsKey : Any] = [:]) -> Bool {
+        // We recreate the temp folder for every incoming file so that unzipping always produces a single uniquely named directory
+        let tempFolder = DATA_DIRECTORY_URL.appendingPathComponent("temp")
+        try! FileManager.default.createDirectory(at: tempFolder, withIntermediateDirectories: true, attributes: nil)
+        
+        let success = SSZipArchive.unzipFile(atPath: url.path, toDestination: tempFolder.path)
+        if success {
+            let projectFolderName = (try! FileManager.default.contentsOfDirectory(atPath: tempFolder.path))[0]
+            let projectFolderUrl = tempFolder.appendingPathComponent(projectFolderName)
+            let newProjectId = UUID()
+            let newProjectFolder = DATA_DIRECTORY_URL.appendingPathComponent(newProjectId.uuidString, isDirectory: true)
+            try! FileManager.default.moveItem(at: projectFolderUrl, to: newProjectFolder)
+            
+            let project = Project(id: newProjectId)
+            SteinaStore.projects.add(project)
+            SteinaStore.saveProjectsManifest()
+            loadProjectThumbnail(project)
+            
+            NotificationCenter.default.post(ImportedProjectNotification)
+        }
+        
+        try! FileManager.default.removeItem(at: tempFolder)
+        return success
+    }
+    
+    func cleanUpAirdropInbox() {
+        let inboxUrl = DATA_DIRECTORY_URL.appendingPathComponent("Inbox")
+        if FileManager.default.fileExists(atPath: inboxUrl.path) {
+            let items = try! FileManager.default.contentsOfDirectory(atPath: inboxUrl.path)
+            for item in items {
+                let itemUrl = inboxUrl.appendingPathComponent(item)
+                try! FileManager.default.removeItem(at: itemUrl)
+            }
+        }
     }
 
     func applicationWillResignActive(_ application: UIApplication) {

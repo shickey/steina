@@ -41,6 +41,13 @@ class ProjectCollectionViewController : UICollectionViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         projects = SteinaStore.projects
+        
+        NotificationCenter.default.addObserver(self, selector: #selector(importedProjectNotification), name: ImportedProjectNotification.name, object: nil)
+    }
+    
+    @objc
+    func importedProjectNotification(notification: Notification) {
+        collectionView?.reloadData()
     }
     
     override func viewWillAppear(_ animated: Bool) {

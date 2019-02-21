@@ -66,6 +66,8 @@ class EditorViewController: UIViewController,
     @IBOutlet weak var assetsView: UIView!
     @IBOutlet weak var projectsButton: UIButton!
     @IBOutlet weak var projectsButtonBackground: UIImageView!
+    @IBOutlet weak var shareButton: UIButton!
+    @IBOutlet weak var shareButtonBackground: UIImageView!
     @IBOutlet weak var stopGreenFlagButtonBackground: UIImageView!
     @IBOutlet weak var rotateHelpIcon: UIView!
     @IBOutlet weak var helpArrowTop: UIImageView!
@@ -143,6 +145,8 @@ class EditorViewController: UIViewController,
             self.toolbarView.backgroundColor = UIColor(red: 40.0 / 255.0, green: 56.0 / 255.0, blue: 86.0 / 255.0, alpha: 1.0)
             self.projectsButton.alpha = 1.0
             self.projectsButtonBackground.alpha = 1.0
+            self.shareButton.alpha = 1.0
+            self.shareButtonBackground.alpha = 1.0
             self.stopGreenFlagButtonBackground.alpha = 1.0
             self.webViewContainer.alpha = 1.0
             self.assetsView.alpha = 1.0
@@ -157,6 +161,8 @@ class EditorViewController: UIViewController,
             self.toolbarView.backgroundColor = UIColor(red: 18.0 / 255.0, green: 18.0 / 255.0, blue: 24.0 / 255.0, alpha: 1.0)
             self.projectsButton.alpha = 0.0
             self.projectsButtonBackground.alpha = 0.0
+            self.shareButton.alpha = 0.0
+            self.shareButtonBackground.alpha = 0.0
             self.stopGreenFlagButtonBackground.alpha = 0.0
             self.webViewContainer.alpha = 0.0
             self.assetsView.alpha = 0.0
@@ -245,13 +251,22 @@ class EditorViewController: UIViewController,
         self.presentingViewController!.dismiss(animated: true, completion: nil)
     }
     
+    @IBAction func shareButtonTapped(_ sender: Any) {
+        stopAndSave()
+        let projectProvider = ProjectItemProvider(project: project)
+        let sharingVC = UIActivityViewController(activityItems: [projectProvider], applicationActivities: nil)
+        sharingVC.modalPresentationStyle = .popover
+        sharingVC.popoverPresentationController?.sourceView = view
+        sharingVC.popoverPresentationController?.sourceRect = shareButton.frame
+        self.present(sharingVC, animated: true, completion: nil)
+    }
+    
     @IBAction func greenFlagButtonTapped(_ sender: Any) {
         runJavascript("vm.greenFlag()")
     }
     
     @IBAction func stopButtonTapped(_ sender: Any) {
-        runJavascript("vm.stopAll()")
-        saveProject()
+        stopAndSave()
     }
     
     @IBAction func trashButtonTapped(_ sender: Any) {
@@ -290,6 +305,11 @@ class EditorViewController: UIViewController,
         else if let audioCaptureVC = segue.destination as? AudioCaptureViewController {
             audioCaptureVC.delegate = self
         }
+    }
+    
+    func stopAndSave() {
+        runJavascript("vm.stopAll()")
+        saveProject()
     }
     
     var nextRenderTimestamp = 0.0
