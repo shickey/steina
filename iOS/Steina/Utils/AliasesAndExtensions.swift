@@ -1,5 +1,5 @@
 //
-//  DataTypes.swift
+//  AliasesAndExtensions.swift
 //  Steina
 //
 //  Created by Sean Hickey on 5/23/18.
@@ -56,19 +56,5 @@ extension Int {
 extension Data {
     var bytes : RawPtr {
         return RawPtr(mutating: (self as NSData).bytes)
-    }
-}
-
-struct Region {
-    var start : Int
-    var end : Int
-    
-    var size : Int {
-        return end - start
-    }
-    
-    init(_ newStart: Int, _ newEnd: Int) {
-        start = newStart
-        end = newEnd
     }
 }

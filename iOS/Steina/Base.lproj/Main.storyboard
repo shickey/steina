@@ -439,10 +439,10 @@
             </objects>
             <point key="canvasLocation" x="712" y="-446"/>
         </scene>
-        <!--Capture View Controller-->
+        <!--Video Capture View Controller-->
         <scene sceneID="Ta3-cP-QYb">
             <objects>
-                <viewController id="vvR-aU-9rN" customClass="CaptureViewController" customModule="Steina" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController id="vvR-aU-9rN" customClass="VideoCaptureViewController" customModule="Steina" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" insetsLayoutMarginsFromSafeArea="NO" id="TTD-NQ-xy4">
                         <rect key="frame" x="0.0" y="0.0" width="768" height="944"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>

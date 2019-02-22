@@ -13,7 +13,7 @@ import os.signpost
 #endif
 
 #if DEBUG
-let logger = OSLog(subsystem: "edu.mit.media.llk.Steina", category: "Timing")
+let logger = OSLog(subsystem: "edu.mit.media.llk.Bricoleur", category: "Timing")
 #endif
 
 @inline(__always)

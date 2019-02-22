@@ -1,5 +1,5 @@
 //
-//  CaptureViewController.swift
+//  VideoCaptureViewController.swift
 //  Steina
 //
 //  Created by Sean Hickey on 5/22/18.
@@ -62,13 +62,13 @@ class CaptureInfoLabel : UILabel {
     
 }
 
-protocol CaptureViewControllerDelegate {
-    func captureViewControllerDidCreateClip(captureViewController: CaptureViewController, clip: Clip)
+protocol VideoCaptureViewControllerDelegate {
+    func videoCaptureViewControllerDidCreateClip(videoCaptureViewController: VideoCaptureViewController, clip: Clip)
 }
 
-class CaptureViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDelegate, DrawMaskViewDelegate {
+class VideoCaptureViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDelegate, DrawMaskViewDelegate {
     
-    var delegate : CaptureViewControllerDelegate? = nil
+    var delegate : VideoCaptureViewControllerDelegate? = nil
     
     var project : Project! = nil
     
@@ -190,7 +190,7 @@ class CaptureViewController: UIViewController, AVCaptureVideoDataOutputSampleBuf
         
         session.commitConfiguration()
         
-        recordingQueue = DispatchQueue(label: "edu.mit.media.llk.Steina")
+        recordingQueue = DispatchQueue(label: "edu.mit.media.llk.Bricoleur")
         
         previewView.videoPreviewLayer.session = self.session
         
@@ -314,7 +314,7 @@ class CaptureViewController: UIViewController, AVCaptureVideoDataOutputSampleBuf
                     saveClip(self.clip)
                     
                     if let d = self.delegate {
-                        d.captureViewControllerDidCreateClip(captureViewController: self, clip: self.clip)
+                        d.videoCaptureViewControllerDidCreateClip(videoCaptureViewController: self, clip: self.clip)
                     }
                     
                     let info = self.infoLabel!

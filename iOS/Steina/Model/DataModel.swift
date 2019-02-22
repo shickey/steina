@@ -22,6 +22,19 @@ let VIDEO_FILE_MAGIC_NUMBER : U32 = 0x000F1DE0
 let DATA_DIRECTORY_URL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).last!
 let PROJECT_MANIFEST_URL = DATA_DIRECTORY_URL.appendingPathComponent("steina.manifest")
 
+struct Region {
+    var start : Int
+    var end : Int
+    
+    var size : Int {
+        return end - start
+    }
+    
+    init(_ newStart: Int, _ newEnd: Int) {
+        start = newStart
+        end = newEnd
+    }
+}
 
 /*******************************************************************
  *

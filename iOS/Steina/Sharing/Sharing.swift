@@ -8,7 +8,7 @@
 
 import UIKit
 
-let BricoleurProjectUti = "edu.mit.media.llk.Bricoleur.bric"
+let BRICOLEUR_PROJECT_UTI = "edu.mit.media.llk.Bricoleur.bric"
 
 class ProjectItemProvider : UIActivityItemProvider {
     
@@ -20,14 +20,14 @@ class ProjectItemProvider : UIActivityItemProvider {
     }
     
     override func activityViewController(_ activityViewController: UIActivityViewController, dataTypeIdentifierForActivityType activityType: UIActivityType?) -> String {
-        return BricoleurProjectUti
+        return BRICOLEUR_PROJECT_UTI
     }
     
     override var item: Any {
         let tempFolder = DATA_DIRECTORY_URL.appendingPathComponent("Outbox")
         try! FileManager.default.createDirectory(at: tempFolder, withIntermediateDirectories: true, attributes: nil)
         let zipFileUrl = tempFolder.appendingPathComponent("MyBricoleurProject.bric")
-        let success = SSZipArchive.createZipFile(atPath: zipFileUrl.path, withContentsOfDirectory: project.projectFolderUrl.path, keepParentDirectory: true)
+        SSZipArchive.createZipFile(atPath: zipFileUrl.path, withContentsOfDirectory: project.projectFolderUrl.path, keepParentDirectory: true)
         return zipFileUrl
     }
     

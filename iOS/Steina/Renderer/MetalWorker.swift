@@ -68,6 +68,23 @@ var lastRenderedPixels : RawPtr = malloc(4 * 640 * 480)
 var lastRenderedHeight = 0
 var lastRenderedWidth = 0
 
+var pixelTex : MTLTexture! = nil
+var maskTex : MTLTexture! = nil
+var depthTex : MTLTexture! = nil
+
+var vertBuffer : MTLBuffer! = nil
+var matBuffer : MTLBuffer! = nil
+
+var rawPixels : UnsafeMutableRawPointer! = malloc(640 * 480 * 4 * MAX_RENDERED_ENTITIES)!
+var pixels : U8Ptr! = nil
+
+var rawMask : UnsafeMutableRawPointer! = malloc(640 * 480 * MAX_RENDERED_ENTITIES)!
+var mask : U8Ptr! = nil
+
+var decompressors : Set<tjhandle> = Set()
+var decompressorSemaphore : DispatchSemaphore! = nil
+let decompressorLockQueue = DispatchQueue(label: "edu.mit.media.llk.Bricoleur.Decompressors")
+
 struct VideoEffects {
     var color : F32 = 0
     var whirl : F32 = 0
@@ -134,24 +151,6 @@ func orthographicUnprojection(left: Float, right: Float, top: Float, bottom: Flo
     )
 }
 
-var pixelTex : MTLTexture! = nil
-var maskTex : MTLTexture! = nil
-var depthTex : MTLTexture! = nil
-
-var vertBuffer : MTLBuffer! = nil
-var matBuffer : MTLBuffer! = nil
-
-var rawPixels : UnsafeMutableRawPointer! = malloc(640 * 480 * 4 * MAX_RENDERED_ENTITIES)!
-var pixels : U8Ptr! = nil
-
-var rawMask : UnsafeMutableRawPointer! = malloc(640 * 480 * MAX_RENDERED_ENTITIES)!
-var mask : U8Ptr! = nil
-
-var NUM_DECOMPRESSORS = 10
-var decompressors : Set<tjhandle> = Set()
-var decompressorSemaphore = DispatchSemaphore(value: NUM_DECOMPRESSORS)
-let decompressorLockQueue = DispatchQueue(label: "edu.mit.media.llk.Steina.Decompressors")
-
 //var captureScope : MTLCaptureScope! = nil
 
 func initMetal(_ hostView: MetalView) {
@@ -160,9 +159,12 @@ func initMetal(_ hostView: MetalView) {
 //    captureScope.label = "Steina Debug Scope"
     
     // Set up JPEG decompressors
-    for _ in 0..<NUM_DECOMPRESSORS {
+    let numDecompressors = ProcessInfo.processInfo.activeProcessorCount
+    decompressorSemaphore = DispatchSemaphore(value: numDecompressors)
+    for _ in 0..<numDecompressors {
         decompressors.insert(tjInitDecompress())
     } 
+    
     
     // Set up rendering view layer
     metalLayer = hostView.metalLayer

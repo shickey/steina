@@ -39,7 +39,7 @@ class EditorViewController: UIViewController,
                             UIWebViewDelegate,
                             MetalViewDelegate,
                             ClipsCollectionViewControllerDelegate, 
-                            CaptureViewControllerDelegate,
+                            VideoCaptureViewControllerDelegate,
                             AudioCaptureViewControllerDelegate {
     
     var project : Project! = nil
@@ -51,9 +51,17 @@ class EditorViewController: UIViewController,
     var touchState = MetalViewTouchState()
     var previousRenderedIds : [ClipId] = []
     var renderedIds : [ClipId] = []
-    var renderingQueue : DispatchQueue = DispatchQueue(label: "edu.mit.media.llk.Steina.Render", qos: .default, attributes: .concurrent, autoreleaseFrequency: DispatchQueue.AutoreleaseFrequency.workItem, target: nil)
+    var renderingQueue : DispatchQueue = DispatchQueue(label: "edu.mit.media.llk.Bricoleur.Render", qos: .default, attributes: .concurrent, autoreleaseFrequency: DispatchQueue.AutoreleaseFrequency.workItem, target: nil)
     let renderDispatchGroup = DispatchGroup()
     let unprojection = orthographicUnprojection(left: -320.0, right: 320.0, top: 240.0, bottom: -240.0, near: 1.0, far: -1.0)
+    
+    var webView: UIWebView! = nil
+    var clipsCollectionVC : ClipsCollectionViewController? = nil
+    
+    // Audio
+    var nextRenderTimestamp = 0.0
+    var lastTargetTimestamp = 0.0
+    let mixingBuffer = Data(count: MemoryLayout<Float>.size * 4800) // We allocate enough for 3 frames of audio and hard cap it there
     
     @IBOutlet weak var metalView: MetalView!
     @IBOutlet weak var webViewContainer: UIView!
@@ -74,8 +82,11 @@ class EditorViewController: UIViewController,
     @IBOutlet weak var helpArrowBottom: UIImageView!
     
     
-    var webView: UIWebView! = nil
-    var clipsCollectionVC : ClipsCollectionViewController? = nil
+    /**********************************************************************
+     *
+     * Lifecycle
+     *
+     **********************************************************************/
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -110,10 +121,6 @@ class EditorViewController: UIViewController,
         webView.loadRequest(URLRequest(url: indexPage))
     }
     
-    func webViewDidFinishLoad(_ webView: UIWebView) {
-        onScratchLoaded()
-    }
-    
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         arrangeViewsForSize(view.bounds.size)
@@ -137,6 +144,21 @@ class EditorViewController: UIViewController,
         }, completion: { (_) in 
             self.updateHelpAnimations()
         })
+    }
+    
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+        if let clipsVC = segue.destination as? ClipsCollectionViewController {
+            clipsVC.delegate = self
+            clipsVC.project = project
+            self.clipsCollectionVC = clipsVC
+        }
+        else if let captureVC = segue.destination as? VideoCaptureViewController {
+            captureVC.delegate = self
+            captureVC.project = project
+        }
+        else if let audioCaptureVC = segue.destination as? AudioCaptureViewController {
+            audioCaptureVC.delegate = self
+        }
     }
     
     func arrangeViewsForSize(_ size: CGSize) {
@@ -187,6 +209,14 @@ class EditorViewController: UIViewController,
         })
     }
     
+    func onReady() {
+        if let clipsVC = clipsCollectionVC {
+            clipsVC.project = project
+            clipsVC.collectionView?.reloadData()
+        }
+        startDisplayLink()
+    }
+    
     func updateHelpAnimations() {
         if self.project.clips.count == 0 && self.project.sounds.count == 0 {
             if self.view.bounds.size.width < self.view.bounds.size.height {
@@ -217,21 +247,6 @@ class EditorViewController: UIViewController,
         }
     }
     
-    func saveProject() {
-        project.thumbnail = getLastRenderedImage()
-        saveProjectThumbnail(project)
-        let projectJson = runJavascript("Steina.getProjectJson()")
-        saveProjectJson(self.project, projectJson!) 
-    }
-    
-    func onReady() {
-        if let clipsVC = clipsCollectionVC {
-            clipsVC.project = project
-            clipsVC.collectionView?.reloadData()
-        }
-        startDisplayLink()
-    }
-    
     func startDisplayLink() {
         displayLink = CADisplayLink(target: self, selector: #selector(tick))
         displayLink.preferredFramesPerSecond = 30
@@ -242,10 +257,12 @@ class EditorViewController: UIViewController,
         displayLink.remove(from: .current, forMode: .defaultRunLoopMode)
     }
     
-    @inline(__always) @discardableResult
-    func runJavascript(_ js: String) -> String? {
-        return webView!.stringByEvaluatingJavaScript(from: js)
-    }
+    
+    /**********************************************************************
+     *
+     * IBActions
+     *
+     **********************************************************************/
     
     @IBAction func backButtonTapped(_ sender: Any) {
         self.presentingViewController!.dismiss(animated: true, completion: nil)
@@ -292,31 +309,29 @@ class EditorViewController: UIViewController,
         }
     }
     
-    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        if let clipsVC = segue.destination as? ClipsCollectionViewController {
-            clipsVC.delegate = self
-            clipsVC.project = project
-            self.clipsCollectionVC = clipsVC
-        }
-        else if let captureVC = segue.destination as? CaptureViewController {
-            captureVC.delegate = self
-            captureVC.project = project
-        }
-        else if let audioCaptureVC = segue.destination as? AudioCaptureViewController {
-            audioCaptureVC.delegate = self
-        }
+    
+    /**********************************************************************
+     *
+     * The Goods
+     *
+     **********************************************************************/
+    
+    @inline(__always) @discardableResult
+    func runJavascript(_ js: String) -> String? {
+        return webView!.stringByEvaluatingJavaScript(from: js)
+    }
+    
+    func saveProject() {
+        project.thumbnail = getLastRenderedImage()
+        saveProjectThumbnail(project)
+        let projectJson = runJavascript("Steina.getProjectJson()")
+        saveProjectJson(self.project, projectJson!) 
     }
     
     func stopAndSave() {
         runJavascript("vm.stopAll()")
         saveProject()
     }
-    
-    var nextRenderTimestamp = 0.0
-    var lastTargetTimestamp = 0.0
-    
-    // Create audio mixing buffer
-    let mixingBuffer = Data(count: MemoryLayout<Float>.size * 4800) // We allocate enough for 3 frames of audio and hard cap it there
     
     @objc func tick(_ sender: CADisplayLink) {
         
@@ -474,6 +489,18 @@ class EditorViewController: UIViewController,
         
         DEBUGEndTimedBlock("Frame")
     }
+    
+    
+    /**********************************************************************
+     *
+     * UIWebViewDelegate
+     *
+     **********************************************************************/
+    
+    func webViewDidFinishLoad(_ webView: UIWebView) {
+        onScratchLoaded()
+    }
+    
     
     /**********************************************************************
      *
@@ -770,14 +797,15 @@ class EditorViewController: UIViewController,
     
     /**********************************************************************
      *
-     * CaptureViewControllerDelegate
+     * VideoCaptureViewControllerDelegate
      *
      **********************************************************************/
     
-    func captureViewControllerDidCreateClip(captureViewController: CaptureViewController, clip: Clip) {
+    func videoCaptureViewControllerDidCreateClip(videoCaptureViewController: VideoCaptureViewController, clip: Clip) {
         runJavascript("Steina.createVideoTarget(\"\(clip.id.uuidString)\", 30, \(clip.frames));")
         updateHelpAnimations()
     }
+    
     
     /**********************************************************************
      *

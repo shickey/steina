@@ -1,5 +1,5 @@
 //
-//  MathUtils.swift
+//  Utils.swift
 //  Steina
 //
 //  Created by Sean Hickey on 5/31/18.
