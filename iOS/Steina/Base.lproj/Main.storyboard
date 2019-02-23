@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="14460.31" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="pn9-sj-NkA">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="14460.31" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="Vlh-P1-xwk">
     <device id="ipad9_7" orientation="portrait">
         <adaptation id="fullscreen"/>
     </device>
@@ -19,88 +19,92 @@
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <view contentMode="scaleToFill" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Ny8-Yb-Uji" customClass="AudioView" customModule="Steina" customModuleProvider="target">
-                                <rect key="frame" x="20" y="219" width="728" height="500"/>
-                                <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxX="YES" flexibleMinY="YES" flexibleMaxY="YES"/>
+                                <rect key="frame" x="0.0" y="180" width="768" height="500"/>
+                                <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES" flexibleMaxY="YES"/>
                                 <color key="backgroundColor" red="0.3529411764705882" green="0.49019607843137253" blue="0.7803921568627451" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                             </view>
-                            <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="O2N-bB-jeR">
-                                <rect key="frame" x="20" y="20" width="50" height="50"/>
+                            <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="O2N-bB-jeR" userLabel="Close Button">
+                                <rect key="frame" x="20" y="20" width="56" height="56"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                <state key="normal" image="close"/>
+                                <state key="normal" image="editor-close"/>
                                 <connections>
                                     <action selector="closeButtonTapped:" destination="Vlh-P1-xwk" eventType="touchUpInside" id="Lm7-kF-Blk"/>
                                 </connections>
                             </button>
-                            <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="43r-zd-Lsc">
-                                <rect key="frame" x="354" y="844" width="60" height="60"/>
-                                <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxX="YES" flexibleMinY="YES"/>
-                                <state key="normal" image="record"/>
-                                <connections>
-                                    <action selector="recordingButtonTapped:" destination="Vlh-P1-xwk" eventType="touchUpInside" id="u08-EN-ya0"/>
-                                </connections>
-                            </button>
                             <view multipleTouchEnabled="YES" userInteractionEnabled="NO" contentMode="scaleToFill" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="doD-Aa-Oqu" customClass="AssetEditorView" customModule="Steina" customModuleProvider="target">
-                                <rect key="frame" x="20" y="180" width="728" height="580"/>
-                                <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxX="YES" flexibleMinY="YES" flexibleMaxY="YES"/>
+                                <rect key="frame" x="0.0" y="140" width="768" height="580"/>
+                                <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES" flexibleMaxY="YES"/>
                                 <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                             </view>
-                            <button hidden="YES" opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Orz-vi-dp9">
-                                <rect key="frame" x="207" y="765" width="153" height="42"/>
+                            <button hidden="YES" opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="GWO-gI-mtY">
+                                <rect key="frame" x="20" y="844" width="80" height="80"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                                <color key="backgroundColor" red="0.0" green="0.47843137250000001" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-                                <fontDescription key="fontDescription" type="system" pointSize="25"/>
-                                <state key="normal" title="Add Marker">
-                                    <color key="titleColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                                </state>
-                                <connections>
-                                    <action selector="addMarkerButtonTapped:" destination="Vlh-P1-xwk" eventType="touchUpInside" id="2SN-ad-oli"/>
-                                </connections>
-                            </button>
-                            <button hidden="YES" opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="RKk-IA-IcY">
-                                <rect key="frame" x="409" y="853" width="153" height="42"/>
-                                <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMinY="YES"/>
-                                <color key="backgroundColor" red="0.0" green="0.47843137250000001" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-                                <fontDescription key="fontDescription" type="system" pointSize="25"/>
-                                <state key="normal" title="Save">
-                                    <color key="titleColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                                </state>
-                                <connections>
-                                    <action selector="saveButtonTapped:" destination="Vlh-P1-xwk" eventType="touchUpInside" id="HI9-Ne-D4h"/>
-                                </connections>
-                            </button>
-                            <button hidden="YES" opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="GWO-gI-mtY">
-                                <rect key="frame" x="207" y="853" width="153" height="42"/>
-                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                                <color key="backgroundColor" red="0.0" green="0.47843137250000001" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-                                <fontDescription key="fontDescription" type="system" pointSize="25"/>
-                                <state key="normal" title="Rerecord">
+                                <state key="normal" image="editor-rerecord">
                                     <color key="titleColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                 </state>
                                 <connections>
                                     <action selector="rerecordButtonTapped:" destination="Vlh-P1-xwk" eventType="touchUpInside" id="ZkL-9v-9kk"/>
                                 </connections>
                             </button>
-                            <button hidden="YES" opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Ala-aW-dY2">
-                                <rect key="frame" x="409" y="765" width="153" height="42"/>
-                                <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMinY="YES"/>
-                                <color key="backgroundColor" red="0.0" green="0.47843137250000001" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-                                <fontDescription key="fontDescription" type="system" pointSize="25"/>
-                                <state key="normal" title="Play">
+                            <button hidden="YES" opaque="NO" contentMode="scaleToFill" fixedFrame="YES" enabled="NO" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="UKd-Hm-g6u" userLabel="Delete Marker Button">
+                                <rect key="frame" x="217" y="784" width="80" height="80"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                <state key="normal" image="editor-delete-marker">
                                     <color key="titleColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                 </state>
                                 <connections>
-                                    <action selector="playButtonTapped:" destination="Vlh-P1-xwk" eventType="touchUpInside" id="3Ls-bY-S8M"/>
+                                    <action selector="deleteMarkerButtonTapped:" destination="Vlh-P1-xwk" eventType="touchUpInside" id="zI1-ve-cxb"/>
+                                </connections>
+                            </button>
+                            <button hidden="YES" opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Orz-vi-dp9">
+                                <rect key="frame" x="471" y="784" width="80" height="80"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMinY="YES"/>
+                                <state key="normal" image="editor-add-marker">
+                                    <color key="titleColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                </state>
+                                <connections>
+                                    <action selector="addMarkerButtonTapped:" destination="Vlh-P1-xwk" eventType="touchUpInside" id="2SN-ad-oli"/>
+                                </connections>
+                            </button>
+                            <button hidden="YES" opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="RKk-IA-IcY">
+                                <rect key="frame" x="668" y="844" width="80" height="80"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMinY="YES"/>
+                                <state key="normal" image="editor-save">
+                                    <color key="titleColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                </state>
+                                <connections>
+                                    <action selector="saveButtonTapped:" destination="Vlh-P1-xwk" eventType="touchUpInside" id="HI9-Ne-D4h"/>
+                                </connections>
+                            </button>
+                            <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="43r-zd-Lsc">
+                                <rect key="frame" x="328" y="768" width="112" height="112"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                <state key="normal" image="editor-record"/>
+                                <connections>
+                                    <action selector="recordingButtonTapped:" destination="Vlh-P1-xwk" eventType="touchUpInside" id="u08-EN-ya0"/>
+                                </connections>
+                            </button>
+                            <button hidden="YES" opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Ala-aW-dY2" userLabel="Play/Pause Button">
+                                <rect key="frame" x="328" y="768" width="112" height="112"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                <state key="normal" image="editor-play">
+                                    <color key="titleColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                </state>
+                                <connections>
+                                    <action selector="playPauseButtonTapped:" destination="Vlh-P1-xwk" eventType="touchUpInside" id="RLm-nU-moV"/>
                                 </connections>
                             </button>
                         </subviews>
-                        <color key="backgroundColor" red="0.22745098039215686" green="0.24313725490196078" blue="0.29411764705882354" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                        <color key="backgroundColor" red="0.070588235294117646" green="0.10196078431372549" blue="0.14901960784313725" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                         <viewLayoutGuide key="safeArea" id="7MS-sQ-hqc"/>
                     </view>
                     <connections>
                         <outlet property="addMarkerButton" destination="Orz-vi-dp9" id="5E3-5J-7RP"/>
                         <outlet property="assetEditorView" destination="doD-Aa-Oqu" id="nSe-5r-quq"/>
                         <outlet property="audioView" destination="Ny8-Yb-Uji" id="7By-WF-ZZY"/>
-                        <outlet property="playButton" destination="Ala-aW-dY2" id="krG-xN-mk8"/>
+                        <outlet property="closeButton" destination="O2N-bB-jeR" id="0uh-oS-15u"/>
+                        <outlet property="deleteMarkerButton" destination="UKd-Hm-g6u" id="2dV-cA-4Zg"/>
+                        <outlet property="playPauseButton" destination="Ala-aW-dY2" id="QyD-El-fzx"/>
                         <outlet property="recordButton" destination="43r-zd-Lsc" id="bbW-Dl-Gru"/>
                         <outlet property="rerecordButton" destination="GWO-gI-mtY" id="X1z-Nv-9I8"/>
                         <outlet property="saveButton" destination="RKk-IA-IcY" id="3sk-RE-hmB"/>
@@ -531,6 +535,13 @@
         <image name="close" width="50" height="50"/>
         <image name="duplicate" width="38" height="38"/>
         <image name="edit" width="40" height="40"/>
+        <image name="editor-add-marker" width="80" height="80"/>
+        <image name="editor-close" width="56" height="56"/>
+        <image name="editor-delete-marker" width="80" height="80"/>
+        <image name="editor-play" width="112" height="112"/>
+        <image name="editor-record" width="112" height="112"/>
+        <image name="editor-rerecord" width="80" height="80"/>
+        <image name="editor-save" width="80" height="80"/>
         <image name="greenflag" width="33" height="36"/>
         <image name="greenflag-button" width="110" height="52"/>
         <image name="left-arrow" width="288" height="192"/>

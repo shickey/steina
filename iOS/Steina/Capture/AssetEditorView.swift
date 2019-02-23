@@ -189,6 +189,41 @@ class AssetEditorView : UIView {
         setNeedsDisplay()
     }
     
+    func updatePlayhead(_ newPlayhead: Int) {
+        if newPlayhead < trimmedRange.start {
+            playhead = trimmedRange.start
+        }
+        else if newPlayhead > trimmedRange.end {
+            playhead = trimmedRange.end
+        }
+        else {
+            playhead = newPlayhead
+        }
+        updateSelectedMarker()
+        setNeedsDisplay()
+    }
+    
+    func updateSelectedMarker() {
+        if let selected = selectedMarker {
+            if playhead != selected {
+                if let del = delegate {
+                    del.assetEditorDidDeselect(editor: self, marker: selectedMarker!, at: selectedMarkerIdx!)
+                }
+                selectedMarker = nil
+                selectedMarkerIdx = nil
+            }
+        }
+        if let idx = markers.firstIndex(of: playhead) {
+            if idx != selectedMarkerIdx {
+                selectedMarkerIdx = idx
+                selectedMarker = markers[idx]
+                if let del = delegate {
+                    del.assetEditorDidSelect(editor: self, marker: selectedMarker!, at: selectedMarkerIdx!)
+                }
+            }
+        }
+    }
+    
     func deleteSelectedMarker() {
         if let idx = selectedMarkerIdx {
             markers.remove(at: idx)
@@ -554,24 +589,7 @@ class AssetEditorView : UIView {
         }
         
         // Check for deselection
-        if let selected = selectedMarker {
-            if playhead != selected {
-                if let del = delegate {
-                    del.assetEditorDidDeselect(editor: self, marker: selectedMarker!, at: selectedMarkerIdx!)
-                }
-                selectedMarker = nil
-                selectedMarkerIdx = nil
-            }
-        }
-        if let idx = markers.firstIndex(of: playhead) {
-            if idx != selectedMarkerIdx {
-                selectedMarkerIdx = idx
-                selectedMarker = markers[idx]
-                if let del = delegate {
-                    del.assetEditorDidSelect(editor: self, marker: selectedMarker!, at: selectedMarkerIdx!)
-                }
-            }
-        }
+        updateSelectedMarker()
         
         setNeedsDisplay()
     }
@@ -620,8 +638,9 @@ class AssetEditorView : UIView {
                 }
             }
             
-            context.setStrokeColor(UIColor.red.cgColor)
-            context.setFillColor(UIColor.red.cgColor)
+            let markerColor = UIColor.red
+            context.setStrokeColor(markerColor.cgColor)
+            context.setFillColor(markerColor.cgColor)
             
             // Start Trimmer
             if let startTrimX = xPositionForUnit(trimmedRange.start) {
@@ -683,7 +702,7 @@ class AssetEditorView : UIView {
                     }
                     else {
                         let label = "\(idx + 1)" // Scratch uses 1-based indexing
-                        drawMarker(at: markerX, in: context, rect: rect, color: UIColor.red, textColor: UIColor.white, label: label)
+                        drawMarker(at: markerX, in: context, rect: rect, color: markerColor, textColor: UIColor.white, label: label)
                     }
                 }
             }
@@ -695,8 +714,8 @@ class AssetEditorView : UIView {
             }
             
             // Draw play symbols
-            context.setFillColor(UIColor.green.cgColor)
-            context.setStrokeColor(UIColor.green.cgColor)
+            context.setFillColor(UIColor.white.cgColor)
+            context.setStrokeColor(UIColor.white.cgColor)
             context.setLineDash(phase: 0, lengths: [])
             context.setLineWidth(2.0)
             let playButtonRadius = gutterHeight * (2.0 / 5.0)

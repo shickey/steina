@@ -81,13 +81,39 @@ class AudioCaptureViewController: UIViewController, AssetEditorViewDelegate {
     var playingSoundId : PlayingSoundId! = nil
     var recording = false
     
-    var markerSelected = false
+    var playing = false {
+        didSet {
+            if playing {
+                let pauseImage = UIImage(named: "editor-pause")!
+                playPauseButton.setImage(pauseImage, for: .normal)
+            }
+            else {
+                let playImage = UIImage(named: "editor-play")!
+                playPauseButton.setImage(playImage, for: .normal)
+            }
+        }
+    }
+    
+    var markerSelected = false {
+        didSet {
+            if markerSelected {
+                addMarkerButton.isEnabled = false
+                deleteMarkerButton.isEnabled = true
+            }
+            else {
+                addMarkerButton.isEnabled = true
+                deleteMarkerButton.isEnabled = false
+            }
+        }
+    }
     
     @IBOutlet weak var assetEditorView: AssetEditorView!
     @IBOutlet weak var audioView: AudioView!
     
+    @IBOutlet weak var closeButton: UIButton!
     @IBOutlet weak var recordButton: UIButton!
-    @IBOutlet weak var playButton: UIButton!
+    @IBOutlet weak var playPauseButton: UIButton!
+    @IBOutlet weak var deleteMarkerButton: UIButton!
     @IBOutlet weak var addMarkerButton: UIButton!
     @IBOutlet weak var rerecordButton: UIButton!
     @IBOutlet weak var saveButton: UIButton!
@@ -99,7 +125,7 @@ class AudioCaptureViewController: UIViewController, AssetEditorViewDelegate {
         
         audioRenderContext.callback = { (updatedPlayheads) in
             if let _ = self.playingSoundId, let newPlayhead = updatedPlayheads[self.playingSoundId] {
-                self.assetEditorView.playhead = newPlayhead
+                self.assetEditorView.updatePlayhead(newPlayhead)
             }
         }
         
@@ -136,8 +162,9 @@ class AudioCaptureViewController: UIViewController, AssetEditorViewDelegate {
                 self.sound.samples = Data(bytes: recordingBuffer.data, count: recordingBuffer.samples * 2)
                 self.recording = false
                 self.recordButton.isHidden = true
-                self.playButton.isHidden = false
+                self.playPauseButton.isHidden = false
                 self.addMarkerButton.isHidden = false
+                self.deleteMarkerButton.isHidden = false
                 self.rerecordButton.isHidden = false
                 self.saveButton.isHidden = false
                 self.assetEditorView.totalRange = self.audioView.sampleWindow
@@ -151,27 +178,40 @@ class AudioCaptureViewController: UIViewController, AssetEditorViewDelegate {
         }
     }
     
-    @IBAction func playButtonTapped(_ sender: Any) {
-        if playingSoundId != nil {
+    @IBAction func playPauseButtonTapped(_ sender: Any) {
+        if playing {
             stopSound(playingSoundId)
+            playing = false
         }
-        var playRange = EditorRange(assetEditorView.playhead, assetEditorView.trimmedRange.end)
-        if assetEditorView.playhead == assetEditorView.trimmedRange.end {
-            playRange = assetEditorView.trimmedRange
+        else {
+            var playRange = EditorRange(assetEditorView.playhead, assetEditorView.trimmedRange.end)
+            if assetEditorView.playhead == assetEditorView.trimmedRange.end {
+                playRange = assetEditorView.trimmedRange
+            }
+            playing = true
+            playingSoundId = playSound(sound, playRange, looped: false) { stoppedId in
+                if stoppedId == self.playingSoundId {
+                    self.playingSoundId = nil
+                    self.playing = false
+                }
+            }
         }
-        playingSoundId = playSound(sound, playRange, looped: false)
     }
     
     @IBAction func addMarkerButtonTapped(_ sender: Any) {
+        assetEditorView.createMarkerAtPlayhead()
+    }
+    
+    @IBAction func deleteMarkerButtonTapped(_ sender: Any) {
         if markerSelected {
             assetEditorView.deleteSelectedMarker()
-        }
-        else {
-            assetEditorView.createMarkerAtPlayhead()
         }
     }
     
     @IBAction func saveButtonTapped(_ sender: Any) {
+        if playing {
+            stopSound(playingSoundId)
+        }
         sound.markers = assetEditorView.markers
         if let d = delegate {
             d.audioCaptureViewControllerDidCreateSound(audioView.sound!)
@@ -180,6 +220,9 @@ class AudioCaptureViewController: UIViewController, AssetEditorViewDelegate {
     }
     
     @IBAction func rerecordButtonTapped(_ sender: Any) {
+        if playing {
+            stopSound(playingSoundId)
+        }
         sound = Sound(bytesPerSample: 2)
         audioView.sound = sound
 
@@ -193,8 +236,9 @@ class AudioCaptureViewController: UIViewController, AssetEditorViewDelegate {
         
         markerSelected = false
         recordButton.isHidden = false
-        playButton.isHidden = true
+        playPauseButton.isHidden = true
         addMarkerButton.isHidden = true
+        deleteMarkerButton.isHidden = true
         rerecordButton.isHidden = true
         saveButton.isHidden = true
     }
@@ -204,16 +248,27 @@ class AudioCaptureViewController: UIViewController, AssetEditorViewDelegate {
     }
     
     func assetEditorTappedPlayButton(for: AssetEditorView, range: EditorRange) {
-        if playingSoundId != nil {
+        rerecordButton.isEnabled = false
+        playPauseButton.isEnabled = false
+        saveButton.isEnabled = false
+        closeButton.isEnabled = false
+        
+        if playing {
             stopSound(playingSoundId)
         }
         let sampleRange = SampleRange(range.start, range.end)
         playingSoundId = playSound(sound, sampleRange, looped: true)
+        playing = true
     }
     
     func assetEditorReleasedPlayButton(for: AssetEditorView, range: EditorRange) {
         stopSound(playingSoundId)
+        playing = false
         playingSoundId = nil
+        rerecordButton.isEnabled = true
+        playPauseButton.isEnabled = true
+        saveButton.isEnabled = true
+        closeButton.isEnabled = true
     }
     
     func assetEditorMovedToRange(editor: AssetEditorView, range: EditorRange) {
@@ -222,12 +277,10 @@ class AudioCaptureViewController: UIViewController, AssetEditorViewDelegate {
     }
     
     func assetEditorDidSelect(editor: AssetEditorView, marker: Marker, at: Int) {
-        print("selected \(at): \(marker)")
         markerSelected = true
     }
     
     func assetEditorDidDeselect(editor: AssetEditorView, marker: Marker, at: Int) {
-        print("deselected \(at): \(marker)")
         markerSelected = false
     }
     

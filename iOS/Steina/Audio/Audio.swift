@@ -22,6 +22,7 @@ class PlayingSound {
     let range : SampleRange
     let shouldLoop : Bool
     var playhead : Int
+    var completion : ((PlayingSoundId) -> ())? = nil
     
     init(sound newSound: Sound, range newRange: SampleRange, shouldLoop newShouldLoop: Bool) {
         id = UUID()
@@ -170,6 +171,11 @@ func outputAudio(_ inRefCon: UnsafeMutableRawPointer,
         case .ios:
             // @TODO: These addition and removal loops probably aren't threadsafe
             for idToStop in soundsToStop {
+                if let c = playingSounds[idToStop]!.completion {
+                    DispatchQueue.main.async {
+                        c(idToStop)
+                    }
+                }
                 playingSounds.removeValue(forKey: idToStop)
             }
             soundsToStop.removeAll()
@@ -242,10 +248,11 @@ func changeAudioOutputSource(_ source: AudioOutputSource) {
     }
 }
 
-func playSound(_ sound: Sound, _ range: SampleRange, looped: Bool) -> PlayingSoundId {
+func playSound(_ sound: Sound, _ range: SampleRange, looped: Bool, _ completion: ((PlayingSoundId) -> ())? = nil) -> PlayingSoundId {
     // The sounds to start playing get added to the playing sound array at the beginning
     // of the next audio render loop
     let playingSound = PlayingSound(sound: sound, range: range, shouldLoop: looped)
+    playingSound.completion = completion
     soundsToStart.append(playingSound)
     return playingSound.id
 }
