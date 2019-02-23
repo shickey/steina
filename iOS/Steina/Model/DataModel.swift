@@ -301,6 +301,8 @@ class Sound {
     let bytesPerSample : Int
     var markers : [Int] = []
     
+    var thumbnail : UIImage! = nil
+    
     init(id newId: UUID, project newProject: Project, markers newMarkers: [Int]) {
         id = newId
         project = newProject
@@ -344,7 +346,68 @@ func loadSound(_ id: String, _ project: Project, _ markers: [Int]) {
     let soundData = try! Data(contentsOf: sound.assetUrl)
     sound.samples = soundData
     
+    sound.thumbnail = generateThumbnailForSound(sound)
+    
     addSoundToProject(sound, project)
+}
+
+func generateThumbnailForSound(_ sound: Sound) -> UIImage {
+    // Draw the waveform
+    let nsData = sound.samples as NSData
+    let data = nsData.bytes.bindMemory(to: Int16.self, capacity: sound.length)
+     
+    UIGraphicsBeginImageContext(CGSize(width: 400, height: 150)) // Support 2x rendering
+    let context = UIGraphicsGetCurrentContext()!
+    var currentX = CGFloat(0.0)
+    context.setStrokeColor(UIColor.green.cgColor)
+    context.setLineWidth(1.0)
+    
+    // For each pixel in the horizontal direction, draw a vertical line
+    // between the maximum and minimum amplitude of that part of the waveform
+    let rect = CGRect(x: 0, y: 0, width: 400, height: 150)
+    let samplesPerPixel = sound.length / Int(rect.width)
+    var currentSampleIdx = 0
+    for _ in 0..<Int(rect.size.width) {
+        var min : Int16 = 0
+        var max : Int16 = 0
+        for sampleIdx in currentSampleIdx..<currentSampleIdx + samplesPerPixel {
+            let sample = data[sampleIdx];
+            if sample < min {
+                min = sample
+            }
+            else if sample > max {
+                max = sample
+            }
+        }
+        context.beginPath()
+        let minY = (rect.size.height / 2.0) - (CGFloat(min) / CGFloat(Int16.max) * rect.size.height / 2.0) // Flip y
+        let maxY = (rect.size.height / 2.0) - (CGFloat(max) / CGFloat(Int16.max) * rect.size.height / 2.0) // Flip y
+        
+        context.move(to: CGPoint(x: currentX, y: minY))
+        context.addLine(to: CGPoint(x: currentX, y: maxY))
+        context.strokePath()
+        currentSampleIdx += samplesPerPixel
+        currentX += 1.0
+    }
+    
+    // Draw simple markers
+    context.setStrokeColor(UIColor.red.cgColor)
+    context.setFillColor(UIColor.red.cgColor)
+    for marker in sound.markers {
+        let markerX = CGFloat(marker) * CGFloat(rect.size.width) / CGFloat(sound.length)
+        context.beginPath()
+        context.move(to: CGPoint(x: CGFloat(markerX), y: 0))
+        context.addLine(to: CGPoint(x: CGFloat(markerX), y: rect.size.height))
+        context.strokePath()
+    }
+    
+    
+    
+    
+    let image = UIImage(cgImage: context.makeImage()!)
+    UIGraphicsEndImageContext()
+    
+    return image
 }
 
 
