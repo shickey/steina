@@ -84,6 +84,11 @@ class AssetEditorView : UIView {
     var centerPinchUnit : Int! = nil
     var activePlayButtonRegion : EditorRange! = nil
     
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        setNeedsDisplay()
+    }
+    
     var unitsPerPixel : CGFloat {
         return CGFloat(visibleRange.size) / bounds.size.width
     }

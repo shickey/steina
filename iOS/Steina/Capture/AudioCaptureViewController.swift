@@ -28,6 +28,11 @@ class AudioView : UIView {
         return Int((CGFloat(sampleWindow.size) / bounds.size.width))
     }
     
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        setNeedsDisplay()
+    }
+    
     override func draw(_ rect: CGRect) {
         
         if (sound == nil) { return }
