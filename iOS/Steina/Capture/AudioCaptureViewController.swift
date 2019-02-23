@@ -73,13 +73,15 @@ protocol AudioCaptureViewControllerDelegate {
     func audioCaptureViewControllerDidCreateSound(_ sound: Sound)
 }
 
-class AudioCaptureViewController: UIViewController, AssetEditorViewDataSource {
+class AudioCaptureViewController: UIViewController, AssetEditorViewDelegate {
     
     var delegate : AudioCaptureViewControllerDelegate? = nil
     
     var sound : Sound! = nil
     var playingSoundId : PlayingSoundId! = nil
     var recording = false
+    
+    var markerSelected = false
     
     @IBOutlet weak var assetEditorView: AssetEditorView!
     @IBOutlet weak var audioView: AudioView!
@@ -107,9 +109,10 @@ class AudioCaptureViewController: UIViewController, AssetEditorViewDataSource {
         
         audioView.sound = sound
         
-        assetEditorView.dataSource = self
+        assetEditorView.delegate = self
         assetEditorView.markers = []
         assetEditorView.showMarkers = false
+        assetEditorView.showPlayhead = false
     }
     
     @IBAction func closeButtonTapped(_ sender: Any) {
@@ -118,7 +121,6 @@ class AudioCaptureViewController: UIViewController, AssetEditorViewDataSource {
     
     @IBAction func recordingButtonTapped(_ sender: Any) {
         if !recording {
-            assetEditorView.isUserInteractionEnabled = false
             assetEditorView.markers = []
             assetEditorView.showMarkers = false
             assetEditorView.showPlayhead = false
@@ -153,15 +155,20 @@ class AudioCaptureViewController: UIViewController, AssetEditorViewDataSource {
         if playingSoundId != nil {
             stopSound(playingSoundId)
         }
-        playingSoundId = playSound(sound, assetEditorView.trimmedRange, looped: false)
+        var playRange = EditorRange(assetEditorView.playhead, assetEditorView.trimmedRange.end)
+        if assetEditorView.playhead == assetEditorView.trimmedRange.end {
+            playRange = assetEditorView.trimmedRange
+        }
+        playingSoundId = playSound(sound, playRange, looped: false)
     }
     
     @IBAction func addMarkerButtonTapped(_ sender: Any) {
-        assetEditorView.markers.append(assetEditorView.playhead)
-        
-        // @TODO: this stuff shouldn't happen here, the AssetEditorView should handle this itself
-        assetEditorView.markers.sort()
-        assetEditorView.setNeedsDisplay()
+        if markerSelected {
+            assetEditorView.deleteSelectedMarker()
+        }
+        else {
+            assetEditorView.createMarkerAtPlayhead()
+        }
     }
     
     @IBAction func saveButtonTapped(_ sender: Any) {
@@ -182,7 +189,9 @@ class AudioCaptureViewController: UIViewController, AssetEditorViewDataSource {
         assetEditorView.visibleRange = EditorRange(0, 0)
         assetEditorView.showMarkers = false
         assetEditorView.showPlayhead = false
+        assetEditorView.isUserInteractionEnabled = false
         
+        markerSelected = false
         recordButton.isHidden = false
         playButton.isHidden = true
         addMarkerButton.isHidden = true
@@ -210,6 +219,16 @@ class AudioCaptureViewController: UIViewController, AssetEditorViewDataSource {
     func assetEditorMovedToRange(editor: AssetEditorView, range: EditorRange) {
         audioView.sampleWindow = range
         audioView.setNeedsDisplay()
+    }
+    
+    func assetEditorDidSelect(editor: AssetEditorView, marker: Marker, at: Int) {
+        print("selected \(at): \(marker)")
+        markerSelected = true
+    }
+    
+    func assetEditorDidDeselect(editor: AssetEditorView, marker: Marker, at: Int) {
+        print("deselected \(at): \(marker)")
+        markerSelected = false
     }
     
 }

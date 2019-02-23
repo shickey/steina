@@ -39,7 +39,7 @@
                                     <action selector="recordingButtonTapped:" destination="Vlh-P1-xwk" eventType="touchUpInside" id="u08-EN-ya0"/>
                                 </connections>
                             </button>
-                            <view multipleTouchEnabled="YES" contentMode="scaleToFill" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="doD-Aa-Oqu" customClass="AssetEditorView" customModule="Steina" customModuleProvider="target">
+                            <view multipleTouchEnabled="YES" userInteractionEnabled="NO" contentMode="scaleToFill" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="doD-Aa-Oqu" customClass="AssetEditorView" customModule="Steina" customModuleProvider="target">
                                 <rect key="frame" x="20" y="180" width="728" height="580"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxX="YES" flexibleMinY="YES" flexibleMaxY="YES"/>
                                 <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>

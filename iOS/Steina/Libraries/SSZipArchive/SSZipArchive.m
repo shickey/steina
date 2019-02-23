@@ -1138,7 +1138,10 @@ BOOL _fileIsSymbolicLink(const unz_file_info *fileInfo)
 #endif
         strPath = [strPath stringByAddingPercentEncodingWithAllowedCharacters:NSCharacterSet.URLPathAllowedCharacterSet];
     } else {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
         strPath = [strPath stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
+#pragma clang diagnostic pop
     }
     
     // `NSString.stringByAddingPercentEncodingWithAllowedCharacters:` may theorically fail: https://stackoverflow.com/questions/33558933/
@@ -1171,7 +1174,10 @@ BOOL _fileIsSymbolicLink(const unz_file_info *fileInfo)
 #endif
         strPath = strPath.stringByRemovingPercentEncoding;
     } else {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
         strPath = [strPath stringByReplacingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
+#pragma clang diagnostic pop
     }
     
     return strPath;
