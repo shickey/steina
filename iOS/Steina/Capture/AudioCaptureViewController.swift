@@ -142,7 +142,17 @@ class AudioCaptureViewController: UIViewController, AssetEditorViewDelegate {
     }
     
     @IBAction func closeButtonTapped(_ sender: Any) {
-        self.presentingViewController!.dismiss(animated: true, completion: nil)
+        if sound.length == 0 {
+            self.presentingViewController!.dismiss(animated: true, completion: nil)
+        }
+        else {
+            let alert = UIAlertController(title: "Discard audio?", message: "Are you sure you want to discard this audio clip?", preferredStyle: .alert)
+            alert.addAction(UIAlertAction(title: "Discard and Exit", style: .default, handler: { (_) in
+                self.presentingViewController!.dismiss(animated: true, completion: nil)
+            }))
+            alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
+            self.present(alert, animated: true, completion: nil)
+        }
     }
     
     @IBAction func recordingButtonTapped(_ sender: Any) {

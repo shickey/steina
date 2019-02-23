@@ -804,6 +804,7 @@ class EditorViewController: UIViewController,
     func videoCaptureViewControllerDidCreateClip(videoCaptureViewController: VideoCaptureViewController, clip: Clip) {
         runJavascript("Steina.createVideoTarget(\"\(clip.id.uuidString)\", 30, \(clip.frames));")
         updateHelpAnimations()
+        saveProject()
     }
     
     
@@ -824,6 +825,7 @@ class EditorViewController: UIViewController,
         let markersString = "[\(sound.markers.map({ String($0) }).joined(separator: ","))]"
         runJavascript("Steina.createAudioTarget(\"\(sound.id.uuidString)\", {totalSamples: \(sound.length), markers: \(markersString) })")
         updateHelpAnimations()
+        saveProject()
     }
     
 }
