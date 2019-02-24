@@ -300,21 +300,29 @@ class Sound {
     var samples : Data
     let bytesPerSample : Int
     var markers : [Int] = []
+    var trimmedRegion : Region
     
     var thumbnail : UIImage! = nil
     
-    init(id newId: UUID, project newProject: Project, markers newMarkers: [Int]) {
+    init(id newId: UUID, project newProject: Project, markers newMarkers: [Int], trimmedRegion newTrimmedRegion: Region? = nil) {
         id = newId
         project = newProject
         samples = Data()
         bytesPerSample = 2 // @TODO: This is contrived. Do we even really need to keep this property?
         markers = newMarkers
+        if let t = newTrimmedRegion {
+            trimmedRegion = t 
+        }
+        else {
+            trimmedRegion = Region(0, samples.count / bytesPerSample)
+        }
     }
     
     init(bytesPerSample newBytesPerSample: Int) {
         id = UUID()
         bytesPerSample = newBytesPerSample
         samples = Data()
+        trimmedRegion = Region(0, 0)
     }
     
     var length : Int {
@@ -339,10 +347,10 @@ func saveSound(_ sound: Sound) {
     try! sound.samples.write(to: sound.assetUrl)
 }
 
-func loadSound(_ id: String, _ project: Project, _ markers: [Int]) {
+func loadSound(_ id: String, _ project: Project, _ markers: [Int], _ trimmedRegion: Region? = nil) {
     let uuid = UUID(uuidString: id)!
     
-    let sound = Sound(id: uuid, project: project, markers: markers)
+    let sound = Sound(id: uuid, project: project, markers: markers, trimmedRegion: trimmedRegion)
     let soundData = try! Data(contentsOf: sound.assetUrl)
     sound.samples = soundData
     
@@ -401,8 +409,19 @@ func generateThumbnailForSound(_ sound: Sound) -> UIImage {
         context.strokePath()
     }
     
-    
-    
+    // Draw simple greyed out trimmed regions
+    if sound.trimmedRegion.start > 0 {
+        context.setFillColor(red: 0.5, green: 0.5, blue: 0.5, alpha: 0.7)
+        let trimmerPosition = CGFloat(sound.trimmedRegion.start) * CGFloat(rect.size.width) / CGFloat(sound.length)
+        let rect = CGRect(x: 0, y: 0, width: trimmerPosition, height: rect.height)
+        context.fill(rect)
+    }
+    if sound.trimmedRegion.end < sound.length {
+        context.setFillColor(red: 0.5, green: 0.5, blue: 0.5, alpha: 0.7)
+        let trimmerPosition = CGFloat(sound.trimmedRegion.end) * CGFloat(rect.size.width) / CGFloat(sound.length)
+        let rect = CGRect(x: trimmerPosition, y: 0, width: rect.width - trimmerPosition, height: rect.height)
+        context.fill(rect)
+    }
     
     let image = UIImage(cgImage: context.makeImage()!)
     UIGraphicsEndImageContext()
@@ -485,7 +504,14 @@ func loadProjectAssets(_ project: Project) {
             let audioTarget = audioTargetAny as! Dictionary<String, Any>
             let nsMarkers = audioTarget["markers"] as! [NSNumber]
             let markers = nsMarkers.map({ $0.intValue })
-            loadSound(audioTargetIdStr, project, markers) 
+            if let nsTrimStart = audioTarget["trimStart"] as? NSNumber, let nsTrimEnd = audioTarget["trimEnd"] as? NSNumber {
+                let region = Region(nsTrimStart.intValue, nsTrimEnd.intValue)
+                loadSound(audioTargetIdStr, project, markers, region)
+            }
+            else {
+                loadSound(audioTargetIdStr, project, markers)
+            }
+             
         }
     }
     catch {}

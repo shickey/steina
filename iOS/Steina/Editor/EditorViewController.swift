@@ -823,7 +823,9 @@ class EditorViewController: UIViewController,
         saveSound(sound)
         
         let markersString = "[\(sound.markers.map({ String($0) }).joined(separator: ","))]"
-        runJavascript("Steina.createAudioTarget(\"\(sound.id.uuidString)\", {totalSamples: \(sound.length), markers: \(markersString) })")
+        let trimStart = sound.trimmedRegion.start
+        let trimEnd = sound.trimmedRegion.end
+        runJavascript("Steina.createAudioTarget(\"\(sound.id.uuidString)\", {totalSamples: \(sound.length), markers: \(markersString), trimStart: \(trimStart), trimEnd: \(trimEnd) })")
         updateHelpAnimations()
         saveProject()
     }

@@ -228,6 +228,8 @@ class AudioCaptureViewController: UIViewController, AssetEditorViewDelegate {
             stopSound(playingSoundId)
         }
         sound.markers = assetEditorView.markers
+        sound.trimmedRegion = assetEditorView.trimmedRange
+        sound.thumbnail = generateThumbnailForSound(sound)
         if let d = delegate {
             d.audioCaptureViewControllerDidCreateSound(audioView.sound!)
         }
