@@ -354,6 +354,10 @@ func loadSound(_ id: String, _ project: Project, _ markers: [Int], _ trimmedRegi
     let soundData = try! Data(contentsOf: sound.assetUrl)
     sound.samples = soundData
     
+    if trimmedRegion == nil {
+        sound.trimmedRegion = Region(0, sound.length)
+    }
+    
     sound.thumbnail = generateThumbnailForSound(sound)
     
     addSoundToProject(sound, project)
