@@ -237,6 +237,7 @@ class AudioCaptureViewController: UIViewController, AssetEditorViewDelegate {
     }
     
     @IBAction func rerecordButtonTapped(_ sender: Any) {
+        // @TODO: This needs a UIAlert prompt so the user can cancel before rerecording
         if playing {
             stopSound(playingSoundId)
         }

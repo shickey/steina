@@ -18,12 +18,14 @@
 		A398F7AD20A4CD1C00C60946 /* web in Resources */ = {isa = PBXBuildFile; fileRef = A398F7AC20A4CD1C00C60946 /* web */; };
 		A398F7B020A4D6C700C60946 /* EditorViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A398F7AF20A4D6C700C60946 /* EditorViewController.swift */; };
 		A398F7BB20AA4DC100C60946 /* ClipsCollectionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A398F7BA20AA4DC100C60946 /* ClipsCollectionViewController.swift */; };
-		A398F7BF20B3210500C60946 /* MetalWorker.swift in Sources */ = {isa = PBXBuildFile; fileRef = A398F7BE20B3210500C60946 /* MetalWorker.swift */; };
 		A398F7C120B3266200C60946 /* Shaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = A398F7C020B3266200C60946 /* Shaders.metal */; };
 		A398F7C320B4582900C60946 /* VideoCaptureViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A398F7C220B4582900C60946 /* VideoCaptureViewController.swift */; };
 		A398F7CD20B5A8E900C60946 /* AliasesAndExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = A398F7CC20B5A8E900C60946 /* AliasesAndExtensions.swift */; };
 		A398F7CF20B5B89D00C60946 /* DataModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A398F7CE20B5B89D00C60946 /* DataModel.swift */; };
 		A398F7D720BB05D800C60946 /* ProjectCollectionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A398F7D620BB05D800C60946 /* ProjectCollectionViewController.swift */; };
+		A3C6C0C32225DC53000F8301 /* VideoEditorViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3C6C0C22225DC53000F8301 /* VideoEditorViewController.swift */; };
+		A3C6C0C72225E564000F8301 /* leaves.svc in Resources */ = {isa = PBXBuildFile; fileRef = A3C6C0C62225E564000F8301 /* leaves.svc */; };
+		A3C6C0C82226459A000F8301 /* MetalWorker.swift in Sources */ = {isa = PBXBuildFile; fileRef = A398F7BE20B3210500C60946 /* MetalWorker.swift */; };
 		A3C7C6F820C0488E009E08EF /* DrawMaskView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3C7C6F720C0488E009E08EF /* DrawMaskView.swift */; };
 		A3C7C6FE20C04C75009E08EF /* Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3C7C6FD20C04C75009E08EF /* Utils.swift */; };
 		A3F158FC221CAE060098DFE5 /* libturbojpeg.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A3F158FA221CAE060098DFE5 /* libturbojpeg.a */; };
@@ -71,6 +73,8 @@
 		A398F7CC20B5A8E900C60946 /* AliasesAndExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AliasesAndExtensions.swift; sourceTree = "<group>"; };
 		A398F7CE20B5B89D00C60946 /* DataModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataModel.swift; sourceTree = "<group>"; };
 		A398F7D620BB05D800C60946 /* ProjectCollectionViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectCollectionViewController.swift; sourceTree = "<group>"; };
+		A3C6C0C22225DC53000F8301 /* VideoEditorViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoEditorViewController.swift; sourceTree = "<group>"; };
+		A3C6C0C62225E564000F8301 /* leaves.svc */ = {isa = PBXFileReference; lastKnownFileType = file; path = leaves.svc; sourceTree = "<group>"; };
 		A3C7C6F720C0488E009E08EF /* DrawMaskView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DrawMaskView.swift; sourceTree = "<group>"; };
 		A3C7C6FD20C04C75009E08EF /* Utils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utils.swift; sourceTree = "<group>"; };
 		A3F158F9221CAE060098DFE5 /* jpeglib.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = jpeglib.h; sourceTree = "<group>"; };
@@ -274,6 +278,7 @@
 				A34478DD2139C68400545288 /* AudioCaptureViewController.swift */,
 				A3C7C6F720C0488E009E08EF /* DrawMaskView.swift */,
 				A32EED0922022F850025B3E5 /* AssetEditorView.swift */,
+				A3C6C0C22225DC53000F8301 /* VideoEditorViewController.swift */,
 			);
 			path = Capture;
 			sourceTree = "<group>";
@@ -281,6 +286,7 @@
 		A3F15982221E3FF50098DFE5 /* Assets */ = {
 			isa = PBXGroup;
 			children = (
+				A3C6C0C62225E564000F8301 /* leaves.svc */,
 				A398F7A120A346BC00C60946 /* Assets.xcassets */,
 				A3F159882221E8760098DFE5 /* Editor-Assets.xcassets */,
 				A3F1597E221E3FE60098DFE5 /* logo-bnw-small.png */,
@@ -394,6 +400,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A3F15981221E3FE60098DFE5 /* logo-bnw.png in Resources */,
+				A3C6C0C72225E564000F8301 /* leaves.svc in Resources */,
 				A3F15980221E3FE60098DFE5 /* logo-bnw-small.png in Resources */,
 				A3F159892221E8760098DFE5 /* Editor-Assets.xcassets in Resources */,
 				A398F7A520A346BC00C60946 /* LaunchScreen.storyboard in Resources */,
@@ -447,6 +454,7 @@
 				A38F444B21684C32006077B4 /* Debug.swift in Sources */,
 				A3F15933221CAE2D0098DFE5 /* prng.c in Sources */,
 				A398F7C120B3266200C60946 /* Shaders.metal in Sources */,
+				A3C6C0C82226459A000F8301 /* MetalWorker.swift in Sources */,
 				A3F1592A221CAE2D0098DFE5 /* ioapi_buf.c in Sources */,
 				A3F15934221CAE2D0098DFE5 /* pwd2key.c in Sources */,
 				A3F1592D221CAE2D0098DFE5 /* aeskey.c in Sources */,
@@ -455,11 +463,11 @@
 				A344790621402C4A00545288 /* Audio.swift in Sources */,
 				A3F15926221CAE2D0098DFE5 /* crypt.c in Sources */,
 				A3F15927221CAE2D0098DFE5 /* unzip.c in Sources */,
+				A3C6C0C32225DC53000F8301 /* VideoEditorViewController.swift in Sources */,
 				A3F1592F221CAE2D0098DFE5 /* aescrypt.c in Sources */,
 				A398F7D720BB05D800C60946 /* ProjectCollectionViewController.swift in Sources */,
 				A3F15931221CAE2D0098DFE5 /* sha1.c in Sources */,
 				A3C7C6FE20C04C75009E08EF /* Utils.swift in Sources */,
-				A398F7BF20B3210500C60946 /* MetalWorker.swift in Sources */,
 				A3F1592C221CAE2D0098DFE5 /* minishared.c in Sources */,
 				A398F7B020A4D6C700C60946 /* EditorViewController.swift in Sources */,
 				A398F79820A346BB00C60946 /* AppDelegate.swift in Sources */,

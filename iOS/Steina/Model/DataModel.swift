@@ -173,7 +173,7 @@ func serializeClip(_ clip: Clip) -> Data {
 }
 
 
-func deserializeClip(_ clip: Clip, _ project: Project, _ data: Data) {
+func deserializeClip(_ clip: Clip, _ data: Data) {
     var frames : U32 = 0
     var width : U32 = 0
     var height : U32 = 0
@@ -231,31 +231,7 @@ func deserializeClip(_ clip: Clip, _ project: Project, _ data: Data) {
 }
 
 func generateThumbnailForClip(_ clip: Clip) -> UIImage {
-    // Decode the first frame as a thumbnail image
-    let thumbInfo = clip.offsets[0]
-    let thumbRangeStart = clip.data.startIndex
-    let thumbRangeEnd = thumbRangeStart.advanced(by: Int(thumbInfo.length))
-    let thumbData = clip.data.subdata(in: thumbRangeStart..<thumbRangeEnd)
-    
-    let thumbDataProvider = CGDataProvider(data: thumbData as CFData)!
-    let maskDataProvider = CGDataProvider(data: clip.mask as CFData)!
-    
-    let thumbCGImage = CGImage(jpegDataProviderSource: thumbDataProvider, decode: nil, shouldInterpolate: false, intent: .defaultIntent)!
-    let maskCGImage = CGImage(jpegDataProviderSource: maskDataProvider, decode: nil, shouldInterpolate: false, intent: .defaultIntent)!
-    
-    let thumbUpsideDown = thumbCGImage.masking(maskCGImage)!
-    
-    let context = CGContext(data: nil, width: Int(clip.width), height: Int(clip.height), bitsPerComponent: 8, bytesPerRow: Int(clip.width) * 4, space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
-    
-    // @TODO: This rotation matches what's currently rendered by the GPU, but something is still fishy
-    //        in terms of coordinate systems and flipping. Looking into whether the mask is flipping
-    //        when it gets rendered into a jpeg for the video file
-    context.translateBy(x: CGFloat(clip.width), y: CGFloat(clip.height))
-    context.rotate(by: .pi)
-    context.draw(thumbUpsideDown, in: CGRect(origin: CGPoint.zero, size: CGSize(width: Int(clip.width), height: Int(clip.height))))
-    context.rotate(by: .pi)
-    
-    return UIImage(cgImage: context.makeImage()!)
+    return createImageForClip(clip, frame: 0)
 }
 
 func createClipInProject(_ project: Project) -> Clip {
@@ -280,8 +256,43 @@ func loadClip(_ id: String, _ project: Project) {
     let uuid = UUID(uuidString: id)!
     let clip = Clip(id: uuid, project: project)
     let clipData = try! Data(contentsOf: clip.assetUrl)
-    deserializeClip(clip, project, clipData)
+    deserializeClip(clip, clipData)
     addClipToProject(clip, project)
+}
+
+func createImageForClip(_ clip: Clip, frame: Int, inverted : Bool = false) -> UIImage {
+    assert(frame >= 0 && frame < clip.frames)
+    
+    // Decode the frame pixels
+    let frameInfo = clip.offsets[0]
+    let frameRangeStart = clip.data.startIndex
+    let frameRangeEnd = frameRangeStart.advanced(by: Int(frameInfo.length))
+    let frameData = clip.data.subdata(in: frameRangeStart..<frameRangeEnd)
+    
+    let pixelDataProvider = CGDataProvider(data: frameData as CFData)!
+    let maskDataProvider = CGDataProvider(data: clip.mask as CFData)!
+    
+    let pixelCGImage = CGImage(jpegDataProviderSource: pixelDataProvider, decode: nil, shouldInterpolate: false, intent: .defaultIntent)!
+    let maskCGImage = CGImage(jpegDataProviderSource: maskDataProvider, decode: nil, shouldInterpolate: false, intent: .defaultIntent)!
+    
+    let upsideDown = pixelCGImage.masking(maskCGImage)!
+    
+    let context = CGContext(data: nil, width: Int(clip.width), height: Int(clip.height), bitsPerComponent: 8, bytesPerRow: Int(clip.width) * 4, space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+    
+    // @TODO: This rotation matches what's currently rendered by the GPU, but something is still fishy
+    //        in terms of coordinate systems and flipping. Looking into whether the mask is flipping
+    //        when it gets rendered into a jpeg for the video file
+    if !inverted {
+        context.translateBy(x: CGFloat(clip.width), y: CGFloat(clip.height))
+        context.rotate(by: .pi)
+    }
+    else {
+        context.scaleBy(x: -1.0, y: 1.0)
+        context.translateBy(x: -CGFloat(clip.width), y: 0)
+    }
+    context.draw(upsideDown, in: CGRect(origin: CGPoint.zero, size: CGSize(width: Int(clip.width), height: Int(clip.height))))
+    
+    return UIImage(cgImage: context.makeImage()!)
 }
 
 

@@ -80,7 +80,7 @@ class AssetEditorView : UIView {
     var draggingMarkerIdx : Int! = nil
     var panStartUnit : Int! = nil
     var firstPinchDistance : CGFloat! = nil
-    var pinchBeginVisibleRange : Int! = nil
+    var pinchBeginVisibleRangeSize : Int! = nil
     var centerPinchUnit : Int! = nil
     var activePlayButtonRegion : EditorRange! = nil
     
@@ -347,7 +347,7 @@ class AssetEditorView : UIView {
                 if firstPinchDistance == 0.0 {
                     firstPinchDistance = 0.1
                 }
-                pinchBeginVisibleRange = visibleRange.size
+                pinchBeginVisibleRangeSize = visibleRange.size
                 let midpoint = (location1.x + location2.x) / 2.0
                 centerPinchUnit = unitForXPosition(midpoint)
                 touchState = .zooming
@@ -371,7 +371,7 @@ class AssetEditorView : UIView {
             if firstPinchDistance == 0.0 {
                 firstPinchDistance = 0.1
             }
-            pinchBeginVisibleRange = visibleRange.size
+            pinchBeginVisibleRangeSize = visibleRange.size
             let midpoint = (location1.x + location2.x) / 2.0
             centerPinchUnit = unitForXPosition(midpoint)
             touchState = .zooming
@@ -539,7 +539,7 @@ class AssetEditorView : UIView {
             }
             let scale = distance / firstPinchDistance
             
-            let totalUnitsInWindow = Int(CGFloat(pinchBeginVisibleRange) / scale)
+            let totalUnitsInWindow = Int(CGFloat(pinchBeginVisibleRangeSize) / scale)
             let midpoint = (location1.x + location2.x) / 2.0
             let unitOffsetForMidpoint = Int(midpoint * CGFloat(unitsPerPixel))
             
@@ -577,7 +577,7 @@ class AssetEditorView : UIView {
             draggingMarkerIdx = nil
             panStartUnit = nil
             firstPinchDistance = nil
-            pinchBeginVisibleRange = nil
+            pinchBeginVisibleRangeSize = nil
             centerPinchUnit = nil
             activePlayButtonRegion = nil
             markers.sort() // In the case that we moved one marker past another, resort them
@@ -586,7 +586,7 @@ class AssetEditorView : UIView {
             // Transition to ignoring touch input until a second touch returns 
             touchState = .ignoring
             firstPinchDistance = nil
-            pinchBeginVisibleRange = nil
+            pinchBeginVisibleRangeSize = nil
             centerPinchUnit = nil
         }
         if let del = delegate {
@@ -605,7 +605,7 @@ class AssetEditorView : UIView {
         draggingMarkerIdx = nil
         panStartUnit = nil
         firstPinchDistance = nil
-        pinchBeginVisibleRange = nil
+        pinchBeginVisibleRangeSize = nil
         centerPinchUnit = nil
     }
     

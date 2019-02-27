@@ -26,6 +26,29 @@ func degreesToRadians(_ degrees: CGFloat) -> CGFloat {
 }
 
 @inline(__always)
+func clamp<T>(_ val: T, _ min: T, _ max: T) -> T where T:Numeric, T:Comparable {
+    if val < min { return min }
+    if val > max { return max }
+    return val
+}
+
+@inline(__always)
+func largestPowerOfTwoLessThanOrEqualTo(_ n: UInt) -> Int {
+    var power = 0
+    var found = false
+    for i in (1...32).reversed() {
+        let masked = n & UInt(1 << (i - 1))
+        if masked > 0 {
+            power = i
+            found = true
+            break
+        }
+    }
+    if found { return 1 << (power - 1) }
+    return 0
+}
+
+@inline(__always)
 func distance(_ point1: CGPoint, _ point2: CGPoint) -> CGFloat {
     let yDiffSquared = ((point2.y - point1.y) * (point2.y - point1.y))
     let xDiffSquared = ((point2.x - point1.x) * (point2.x - point1.x))

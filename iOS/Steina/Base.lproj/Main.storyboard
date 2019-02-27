@@ -213,7 +213,7 @@
                                     <segue destination="BYZ-38-t0r" kind="show" id="ZAs-hB-ozM"/>
                                 </connections>
                             </collectionViewCell>
-                            <collectionViewCell opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" reuseIdentifier="AddProjectCell" id="FbL-Pi-hgX" customClass="AddProjectCell" customModule="Steina" customModuleProvider="target">
+                            <collectionViewCell opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" misplaced="YES" reuseIdentifier="AddProjectCell" id="FbL-Pi-hgX" customClass="AddProjectCell" customModule="Steina" customModuleProvider="target">
                                 <rect key="frame" x="448" y="0.0" width="320" height="240"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                 <view key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" insetsLayoutMarginsFromSafeArea="NO">
@@ -552,6 +552,135 @@
                 <placeholder placeholderIdentifier="IBFirstResponder" id="yEX-Ov-bfU" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
             <point key="canvasLocation" x="881" y="5"/>
+        </scene>
+        <!--Video Editor View Controller-->
+        <scene sceneID="p18-79-cSl">
+            <objects>
+                <viewController id="cBN-XD-K8W" customClass="VideoEditorViewController" customModule="Steina" customModuleProvider="target" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" insetsLayoutMarginsFromSafeArea="NO" id="f39-Pf-Gw7">
+                        <rect key="frame" x="0.0" y="0.0" width="768" height="1024"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Kl3-yA-rTt" userLabel="Close Button">
+                                <rect key="frame" x="20" y="20" width="56" height="56"/>
+                                <state key="normal" image="editor-close"/>
+                                <connections>
+                                    <action selector="closeButtonTapped:" destination="cBN-XD-K8W" eventType="touchUpInside" id="8a9-v4-E2H"/>
+                                </connections>
+                            </button>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="EUX-rw-ZrT">
+                                <rect key="frame" x="0.0" y="800" width="768" height="224"/>
+                                <subviews>
+                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="5hk-kw-a1L">
+                                        <rect key="frame" x="28" y="116" width="80" height="80"/>
+                                        <state key="normal" image="editor-rerecord">
+                                            <color key="titleColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                        </state>
+                                        <connections>
+                                            <action selector="rerecordButtonTapped:" destination="cBN-XD-K8W" eventType="touchUpInside" id="Oge-KI-0UG"/>
+                                        </connections>
+                                    </button>
+                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="zpE-yo-zjE">
+                                        <rect key="frame" x="470" y="72" width="80" height="80"/>
+                                        <state key="normal" image="editor-add-marker">
+                                            <color key="titleColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                        </state>
+                                        <connections>
+                                            <action selector="addMarkerButtonTapped:" destination="cBN-XD-K8W" eventType="touchUpInside" id="onH-Wa-IQj"/>
+                                        </connections>
+                                    </button>
+                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="jwN-xu-dfS">
+                                        <rect key="frame" x="660" y="116" width="80" height="80"/>
+                                        <state key="normal" image="editor-save">
+                                            <color key="titleColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                        </state>
+                                        <connections>
+                                            <action selector="saveButtonTapped:" destination="cBN-XD-K8W" eventType="touchUpInside" id="Oxa-Ch-TWL"/>
+                                        </connections>
+                                    </button>
+                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Wfp-GG-fDf" userLabel="Play/Pause Button">
+                                        <rect key="frame" x="328" y="56" width="112" height="112"/>
+                                        <state key="normal" image="editor-play">
+                                            <color key="titleColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                        </state>
+                                        <connections>
+                                            <action selector="playPauseButtonTapped:" destination="cBN-XD-K8W" eventType="touchUpInside" id="oKC-7p-eyc"/>
+                                        </connections>
+                                    </button>
+                                    <button opaque="NO" contentMode="scaleToFill" enabled="NO" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="sYH-Ac-QBU" userLabel="Delete Marker Button">
+                                        <rect key="frame" x="218" y="72" width="80" height="80"/>
+                                        <state key="normal" image="editor-delete-marker">
+                                            <color key="titleColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                        </state>
+                                        <connections>
+                                            <action selector="deleteMarkerButtonTapped:" destination="cBN-XD-K8W" eventType="touchUpInside" id="4qf-6b-DXG"/>
+                                        </connections>
+                                    </button>
+                                </subviews>
+                                <constraints>
+                                    <constraint firstItem="sYH-Ac-QBU" firstAttribute="top" secondItem="zpE-yo-zjE" secondAttribute="top" id="7Bf-IL-mKj"/>
+                                    <constraint firstItem="sYH-Ac-QBU" firstAttribute="centerY" secondItem="EUX-rw-ZrT" secondAttribute="centerY" id="Ggp-iN-EIL"/>
+                                    <constraint firstItem="Wfp-GG-fDf" firstAttribute="leading" secondItem="sYH-Ac-QBU" secondAttribute="trailing" constant="30" id="LiN-uf-UEy"/>
+                                    <constraint firstItem="5hk-kw-a1L" firstAttribute="leading" secondItem="EUX-rw-ZrT" secondAttribute="leading" constant="28" id="LxF-ef-5cs"/>
+                                    <constraint firstItem="Wfp-GG-fDf" firstAttribute="top" secondItem="EUX-rw-ZrT" secondAttribute="top" constant="56" id="P5L-Ai-Fpp"/>
+                                    <constraint firstAttribute="trailing" secondItem="jwN-xu-dfS" secondAttribute="trailing" constant="28" id="ROt-8W-0GP"/>
+                                    <constraint firstItem="Wfp-GG-fDf" firstAttribute="centerX" secondItem="EUX-rw-ZrT" secondAttribute="centerX" id="YSC-Y5-Sb9"/>
+                                    <constraint firstItem="sYH-Ac-QBU" firstAttribute="centerY" secondItem="Wfp-GG-fDf" secondAttribute="centerY" id="gPt-WF-b0a"/>
+                                    <constraint firstItem="5hk-kw-a1L" firstAttribute="top" secondItem="jwN-xu-dfS" secondAttribute="top" id="hBq-Tw-z4S"/>
+                                    <constraint firstAttribute="bottom" secondItem="5hk-kw-a1L" secondAttribute="bottom" constant="28" id="r4Z-VL-y5g"/>
+                                    <constraint firstItem="zpE-yo-zjE" firstAttribute="leading" secondItem="Wfp-GG-fDf" secondAttribute="trailing" constant="30" id="y0y-ts-vHO"/>
+                                </constraints>
+                            </view>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="dIj-um-six" customClass="VideoTimelineView" customModule="Steina" customModuleProvider="target">
+                                <rect key="frame" x="0.0" y="696" width="768" height="96"/>
+                                <color key="backgroundColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                            </view>
+                            <view multipleTouchEnabled="YES" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="t0j-hI-VSt" customClass="AssetEditorView" customModule="Steina" customModuleProvider="target">
+                                <rect key="frame" x="0.0" y="656" width="768" height="176"/>
+                                <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                            </view>
+                            <imageView userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="snL-fR-LrX">
+                                <rect key="frame" x="0.0" y="108" width="768" height="540"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="540" id="Eqs-21-mET"/>
+                                </constraints>
+                            </imageView>
+                        </subviews>
+                        <color key="backgroundColor" red="0.070588235289999995" green="0.1019607843" blue="0.14901960780000001" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                        <constraints>
+                            <constraint firstItem="dIj-um-six" firstAttribute="leading" secondItem="EUX-rw-ZrT" secondAttribute="leading" id="7od-RB-J8V"/>
+                            <constraint firstItem="dIj-um-six" firstAttribute="trailing" secondItem="EUX-rw-ZrT" secondAttribute="trailing" id="CQs-QH-l5n"/>
+                            <constraint firstItem="snL-fR-LrX" firstAttribute="trailing" secondItem="dIj-um-six" secondAttribute="trailing" id="CcF-dU-fwg"/>
+                            <constraint firstAttribute="trailing" secondItem="snL-fR-LrX" secondAttribute="trailing" id="FY4-en-RjH"/>
+                            <constraint firstItem="t0j-hI-VSt" firstAttribute="leading" secondItem="dIj-um-six" secondAttribute="leading" id="If1-VL-Kga"/>
+                            <constraint firstItem="Kl3-yA-rTt" firstAttribute="top" secondItem="f39-Pf-Gw7" secondAttribute="top" constant="20" symbolic="YES" id="JBE-WF-2XZ"/>
+                            <constraint firstItem="EUX-rw-ZrT" firstAttribute="top" secondItem="dIj-um-six" secondAttribute="bottom" constant="8" symbolic="YES" id="Loq-m0-Jo4"/>
+                            <constraint firstItem="t0j-hI-VSt" firstAttribute="trailing" secondItem="dIj-um-six" secondAttribute="trailing" id="Mh7-Tu-PS8"/>
+                            <constraint firstAttribute="bottom" secondItem="EUX-rw-ZrT" secondAttribute="bottom" id="RmT-lK-P9u"/>
+                            <constraint firstItem="Kl3-yA-rTt" firstAttribute="leading" secondItem="f39-Pf-Gw7" secondAttribute="leadingMargin" id="SQm-sQ-0Tw"/>
+                            <constraint firstItem="snL-fR-LrX" firstAttribute="leading" secondItem="dIj-um-six" secondAttribute="leading" id="Zre-hw-98U"/>
+                            <constraint firstItem="snL-fR-LrX" firstAttribute="top" secondItem="Kl3-yA-rTt" secondAttribute="bottom" constant="32" id="bXu-Ms-UIu"/>
+                            <constraint firstItem="snL-fR-LrX" firstAttribute="leading" secondItem="f39-Pf-Gw7" secondAttribute="leading" id="otX-bH-DK7"/>
+                            <constraint firstItem="t0j-hI-VSt" firstAttribute="top" secondItem="snL-fR-LrX" secondAttribute="bottom" constant="8" id="u6c-jl-X4q"/>
+                            <constraint firstItem="dIj-um-six" firstAttribute="top" secondItem="snL-fR-LrX" secondAttribute="bottom" constant="48" id="yAV-gA-zCK"/>
+                            <constraint firstItem="t0j-hI-VSt" firstAttribute="centerY" secondItem="dIj-um-six" secondAttribute="centerY" id="ywb-qs-Bsf"/>
+                        </constraints>
+                    </view>
+                    <connections>
+                        <outlet property="addMarkerButton" destination="zpE-yo-zjE" id="ifg-92-qlu"/>
+                        <outlet property="assetEditorView" destination="t0j-hI-VSt" id="1qN-di-QBZ"/>
+                        <outlet property="clipImageView" destination="snL-fR-LrX" id="bcb-Ol-gPH"/>
+                        <outlet property="closeButton" destination="Kl3-yA-rTt" id="Nn8-uy-pxw"/>
+                        <outlet property="deleteMarkerButton" destination="sYH-Ac-QBU" id="nK0-Qj-J7f"/>
+                        <outlet property="playPauseButton" destination="Wfp-GG-fDf" id="o1O-9Q-hHH"/>
+                        <outlet property="rerecordButton" destination="5hk-kw-a1L" id="mEW-zc-XBw"/>
+                        <outlet property="saveButton" destination="jwN-xu-dfS" id="PQJ-x9-pk9"/>
+                        <outlet property="videoTimelineView" destination="dIj-um-six" id="XDp-21-mam"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="qaD-Mg-das" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="-776.5625" y="1166.6015625"/>
         </scene>
     </scenes>
     <resources>

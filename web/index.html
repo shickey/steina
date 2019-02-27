@@ -10,6 +10,7 @@
   <script type="text/javascript" src="./lib/messages.js"></script>
   <script type="text/javascript" src="./lib/blocks.js"></script>
   <script type="text/javascript" src="./lib/blocks_vertical.js"></script>
+  <script type="text/javascript" src="./lib/scratch_msgs.js"></script>
 
   <!-- CSS -->
   <link rel="stylesheet" type="text/css" href="./css/normalize.css">
@@ -19,14 +20,14 @@
 
   <!-- Video Toolbox -->
   <xml id="video-toolbox">
-    <category name="Events" colour="#FFD500" secondaryColour="#CC9900">
+    <category name="Events" id="Events" colour="#FFD500" secondaryColour="#CC9900">
       <block type="event_whenflagclicked"></block>
       <block type="steina_whenTapped"></block>
       <block type="steina_whenPlayedToEnd"></block>
       <block type="steina_whenPlayedToBeginning"></block>
     </category>
 
-    <category name="Video" colour="#FF6680" secondaryColour="#FF4D6A">
+    <category name="Video" id="Video" colour="#FF6680" secondaryColour="#FF4D6A">
 
       <block type="steina_playEntireVideoUntilDone"></block>
 
@@ -97,7 +98,7 @@
       <block type="steina_getPlayRate"></block>
     </category>
 
-    <category name="Motion" colour="#4C97FF" secondaryColour="#3373CC">
+    <category name="Motion" id="Motion" colour="#4C97FF" secondaryColour="#3373CC">
       <block type="motion_movesteps">
         <value name="STEPS">
           <shadow type="math_number">
@@ -188,7 +189,7 @@
       <block id="motion_direction" type="motion_direction"></block>
     </category>
 
-    <category name="Looks" colour="#9966FF" secondaryColour="#774DCB">
+    <category name="Looks" id="Looks" colour="#9966FF" secondaryColour="#774DCB">
       <block type="looks_setsizeto">
         <value name="SIZE">
           <shadow type="math_number">
@@ -216,7 +217,7 @@
       <block id="looks_size" type="looks_size"></block>
     </category>
 
-    <category name="Control" colour="#FFAB19" secondaryColour="#CF8B17">
+    <category name="Control" id="Control" colour="#FFAB19" secondaryColour="#CF8B17">
 
       <block type="control_wait">
         <value name="DURATION">
@@ -240,7 +241,7 @@
       <block type="control_if_else"></block>
     </category>
 
-    <category name="Messages" colour="#FFD500" secondaryColour="#CC9900">
+    <category name="Messages" id="Messages" colour="#FFD500" secondaryColour="#CC9900">
       <block type="event_whenbroadcastreceived"></block>
       <block type="event_broadcast">
         <value name="BROADCAST_INPUT">
@@ -254,7 +255,7 @@
       </block>
     </category>
 
-    <category name="Operators" colour="#40BF4A" secondaryColour="#389438">
+    <category name="Operators" id="Operators" colour="#40BF4A" secondaryColour="#389438">
       <block type="operator_add">
         <value name="NUM1">
           <shadow type="math_number">
@@ -374,7 +375,7 @@
   <!-- Audio Toolbox -->
   <xml id="audio-toolbox">
 
-    <category name="Events" colour="#FFD500" secondaryColour="#CC9900">
+    <category name="Events" id="Events" colour="#FFD500" secondaryColour="#CC9900">
       <block type="event_whenflagclicked"></block>
       <block type="event_whenbroadcastreceived"></block>
       <block type="event_broadcast">
@@ -389,7 +390,7 @@
       </block>
     </category>
 
-    <category name="Audio" colour="#FF6680" secondaryColour="#FF4D6A">
+    <category name="Audio" id="Audio" colour="#FF6680" secondaryColour="#FF4D6A">
       <block type="steina_startSound"></block>
       <block type="steina_playSound"></block>
       <block type="steina_startSoundFromAToB">
@@ -425,7 +426,7 @@
       <block type="steina_getVolume"></block>
     </category>
 
-    <category name="Control" colour="#FFAB19" secondaryColour="#CF8B17">
+    <category name="Control" id="Control" colour="#FFAB19" secondaryColour="#CF8B17">
 
       <block type="control_wait">
         <value name="DURATION">
@@ -450,7 +451,7 @@
 
     </category>
 
-    <category name="Operators" colour="#40BF4A" secondaryColour="#389438">
+    <category name="Operators" id="Operators" colour="#40BF4A" secondaryColour="#389438">
       <block type="operator_add">
         <value name="NUM1">
           <shadow type="math_number">
