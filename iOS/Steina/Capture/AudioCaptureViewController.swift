@@ -265,7 +265,7 @@ class AudioCaptureViewController: UIViewController, AssetEditorViewDelegate {
         return EditorRange(0, sound.length)
     }
     
-    func assetEditorTappedPlayButton(for: AssetEditorView, range: EditorRange) {
+    func assetEditorTappedPlayButton(editor: AssetEditorView, range: EditorRange) {
         rerecordButton.isEnabled = false
         playPauseButton.isEnabled = false
         saveButton.isEnabled = false
@@ -279,7 +279,7 @@ class AudioCaptureViewController: UIViewController, AssetEditorViewDelegate {
         playing = true
     }
     
-    func assetEditorReleasedPlayButton(for: AssetEditorView, range: EditorRange) {
+    func assetEditorReleasedPlayButton(editor: AssetEditorView, range: EditorRange) {
         stopSound(playingSoundId)
         playing = false
         playingSoundId = nil
@@ -308,5 +308,13 @@ class AudioCaptureViewController: UIViewController, AssetEditorViewDelegate {
     }
     
     func assetEditorPlayheadMoved(editor: AssetEditorView, to playhead: Int) {}
+    
+    func assetEditorBeganDraggingMarkerOrTrimmer(editor: AssetEditorView) {
+        
+    }
+    
+    func assetEditorStoppedDraggingMarkerOrTrimmer(editor: AssetEditorView) {
+        
+    }
     
 }

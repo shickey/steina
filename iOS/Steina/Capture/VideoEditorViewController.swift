@@ -40,6 +40,11 @@ class VideoTimelineView : UIView {
         return image
     }
     
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        setNeedsDisplay()
+    }
+    
     override func draw(_ rect: CGRect) {
         let context = UIGraphicsGetCurrentContext()!
         
@@ -87,6 +92,24 @@ class VideoEditorViewController: UIViewController, AssetEditorViewDelegate {
         }
     }
     
+    var displayLink : CADisplayLink! = nil
+    
+    var playing = false {
+        didSet {
+            if playing {
+                let pauseImage = UIImage(named: "editor-pause")!
+                playPauseButton.setImage(pauseImage, for: .normal)
+            }
+            else {
+                let playImage = UIImage(named: "editor-play")!
+                playPauseButton.setImage(playImage, for: .normal)
+            }
+        }
+    }
+    var playLooped = false
+    var currentPlayingRegion : Region<Int>! = nil
+    var currentPlayingFrame = 0
+    
     @IBOutlet weak var clipImageView: UIImageView!
     @IBOutlet weak var videoTimelineView: VideoTimelineView!
     @IBOutlet weak var assetEditorView: AssetEditorView!
@@ -115,38 +138,70 @@ class VideoEditorViewController: UIViewController, AssetEditorViewDelegate {
         assetEditorView.delegate = self
     }
     
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        startDisplayLink()
+    }
+    
+    override func viewDidDisappear(_ animated: Bool) {
+        stopDisplayLink()
+        super.viewDidDisappear(animated)
+    }
+    
+    func startDisplayLink() {
+        displayLink = CADisplayLink(target: self, selector: #selector(tick))
+        displayLink.preferredFramesPerSecond = 30
+        displayLink.add(to: .current, forMode: .defaultRunLoopMode)
+    }
+    
+    func stopDisplayLink() {
+        displayLink.remove(from: .current, forMode: .defaultRunLoopMode)
+    }
+    
+    @objc
+    func tick(_ sender: CADisplayLink) {
+        if playing {
+            clipImageView.image = createImageForClip(clip, frame: currentPlayingFrame)
+            assetEditorView.updatePlayhead(currentPlayingFrame)
+            
+            if currentPlayingFrame == currentPlayingRegion.end {
+                if playLooped {
+                    currentPlayingFrame = currentPlayingRegion.start
+                }
+                else {
+                    playing = false
+                    currentPlayingRegion = nil
+                }
+            }
+            else {
+                currentPlayingFrame += 1
+            }
+        }
+    }
+    
     @IBAction func closeButtonTapped(_ sender: Any) {
-//        if sound.length == 0 {
+//        let alert = UIAlertController(title: "Discard video?", message: "Are you sure you want to discard this video clip?", preferredStyle: .alert)
+//        alert.addAction(UIAlertAction(title: "Discard and Exit", style: .default, handler: { (_) in
 //            self.presentingViewController!.dismiss(animated: true, completion: nil)
-//        }
-//        else {
-//            let alert = UIAlertController(title: "Discard audio?", message: "Are you sure you want to discard this audio clip?", preferredStyle: .alert)
-//            alert.addAction(UIAlertAction(title: "Discard and Exit", style: .default, handler: { (_) in
-//                self.presentingViewController!.dismiss(animated: true, completion: nil)
-//            }))
-//            alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
-//            self.present(alert, animated: true, completion: nil)
-//        }
+//        }))
+//        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
+//        self.present(alert, animated: true, completion: nil)
     }
     
     @IBAction func playPauseButtonTapped(_ sender: Any) {
-//        if playing {
-//            stopSound(playingSoundId)
-//            playing = false
-//        }
-//        else {
-//            var playRange = EditorRange(assetEditorView.playhead, assetEditorView.trimmedRange.end)
-//            if assetEditorView.playhead == assetEditorView.trimmedRange.end {
-//                playRange = assetEditorView.trimmedRange
-//            }
-//            playing = true
-//            playingSoundId = playSound(sound, playRange, looped: false) { stoppedId in
-//                if stoppedId == self.playingSoundId {
-//                    self.playingSoundId = nil
-//                    self.playing = false
-//                }
-//            }
-//        }
+        if playing {
+            playing = false
+        }
+        else {
+            var playRange = EditorRange(assetEditorView.playhead, assetEditorView.trimmedRange.end)
+            if assetEditorView.playhead == assetEditorView.trimmedRange.end {
+                playRange = assetEditorView.trimmedRange
+                currentPlayingFrame = playRange.start
+            }
+            currentPlayingRegion = playRange
+            playLooped = false
+            playing = true
+        }
     }
     
     @IBAction func addMarkerButtonTapped(_ sender: Any) {
@@ -200,12 +255,27 @@ class VideoEditorViewController: UIViewController, AssetEditorViewDelegate {
         return EditorRange(0, Int(clip.frames - 1))
     }
     
-    func assetEditorTappedPlayButton(for: AssetEditorView, range: EditorRange) {
-        videoTimelineView.setNeedsDisplay()
+    func assetEditorTappedPlayButton(editor: AssetEditorView, range: EditorRange) {
+        rerecordButton.isEnabled = false
+        playPauseButton.isEnabled = false
+        saveButton.isEnabled = false
+        closeButton.isEnabled = false
+        
+        currentPlayingRegion = range
+        currentPlayingFrame = range.start
+        playLooped = true
+        playing = true
     }
     
-    func assetEditorReleasedPlayButton(for: AssetEditorView, range: EditorRange) {
+    func assetEditorReleasedPlayButton(editor: AssetEditorView, range: EditorRange) {
+        playing = false
+        playLooped = false
+        currentPlayingRegion = nil
         
+        rerecordButton.isEnabled = true
+        playPauseButton.isEnabled = true
+        saveButton.isEnabled = true
+        closeButton.isEnabled = true
     }
     
     func assetEditorMovedToVisibleRange(editor: AssetEditorView, range: VisibleRange) {
@@ -222,8 +292,26 @@ class VideoEditorViewController: UIViewController, AssetEditorViewDelegate {
     }
     
     func assetEditorPlayheadMoved(editor: AssetEditorView, to playhead: Int) {
-        print(playhead)
+        currentPlayingFrame = playhead
         clipImageView.image = createImageForClip(clip, frame: playhead)
+    }
+    
+    func assetEditorBeganDraggingMarkerOrTrimmer(editor: AssetEditorView) {
+        rerecordButton.isEnabled = false
+        playPauseButton.isEnabled = false
+        saveButton.isEnabled = false
+        closeButton.isEnabled = false
+        addMarkerButton.isEnabled = false
+        deleteMarkerButton.isEnabled = false
+    }
+    
+    func assetEditorStoppedDraggingMarkerOrTrimmer(editor: AssetEditorView) {
+        rerecordButton.isEnabled = true
+        playPauseButton.isEnabled = true
+        saveButton.isEnabled = true
+        closeButton.isEnabled = true
+        addMarkerButton.isEnabled = markerSelected ? false : true
+        deleteMarkerButton.isEnabled = markerSelected ? true : false
     }
 
 }

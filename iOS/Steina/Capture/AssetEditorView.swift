@@ -14,12 +14,14 @@ typealias VisibleRange = Region<CGFloat>
 
 protocol AssetEditorViewDelegate {
     func totalRange(for: AssetEditorView) -> EditorRange
-    func assetEditorTappedPlayButton(for: AssetEditorView, range: EditorRange)
-    func assetEditorReleasedPlayButton(for: AssetEditorView, range: EditorRange)
+    func assetEditorTappedPlayButton(editor: AssetEditorView, range: EditorRange)
+    func assetEditorReleasedPlayButton(editor: AssetEditorView, range: EditorRange)
     func assetEditorMovedToVisibleRange(editor: AssetEditorView, range: VisibleRange)
     func assetEditorDidSelect(editor: AssetEditorView, marker: Marker, at index: Int)
     func assetEditorDidDeselect(editor: AssetEditorView, marker: Marker, at index: Int)
     func assetEditorPlayheadMoved(editor: AssetEditorView, to playhead: Int)
+    func assetEditorBeganDraggingMarkerOrTrimmer(editor: AssetEditorView) 
+    func assetEditorStoppedDraggingMarkerOrTrimmer(editor: AssetEditorView)
 }
 
 class AssetEditorView : UIView {
@@ -271,7 +273,7 @@ class AssetEditorView : UIView {
     }
     
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        if touchState == .draggingMarker || touchState == .zooming || activeTouches.count >= 2 {
+        if touchState == .draggingMarker || touchState == .draggingStartTrimmer || touchState == .draggingEndTrimmer || touchState == .zooming || touchState == .touchingPlayButton || activeTouches.count >= 2 {
             return
         }
         
@@ -293,18 +295,27 @@ class AssetEditorView : UIView {
                         updatePlayheadAndNotify(markers[draggingMarkerIdx])
                         activeTouches.insert(touch)
                         setNeedsDisplay()
+                        if let del = delegate {
+                            del.assetEditorBeganDraggingMarkerOrTrimmer(editor: self)
+                        }
                     }
                     else if startTrimmerX != nil && abs(startTrimmerX! - location.x) < trimmerDistanceThreshold {
                         touchState = .draggingStartTrimmer
                         updatePlayheadAndNotify(trimmedRange.start)
                         activeTouches.insert(touch)
                         setNeedsDisplay()
+                        if let del = delegate {
+                            del.assetEditorBeganDraggingMarkerOrTrimmer(editor: self)
+                        }
                     }
                     else if endTrimmerX != nil && abs(endTrimmerX! - location.x) < trimmerDistanceThreshold {
                         touchState = .draggingEndTrimmer
                         updatePlayheadAndNotify(trimmedRange.end)
                         activeTouches.insert(touch)
                         setNeedsDisplay()
+                        if let del = delegate {
+                            del.assetEditorBeganDraggingMarkerOrTrimmer(editor: self)
+                        }
                     } 
                     else {
                         let x = location.x
@@ -324,7 +335,7 @@ class AssetEditorView : UIView {
                                 activeTouches.insert(touch)
                                 activePlayButtonRegion = playRegions[idx]
                                 if let del = delegate {
-                                    del.assetEditorTappedPlayButton(for: self, range: activePlayButtonRegion)
+                                    del.assetEditorTappedPlayButton(editor: self, range: activePlayButtonRegion)
                                 }
                                 break
                             } 
@@ -611,13 +622,18 @@ class AssetEditorView : UIView {
             if touchState == .touchingPlayButton {
                 // We don't check for touch up inside, since we want to start/cancel playback no matter what
                 if let del = delegate {
-                    del.assetEditorReleasedPlayButton(for: self, range: activePlayButtonRegion)
+                    del.assetEditorReleasedPlayButton(editor: self, range: activePlayButtonRegion)
                 }
                 
             }
         }
         activeTouches.subtract(touches)
         if activeTouches.count == 0 {
+            if touchState == .draggingMarker || touchState == .draggingStartTrimmer || touchState == .draggingEndTrimmer {
+                if let del = delegate {
+                    del.assetEditorStoppedDraggingMarkerOrTrimmer(editor: self)
+                }
+            }
             touchState = .none
             draggingMarkerIdx = nil
             panStartUnit = nil
@@ -639,12 +655,24 @@ class AssetEditorView : UIView {
         }
         
         // Check for deselection
-        updateSelectedMarker()
+        if touchState != .draggingMarker && touchState != .draggingStartTrimmer && touchState != .draggingEndTrimmer {
+            updateSelectedMarker()
+        }
         
         setNeedsDisplay()
     }
     
     override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
+        if touchState == .touchingPlayButton {
+            if let del = delegate {
+                del.assetEditorReleasedPlayButton(editor: self, range: activePlayButtonRegion)
+            }
+        }
+        if touchState == .draggingMarker || touchState == .draggingStartTrimmer || touchState == .draggingEndTrimmer {
+            if let del = delegate {
+                del.assetEditorStoppedDraggingMarkerOrTrimmer(editor: self)
+            }
+        }
         activeTouches.removeAll()
         touchState = .none
         draggingMarkerIdx = nil
@@ -652,6 +680,7 @@ class AssetEditorView : UIView {
         firstPinchDistance = nil
         pinchBeginVisibleRangeSize = nil
         centerPinchUnit = nil
+        activePlayButtonRegion = nil
     }
     
     override func draw(_ rect: CGRect) {
