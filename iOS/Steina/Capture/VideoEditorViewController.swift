@@ -16,25 +16,19 @@ class VideoTimelineView : UIView {
         didSet {
             imageCache = Array<UIImage?>(repeating: nil, count: Int(clip.frames))
             totalRegion = Region(0, Int(clip.frames) - 1)
-            visibleRegion = totalRegion
+            visibleRegion = VisibleRange(CGFloat(totalRegion.start), CGFloat(totalRegion.end))
         }
     }
     
     var totalRegion = Region(0, 0)
-    var visibleRegion = Region(0, 0)
+    var visibleRegion = VisibleRange(0, 0)
+    var currentFrame = 22
     
-    var pixelsPerFrame : CGFloat      { return bounds.width / CGFloat(visibleRegion.size) }
+    var pixelsPerFrame : CGFloat      { return bounds.width / visibleRegion.size }
     var effectiveBounds : CGSize      { return CGSize(width: pixelsPerFrame * CGFloat(totalRegion.size), height: bounds.height) }
     var drawableFrameAspect : CGFloat { return CGFloat(clip.width) / CGFloat(clip.height) }
-    var drawableFrameWidth : CGFloat  { return effectiveBounds.height * drawableFrameAspect }
-    var drawableFrameHeight : CGFloat { return effectiveBounds.height }
-    var numFittableFrames : Int {
-        let minFittableFrames = Int(bounds.width / drawableFrameWidth)
-        let boundsRatio = effectiveBounds.width / bounds.width
-        let powerOfTwo = largestPowerOfTwoLessThanOrEqualTo(UInt(boundsRatio))
-        
-        return minFittableFrames * powerOfTwo
-    }
+    var drawableFrameHeight : CGFloat { return bounds.height }
+    var drawableFrameWidth : CGFloat  { return bounds.height * drawableFrameAspect }
     
     var imageCache : [UIImage?]! = nil
     
@@ -49,19 +43,28 @@ class VideoTimelineView : UIView {
     override func draw(_ rect: CGRect) {
         let context = UIGraphicsGetCurrentContext()!
         
-        let totalFrameWidth = effectiveBounds.width / CGFloat(numFittableFrames)
-        let framesToDraw = Int(ceil(bounds.width / totalFrameWidth))
-        let frameIncrement = CGFloat(clip.frames) / CGFloat(numFittableFrames - 1)
-        let firstFrameToDraw = Int(CGFloat(Int(CGFloat(visibleRegion.start) / frameIncrement)) * frameIncrement)
-        var xOffset = -(pixelsPerFrame * CGFloat(visibleRegion.start - firstFrameToDraw))
+        // Determine buckets
+        let maxFittableFrames = Int(effectiveBounds.width / (drawableFrameHeight * drawableFrameAspect))
+        let minFrameSize = CGFloat(clip.frames) / CGFloat(maxFittableFrames)
+        let largestPowerOfTwoLessThanMinFrameSize = largestPowerOfTwoLessThanOrEqualTo(UInt(minFrameSize))
+        var framesPerBucket = 1
+        if largestPowerOfTwoLessThanMinFrameSize != 0 {
+            framesPerBucket = largestPowerOfTwoLessThanMinFrameSize << 1
+        }
         
-        let drawFrameOffset = (totalFrameWidth - drawableFrameWidth) / 2.0
-        for i in 0..<framesToDraw {
-            let drawingFrame = clamp(Int(CGFloat(i) * frameIncrement) + firstFrameToDraw, 0, Int(clip.frames) - 1)
+        let bucketWidth = pixelsPerFrame * CGFloat(framesPerBucket)
+        
+        let firstBucketToDraw = Int(visibleRegion.start / CGFloat(framesPerBucket)) * framesPerBucket
+        var xOffset = -(pixelsPerFrame * fmod(visibleRegion.start, CGFloat(framesPerBucket)))
+        let numBucketsToDraw = Int(ceil((bounds.width - xOffset) / (CGFloat(framesPerBucket) * pixelsPerFrame)))
+        for i in 0..<numBucketsToDraw {
+            
+            let drawingFrame = (i * framesPerBucket) + firstBucketToDraw
             let image = imageForFrame(drawingFrame)
-            let rect = CGRect(x: xOffset + drawFrameOffset, y: 0, width: drawableFrameWidth, height: drawableFrameHeight).insetBy(dx: xPaddingInPixels, dy: xPaddingInPixels / drawableFrameAspect)
+            let rect = CGRect(x: xOffset, y: 0, width: drawableFrameWidth, height: drawableFrameHeight).insetBy(dx: xPaddingInPixels, dy: xPaddingInPixels / drawableFrameAspect)
             context.draw(image.cgImage!, in: rect)
-            xOffset += totalFrameWidth
+            
+            xOffset += bucketWidth
         }
     }
     
@@ -70,6 +73,19 @@ class VideoTimelineView : UIView {
 class VideoEditorViewController: UIViewController, AssetEditorViewDelegate {
     
     var clip : Clip! = nil
+    
+    var markerSelected = false {
+        didSet {
+            if markerSelected {
+                addMarkerButton.isEnabled = false
+                deleteMarkerButton.isEnabled = true
+            }
+            else {
+                addMarkerButton.isEnabled = true
+                deleteMarkerButton.isEnabled = false
+            }
+        }
+    }
     
     @IBOutlet weak var clipImageView: UIImageView!
     @IBOutlet weak var videoTimelineView: VideoTimelineView!
@@ -134,13 +150,13 @@ class VideoEditorViewController: UIViewController, AssetEditorViewDelegate {
     }
     
     @IBAction func addMarkerButtonTapped(_ sender: Any) {
-//        assetEditorView.createMarkerAtPlayhead()
+        assetEditorView.createMarkerAtPlayhead()
     }
     
     @IBAction func deleteMarkerButtonTapped(_ sender: Any) {
-//        if markerSelected {
-//            assetEditorView.deleteSelectedMarker()
-//        }
+        if markerSelected {
+            assetEditorView.deleteSelectedMarker()
+        }
     }
     
     @IBAction func saveButtonTapped(_ sender: Any) {
@@ -185,24 +201,29 @@ class VideoEditorViewController: UIViewController, AssetEditorViewDelegate {
     }
     
     func assetEditorTappedPlayButton(for: AssetEditorView, range: EditorRange) {
-        
+        videoTimelineView.setNeedsDisplay()
     }
     
     func assetEditorReleasedPlayButton(for: AssetEditorView, range: EditorRange) {
         
     }
     
-    func assetEditorMovedToRange(editor: AssetEditorView, range: EditorRange) {
+    func assetEditorMovedToVisibleRange(editor: AssetEditorView, range: VisibleRange) {
         videoTimelineView.visibleRegion = range
         videoTimelineView.setNeedsDisplay()
     }
     
     func assetEditorDidSelect(editor: AssetEditorView, marker: Marker, at index: Int) {
-        
+        markerSelected = true
     }
     
     func assetEditorDidDeselect(editor: AssetEditorView, marker: Marker, at index: Int) {
-        
+        markerSelected = false
+    }
+    
+    func assetEditorPlayheadMoved(editor: AssetEditorView, to playhead: Int) {
+        print(playhead)
+        clipImageView.image = createImageForClip(clip, frame: playhead)
     }
 
 }

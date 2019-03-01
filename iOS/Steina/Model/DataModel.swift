@@ -22,19 +22,21 @@ let VIDEO_FILE_MAGIC_NUMBER : U32 = 0x000F1DE0
 let DATA_DIRECTORY_URL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).last!
 let PROJECT_MANIFEST_URL = DATA_DIRECTORY_URL.appendingPathComponent("steina.manifest")
 
-struct Region {
-    var start : Int
-    var end : Int
+struct Region<T:Numeric> {
+    var start : T
+    var end : T
     
-    var size : Int {
+    var size : T {
         return end - start
     }
     
-    init(_ newStart: Int, _ newEnd: Int) {
+    init(_ newStart: T, _ newEnd: T) {
         start = newStart
         end = newEnd
     }
 }
+
+typealias SampleRange = Region<Int>
 
 /*******************************************************************
  *
@@ -264,8 +266,8 @@ func createImageForClip(_ clip: Clip, frame: Int, inverted : Bool = false) -> UI
     assert(frame >= 0 && frame < clip.frames)
     
     // Decode the frame pixels
-    let frameInfo = clip.offsets[0]
-    let frameRangeStart = clip.data.startIndex
+    let frameInfo = clip.offsets[frame]
+    let frameRangeStart = clip.data.startIndex.advanced(by: Int(frameInfo.offset))
     let frameRangeEnd = frameRangeStart.advanced(by: Int(frameInfo.length))
     let frameData = clip.data.subdata(in: frameRangeStart..<frameRangeEnd)
     
@@ -311,11 +313,11 @@ class Sound {
     var samples : Data
     let bytesPerSample : Int
     var markers : [Int] = []
-    var trimmedRegion : Region
+    var trimmedRegion : SampleRange
     
     var thumbnail : UIImage! = nil
     
-    init(id newId: UUID, project newProject: Project, markers newMarkers: [Int], trimmedRegion newTrimmedRegion: Region? = nil) {
+    init(id newId: UUID, project newProject: Project, markers newMarkers: [Int], trimmedRegion newTrimmedRegion: SampleRange? = nil) {
         id = newId
         project = newProject
         samples = Data()
@@ -358,7 +360,7 @@ func saveSound(_ sound: Sound) {
     try! sound.samples.write(to: sound.assetUrl)
 }
 
-func loadSound(_ id: String, _ project: Project, _ markers: [Int], _ trimmedRegion: Region? = nil) {
+func loadSound(_ id: String, _ project: Project, _ markers: [Int], _ trimmedRegion: SampleRange? = nil) {
     let uuid = UUID(uuidString: id)!
     
     let sound = Sound(id: uuid, project: project, markers: markers, trimmedRegion: trimmedRegion)

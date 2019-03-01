@@ -184,7 +184,7 @@ class AudioCaptureViewController: UIViewController, AssetEditorViewDelegate {
                 self.saveButton.isHidden = false
                 self.assetEditorView.totalRange = self.audioView.sampleWindow
                 self.assetEditorView.trimmedRange = self.audioView.sampleWindow
-                self.assetEditorView.visibleRange = self.audioView.sampleWindow
+                self.assetEditorView.visibleRange = VisibleRange(CGFloat(self.audioView.sampleWindow.start), CGFloat(self.audioView.sampleWindow.end))
                 self.assetEditorView.playhead = 0
                 self.assetEditorView.showMarkers = true
                 self.assetEditorView.showPlayhead = true
@@ -247,7 +247,7 @@ class AudioCaptureViewController: UIViewController, AssetEditorViewDelegate {
         assetEditorView.markers = []
         assetEditorView.totalRange = EditorRange(0, 0)
         assetEditorView.trimmedRange = EditorRange(0, 0)
-        assetEditorView.visibleRange = EditorRange(0, 0)
+        assetEditorView.visibleRange = VisibleRange(0, 0)
         assetEditorView.showMarkers = false
         assetEditorView.showPlayhead = false
         assetEditorView.isUserInteractionEnabled = false
@@ -289,8 +289,13 @@ class AudioCaptureViewController: UIViewController, AssetEditorViewDelegate {
         closeButton.isEnabled = true
     }
     
-    func assetEditorMovedToRange(editor: AssetEditorView, range: EditorRange) {
-        audioView.sampleWindow = range
+    func assetEditorMovedToVisibleRange(editor: AssetEditorView, range: VisibleRange) {
+        // @TODO
+        // @TODO
+        // @TODO
+        // @TODO
+        // @TODO: FIX
+        audioView.sampleWindow = SampleRange(Int(range.start), Int(range.end))
         audioView.setNeedsDisplay()
     }
     
@@ -301,5 +306,7 @@ class AudioCaptureViewController: UIViewController, AssetEditorViewDelegate {
     func assetEditorDidDeselect(editor: AssetEditorView, marker: Marker, at: Int) {
         markerSelected = false
     }
+    
+    func assetEditorPlayheadMoved(editor: AssetEditorView, to playhead: Int) {}
     
 }

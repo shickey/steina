@@ -9,17 +9,17 @@
 import UIKit
 
 typealias Marker = Int
-typealias EditorRange = Region
-
-
+typealias EditorRange = Region<Int>
+typealias VisibleRange = Region<CGFloat>
 
 protocol AssetEditorViewDelegate {
     func totalRange(for: AssetEditorView) -> EditorRange
     func assetEditorTappedPlayButton(for: AssetEditorView, range: EditorRange)
     func assetEditorReleasedPlayButton(for: AssetEditorView, range: EditorRange)
-    func assetEditorMovedToRange(editor: AssetEditorView, range: EditorRange)
+    func assetEditorMovedToVisibleRange(editor: AssetEditorView, range: VisibleRange)
     func assetEditorDidSelect(editor: AssetEditorView, marker: Marker, at index: Int)
     func assetEditorDidDeselect(editor: AssetEditorView, marker: Marker, at index: Int)
+    func assetEditorPlayheadMoved(editor: AssetEditorView, to playhead: Int)
 }
 
 class AssetEditorView : UIView {
@@ -29,7 +29,7 @@ class AssetEditorView : UIView {
             if let del = delegate {
                 totalRange = del.totalRange(for: self)
                 trimmedRange = totalRange
-                visibleRange = totalRange
+                visibleRange = VisibleRange(CGFloat(trimmedRange.start), CGFloat(trimmedRange.end))
                 setNeedsDisplay()
             }
         }
@@ -45,7 +45,7 @@ class AssetEditorView : UIView {
     
     var totalRange : EditorRange = EditorRange(0, 0)
     var trimmedRange : EditorRange = EditorRange(0, 0)
-    var visibleRange : EditorRange = EditorRange(0, 0)
+    var visibleRange : VisibleRange = VisibleRange(0, 0)
     var playhead : Int = 0 {
         didSet {
             setNeedsDisplay()
@@ -58,6 +58,12 @@ class AssetEditorView : UIView {
         }
     }
     var showPlayhead = true {
+        didSet {
+            setNeedsDisplay()
+        }
+    }
+    
+    var minimumVisibleUnits : CGFloat = 4.0 {
         didSet {
             setNeedsDisplay()
         }
@@ -78,10 +84,10 @@ class AssetEditorView : UIView {
     var activeTouches = Set<UITouch>()
     
     var draggingMarkerIdx : Int! = nil
-    var panStartUnit : Int! = nil
+    var panStartUnit : CGFloat! = nil
     var firstPinchDistance : CGFloat! = nil
-    var pinchBeginVisibleRangeSize : Int! = nil
-    var centerPinchUnit : Int! = nil
+    var pinchBeginVisibleRangeSize : CGFloat! = nil
+    var centerPinchUnit : CGFloat! = nil
     var activePlayButtonRegion : EditorRange! = nil
     
     override func layoutSubviews() {
@@ -99,14 +105,30 @@ class AssetEditorView : UIView {
     
     @inline(__always)
     func xPositionForUnit(_ unit: Int) -> CGFloat? {
+        if let xPosition = xPositionForFloatUnit(CGFloat(unit)) {
+            return xPosition
+        }
+        return nil
+    }
+    
+    @inline(__always)
+    func xPositionForFloatUnit(_ unit: CGFloat) -> CGFloat? {
         if unit < visibleRange.start || unit > visibleRange.end { return nil } 
-        return (CGFloat(unit - visibleRange.start) / CGFloat(visibleRange.size)) * bounds.size.width
+        return (unit - visibleRange.start) / visibleRange.size * bounds.size.width
     }
     
     @inline(__always)
     func unitForXPosition(_ xPosition: CGFloat) -> Int? {
+        if let floatUnit = floatUnitForXPosition(xPosition) {
+            return Int(floatUnit + 0.5) // Simple rounding
+        }
+        return nil
+    }
+    
+    @inline(__always)
+    func floatUnitForXPosition(_ xPosition: CGFloat) -> CGFloat? {
         if xPosition < 0 || xPosition > bounds.size.width { return nil }
-        return Int((CGFloat(visibleRange.size) / bounds.size.width) * xPosition) + visibleRange.start
+        return (visibleRange.size / bounds.size.width) * xPosition + visibleRange.start
     }
     
     func markerForXPosition(_ x: CGFloat, thresholdInPixels: CGFloat? = nil) -> (Int, Marker)? {
@@ -135,39 +157,39 @@ class AssetEditorView : UIView {
         return nil
     }
     
-    func rangesForVisibleRegions() -> [EditorRange] {
-        var ranges : [EditorRange] = []
+    func rangesForVisibleRegions() -> [VisibleRange] {
+        var ranges : [VisibleRange] = []
         var lastRangeStart = visibleRange.start
-        if trimmedRange.start > visibleRange.start {
-            lastRangeStart = trimmedRange.start
+        if CGFloat(trimmedRange.start) > visibleRange.start {
+            lastRangeStart = CGFloat(trimmedRange.start)
         }
         for marker in markers {
-            if marker < visibleRange.start { continue }
+            if CGFloat(marker) < visibleRange.start { continue }
             if let _ = xPositionForUnit(marker) {
-                ranges.append(EditorRange(lastRangeStart, marker))
-                lastRangeStart = marker
+                ranges.append(VisibleRange(lastRangeStart, CGFloat(marker)))
+                lastRangeStart = CGFloat(marker)
             }
         }
-        if trimmedRange.end < visibleRange.end {
-            ranges.append(EditorRange(lastRangeStart, trimmedRange.end))
+        if CGFloat(trimmedRange.end) < visibleRange.end {
+            ranges.append(VisibleRange(lastRangeStart, CGFloat(trimmedRange.end)))
         }
         else {
-            ranges.append(EditorRange(lastRangeStart, visibleRange.end))
+            ranges.append(VisibleRange(lastRangeStart, visibleRange.end)) // @TODO: Again here, is truncating the right move?
         }
         return ranges
     }
     
     func fullRangesForVisibleRegions() -> [EditorRange] {
         var ranges : [EditorRange] = []
-        if trimmedRange.start > visibleRange.end { return ranges } 
+        if CGFloat(trimmedRange.start) > visibleRange.end { return ranges } 
         var lastRangeStart = trimmedRange.start
         var didBreakEarly = false
         for marker in markers {
-            if marker < visibleRange.start {
+            if CGFloat(marker) < visibleRange.start {
                 lastRangeStart = marker
                 continue
             }
-            if marker > visibleRange.end {
+            if CGFloat(marker) > visibleRange.end {
                 ranges.append(EditorRange(lastRangeStart, marker))
                 didBreakEarly = true
                 break
@@ -175,7 +197,7 @@ class AssetEditorView : UIView {
             ranges.append(EditorRange(lastRangeStart, marker))
             lastRangeStart = marker
         }
-        if !didBreakEarly && trimmedRange.end > visibleRange.start {
+        if !didBreakEarly && CGFloat(trimmedRange.end) > visibleRange.start {
             ranges.append(EditorRange(lastRangeStart, trimmedRange.end))
         }
         return ranges
@@ -206,6 +228,13 @@ class AssetEditorView : UIView {
         }
         updateSelectedMarker()
         setNeedsDisplay()
+    }
+    
+    func updatePlayheadAndNotify(_ newPlayhead: Int) {
+        playhead = newPlayhead
+        if let del = delegate {
+            del.assetEditorPlayheadMoved(editor: self, to: playhead)
+        }
     }
     
     func updateSelectedMarker() {
@@ -261,19 +290,19 @@ class AssetEditorView : UIView {
                     if let (idx, _) = markerForXPosition(location.x) {
                         touchState = .draggingMarker
                         draggingMarkerIdx = idx
-                        playhead = markers[draggingMarkerIdx]
+                        updatePlayheadAndNotify(markers[draggingMarkerIdx])
                         activeTouches.insert(touch)
                         setNeedsDisplay()
                     }
                     else if startTrimmerX != nil && abs(startTrimmerX! - location.x) < trimmerDistanceThreshold {
                         touchState = .draggingStartTrimmer
-                        playhead = trimmedRange.start
+                        updatePlayheadAndNotify(trimmedRange.start)
                         activeTouches.insert(touch)
                         setNeedsDisplay()
                     }
                     else if endTrimmerX != nil && abs(endTrimmerX! - location.x) < trimmerDistanceThreshold {
                         touchState = .draggingEndTrimmer
-                        playhead = trimmedRange.end
+                        updatePlayheadAndNotify(trimmedRange.end)
                         activeTouches.insert(touch)
                         setNeedsDisplay()
                     } 
@@ -307,32 +336,40 @@ class AssetEditorView : UIView {
                     touchState = .draggingPlayhead
                     activeTouches.insert(touch)
                     let location = touch.location(in: self)
+                    var newPlayhead = playhead
                     if location.x < 0 {
                         let unit = unitForXPosition(0)!
-                        playhead = unit
+                        newPlayhead = unit
                     }
                     else if location.x > bounds.size.width {
                         let unit = unitForXPosition(bounds.size.width)!
-                        playhead = unit
+                        newPlayhead = unit
                     }
                     else {
-                        let unit = unitForXPosition(location.x)!
-                        playhead = unit
+                        var unit = unitForXPosition(location.x)!
+                        if CGFloat(unit) < visibleRange.start {
+                            unit = Int(ceil(visibleRange.start))
+                        }
+                        newPlayhead = unit
                     }
                     
                     // Don't go outside trimmer bounds
-                    if playhead < trimmedRange.start {
-                        playhead = trimmedRange.start 
+                    if newPlayhead < trimmedRange.start {
+                        newPlayhead = trimmedRange.start 
                     }
-                    else if playhead > trimmedRange.end {
-                        playhead = trimmedRange.end
+                    else if newPlayhead > trimmedRange.end {
+                        newPlayhead = trimmedRange.end
                     }
                     
                     // Snap to nearby marker
                     let snappingThresholdInPixels = CGFloat(16.0)
-                    if let (_, markerToSnapTo) = markerForXPosition(xPositionForUnit(playhead)!, thresholdInPixels: snappingThresholdInPixels) {
-                        playhead = markerToSnapTo
+                    if let playheadX = xPositionForUnit(newPlayhead) {
+                        if let (_, markerToSnapTo) = markerForXPosition(playheadX, thresholdInPixels: snappingThresholdInPixels) {
+                            newPlayhead = markerToSnapTo
+                        }
                     }
+                    
+                    updatePlayheadAndNotify(newPlayhead)
                     
                     self.setNeedsDisplay()
                 }
@@ -349,7 +386,7 @@ class AssetEditorView : UIView {
                 }
                 pinchBeginVisibleRangeSize = visibleRange.size
                 let midpoint = (location1.x + location2.x) / 2.0
-                centerPinchUnit = unitForXPosition(midpoint)
+                centerPinchUnit = floatUnitForXPosition(midpoint)
                 touchState = .zooming
                 activeTouches.insert(touch1)
                 activeTouches.insert(touch2)
@@ -373,7 +410,7 @@ class AssetEditorView : UIView {
             }
             pinchBeginVisibleRangeSize = visibleRange.size
             let midpoint = (location1.x + location2.x) / 2.0
-            centerPinchUnit = unitForXPosition(midpoint)
+            centerPinchUnit = floatUnitForXPosition(midpoint)
             touchState = .zooming
             activeTouches.insert(touch1)
             activeTouches.insert(touch2)
@@ -390,32 +427,40 @@ class AssetEditorView : UIView {
         if touchState == .draggingPlayhead {
             let touch = activeTouches.first!
             let location = touch.location(in: self)
+            var newPlayhead = playhead
             if location.x < 0 {
                 let unit = unitForXPosition(0)!
-                playhead = unit
+                newPlayhead = unit
             }
             else if location.x > bounds.size.width {
                 let unit = unitForXPosition(bounds.size.width)!
-                playhead = unit
+                newPlayhead = unit
             }
             else {
-                let unit = unitForXPosition(location.x)!
-                playhead = unit
+                var unit = unitForXPosition(location.x)!
+                if CGFloat(unit) < visibleRange.start {
+                    unit = Int(ceil(visibleRange.start))
+                }
+                newPlayhead = unit
             }
             
             // Don't go outside trimmer bounds
-            if playhead < trimmedRange.start {
-               playhead = trimmedRange.start 
+            if newPlayhead < trimmedRange.start {
+               newPlayhead = trimmedRange.start 
             }
-            else if playhead > trimmedRange.end {
-                playhead = trimmedRange.end
+            else if newPlayhead > trimmedRange.end {
+                newPlayhead = trimmedRange.end
             }
             
             // Snap to nearby marker
             let snappingThresholdInPixels = CGFloat(16.0)
-            if let (_, markerToSnapTo) = markerForXPosition(xPositionForUnit(playhead)!, thresholdInPixels: snappingThresholdInPixels) {
-                playhead = markerToSnapTo
+            if let playheadX = xPositionForUnit(newPlayhead) {
+                if let (_, markerToSnapTo) = markerForXPosition(playheadX, thresholdInPixels: snappingThresholdInPixels) {
+                    newPlayhead = markerToSnapTo
+                }
             }
+            
+            updatePlayheadAndNotify(newPlayhead)
             
             self.setNeedsDisplay()
         }
@@ -447,7 +492,7 @@ class AssetEditorView : UIView {
             }
             
             // Update playhead
-            playhead = trimmedRange.start
+            updatePlayheadAndNotify(trimmedRange.start)
             self.setNeedsDisplay()
         }
         else if touchState == .draggingEndTrimmer {
@@ -478,7 +523,7 @@ class AssetEditorView : UIView {
             }
             
             // Update playhead
-            playhead = trimmedRange.end
+            updatePlayheadAndNotify(trimmedRange.end)
             self.setNeedsDisplay()
         }
         else if touchState == .draggingMarker {
@@ -487,7 +532,7 @@ class AssetEditorView : UIView {
             
             var draggableRange = EditorRange(trimmedRange.start + minMarkerSeparationInUnits, trimmedRange.end - minMarkerSeparationInUnits)
             if draggingMarkerIdx > 0 {
-                if markers[draggingMarkerIdx - 1] > visibleRange.start {
+                if CGFloat(markers[draggingMarkerIdx - 1]) > visibleRange.start {
                     draggableRange.start = markers[draggingMarkerIdx - 1] + minMarkerSeparationInUnits
                 }
                 else {
@@ -495,7 +540,7 @@ class AssetEditorView : UIView {
                 }
             }
             if draggingMarkerIdx < markers.count - 1 {
-                if markers[draggingMarkerIdx + 1] < visibleRange.end {
+                if CGFloat(markers[draggingMarkerIdx + 1]) < visibleRange.end {
                     draggableRange.end = markers[draggingMarkerIdx + 1] - minMarkerSeparationInUnits
                 }
                 else {
@@ -525,7 +570,7 @@ class AssetEditorView : UIView {
             }
             
             // Update playhead
-            playhead = markers[draggingMarkerIdx]
+            updatePlayheadAndNotify(markers[draggingMarkerIdx])
             self.setNeedsDisplay()
         }
         else if touchState == .zooming {
@@ -539,21 +584,21 @@ class AssetEditorView : UIView {
             }
             let scale = distance / firstPinchDistance
             
-            let totalUnitsInWindow = Int(CGFloat(pinchBeginVisibleRangeSize) / scale)
+            let totalUnitsInWindow = clamp(CGFloat(pinchBeginVisibleRangeSize) / scale, minimumVisibleUnits, CGFloat(totalRange.size))
             let midpoint = (location1.x + location2.x) / 2.0
-            let unitOffsetForMidpoint = Int(midpoint * CGFloat(unitsPerPixel))
+            let unitOffsetForMidpoint = midpoint * CGFloat(unitsPerPixel)
             
             var firstUnit = centerPinchUnit - unitOffsetForMidpoint
             if firstUnit < 0 {
                 firstUnit = 0
             }
             var lastUnit = firstUnit + totalUnitsInWindow
-            if lastUnit > totalRange.size {
-                lastUnit = totalRange.size
+            if lastUnit > CGFloat(totalRange.size) {
+                lastUnit = CGFloat(totalRange.size)
             }
-            visibleRange = EditorRange(firstUnit, lastUnit)
+            visibleRange = VisibleRange(firstUnit, lastUnit)
             if let del = delegate {
-                del.assetEditorMovedToRange(editor: self, range: visibleRange)
+                del.assetEditorMovedToVisibleRange(editor: self, range: visibleRange)
             }
             
             // Check for selection
@@ -590,7 +635,7 @@ class AssetEditorView : UIView {
             centerPinchUnit = nil
         }
         if let del = delegate {
-            del.assetEditorMovedToRange(editor: self, range: visibleRange)
+            del.assetEditorMovedToVisibleRange(editor: self, range: visibleRange)
         }
         
         // Check for deselection
@@ -618,7 +663,7 @@ class AssetEditorView : UIView {
         if showMarkers {
             
             // Grey out the trimmed out regions, if necessary
-            if trimmedRange.start >= visibleRange.start {
+            if CGFloat(trimmedRange.start) >= visibleRange.start {
                 context.setFillColor(red: 0.5, green: 0.5, blue: 0.5, alpha: 0.7)
                 if let trimmerPosition = xPositionForUnit(trimmedRange.start) {
                     let rect = CGRect(x: 0, y: gutterHeight, width: trimmerPosition, height: bounds.height - (2.0 * gutterHeight))
@@ -630,7 +675,7 @@ class AssetEditorView : UIView {
                     context.fill(rect)
                 }
             }
-            if trimmedRange.end <= visibleRange.end {
+            if CGFloat(trimmedRange.end) <= visibleRange.end {
                 context.setFillColor(red: 0.5, green: 0.5, blue: 0.5, alpha: 0.7)
                 if let trimmerPosition = xPositionForUnit(trimmedRange.end) {
                     let rect = CGRect(x: trimmerPosition, y: gutterHeight, width: bounds.width - trimmerPosition, height: bounds.height - (2.0 * gutterHeight))
@@ -726,10 +771,10 @@ class AssetEditorView : UIView {
             let playButtonRadius = gutterHeight * (2.0 / 5.0)
             let ranges = rangesForVisibleRegions()
             for range in ranges {
-                let rangeWidthInPixels = pixelsPerUnit * CGFloat(range.end - range.start)
+                let rangeWidthInPixels = pixelsPerUnit * range.end - range.start
                 if rangeWidthInPixels < (2.0 * playButtonRadius) + markerWidth + 4.0 { continue } // Don't draw if not enough space
-                let midUnit = Int(CGFloat(range.start + range.end) / 2.0)
-                if let midpoint = xPositionForUnit(midUnit) {
+                let midUnit = (range.start + range.end) / 2.0
+                if let midpoint = xPositionForFloatUnit(midUnit) {
                     let playButtonCenter = CGPoint(x: midpoint, y: bounds.height - (gutterHeight / 2.0))
                     var playButtonRect = CGRect(origin: playButtonCenter, size: .zero)
                     playButtonRect = playButtonRect.insetBy(dx: -playButtonRadius, dy: -playButtonRadius)

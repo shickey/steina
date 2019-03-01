@@ -14,8 +14,6 @@ import QuartzCore
 
 typealias PlayingSoundId = UUID
 
-typealias SampleRange = Region
-
 class PlayingSound {
     let id : PlayingSoundId
     let sound : Sound
