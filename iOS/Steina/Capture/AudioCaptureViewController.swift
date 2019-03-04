@@ -227,23 +227,31 @@ class AudioCaptureViewController: UIViewController, AssetEditorViewDelegate {
         if playing {
             stopSound(playingSoundId)
         }
-        sound.markers = assetEditorView.markers
-        sound.trimmedRegion = assetEditorView.trimmedRange
-        sound.thumbnail = generateThumbnailForSound(sound)
-        if let d = delegate {
-            d.audioCaptureViewControllerDidCreateSound(audioView.sound!)
-        }
+        saveSound()
         self.presentingViewController!.dismiss(animated: true, completion: nil)
     }
     
     @IBAction func rerecordButtonTapped(_ sender: Any) {
-        // @TODO: This needs a UIAlert prompt so the user can cancel before rerecording
         if playing {
             stopSound(playingSoundId)
         }
+        
+        let alert = UIAlertController(title: "Save Audio?", message: "Do you want to save this audio clip before recording again?", preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "Save and Record Again", style: .default, handler: { (_) in
+            self.saveSound()
+            self.resetSound()
+        }))
+        alert.addAction(UIAlertAction(title: "Discard and Record Again", style: .default, handler: { (_) in
+            self.resetSound()
+        }))
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
+        self.present(alert, animated: true, completion: nil)
+    }
+    
+    func resetSound() {
         sound = Sound(bytesPerSample: 2)
         audioView.sound = sound
-
+        
         assetEditorView.markers = []
         assetEditorView.totalRange = EditorRange(0, 0)
         assetEditorView.trimmedRange = EditorRange(0, 0)
@@ -259,6 +267,15 @@ class AudioCaptureViewController: UIViewController, AssetEditorViewDelegate {
         deleteMarkerButton.isHidden = true
         rerecordButton.isHidden = true
         saveButton.isHidden = true
+    }
+    
+    func saveSound() {
+        sound.markers = assetEditorView.markers
+        sound.trimmedRegion = assetEditorView.trimmedRange
+        sound.thumbnail = generateThumbnailForSound(sound)
+        if let d = delegate {
+            d.audioCaptureViewControllerDidCreateSound(audioView.sound!)
+        }
     }
     
     func totalRange(for: AssetEditorView) -> EditorRange {
@@ -290,11 +307,7 @@ class AudioCaptureViewController: UIViewController, AssetEditorViewDelegate {
     }
     
     func assetEditorMovedToVisibleRange(editor: AssetEditorView, range: VisibleRange) {
-        // @TODO
-        // @TODO
-        // @TODO
-        // @TODO
-        // @TODO: FIX
+        // @TODO: FIX - This won't line up correctly at very zoomed-in scales
         audioView.sampleWindow = SampleRange(Int(range.start), Int(range.end))
         audioView.setNeedsDisplay()
     }
@@ -310,11 +323,21 @@ class AudioCaptureViewController: UIViewController, AssetEditorViewDelegate {
     func assetEditorPlayheadMoved(editor: AssetEditorView, to playhead: Int) {}
     
     func assetEditorBeganDraggingMarkerOrTrimmer(editor: AssetEditorView) {
-        
+        rerecordButton.isEnabled = false
+        playPauseButton.isEnabled = false
+        saveButton.isEnabled = false
+        closeButton.isEnabled = false
+        addMarkerButton.isEnabled = false
+        deleteMarkerButton.isEnabled = false
     }
     
     func assetEditorStoppedDraggingMarkerOrTrimmer(editor: AssetEditorView) {
-        
+        rerecordButton.isEnabled = true
+        playPauseButton.isEnabled = true
+        saveButton.isEnabled = true
+        closeButton.isEnabled = true
+        addMarkerButton.isEnabled = markerSelected ? false : true
+        deleteMarkerButton.isEnabled = markerSelected ? true : false
     }
     
 }

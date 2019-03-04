@@ -800,7 +800,7 @@ class AssetEditorView : UIView {
             let playButtonRadius = gutterHeight * (2.0 / 5.0)
             let ranges = rangesForVisibleRegions()
             for range in ranges {
-                let rangeWidthInPixels = pixelsPerUnit * range.end - range.start
+                let rangeWidthInPixels = pixelsPerUnit * range.size
                 if rangeWidthInPixels < (2.0 * playButtonRadius) + markerWidth + 4.0 { continue } // Don't draw if not enough space
                 let midUnit = (range.start + range.end) / 2.0
                 if let midpoint = xPositionForFloatUnit(midUnit) {

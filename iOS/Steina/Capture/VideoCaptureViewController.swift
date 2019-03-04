@@ -102,6 +102,8 @@ class VideoCaptureViewController: UIViewController, AVCaptureVideoDataOutputSamp
         
         drawMaskView.delegate = self
         
+        project = Project(id: UUID())
+        
         switch AVCaptureDevice.authorizationStatus(for: .video) {
         case .authorized: // The user has previously granted access to the camera.
             self.setupCaptureSession()
@@ -132,7 +134,7 @@ class VideoCaptureViewController: UIViewController, AVCaptureVideoDataOutputSamp
     }
     
     override func viewDidAppear(_ animated: Bool) {
-        UIView.animate(withDuration: 2.0, delay: 1.0, options: [], animations: { 
+        UIView.animate(withDuration: 5.0, delay: 1.0, options: [], animations: { 
             self.infoLabel.alpha = 0.0
         }) { (_) in
             self.infoLabel.isHidden = true
@@ -309,25 +311,30 @@ class VideoCaptureViewController: UIViewController, AVCaptureVideoDataOutputSamp
                     }
                 }
                 else {
-                    addClipToProject(self.clip, self.project)
-                    self.clip.thumbnail = generateThumbnailForClip(self.clip)
-                    saveClip(self.clip)
-                    
-                    if let d = self.delegate {
-                        d.videoCaptureViewControllerDidCreateClip(videoCaptureViewController: self, clip: self.clip)
-                    }
-                    
-                    let info = self.infoLabel!
-                    info.text = "Clip captured!"
-                    info.alpha = 1.0
-                    info.isHidden = false
-                    UIView.animate(withDuration: 2.0, delay: 1.0, options: [], animations: { 
-                        info.alpha = 0.0
-                    }) { (finished) in
-                        if (finished) {
-                            info.isHidden = true
-                        }
-                    }
+//                    addClipToProject(self.clip, self.project)
+//                    self.clip.thumbnail = generateThumbnailForClip(self.clip)
+//                    saveClip(self.clip)
+//                    
+//                    if let d = self.delegate {
+//                        d.videoCaptureViewControllerDidCreateClip(videoCaptureViewController: self, clip: self.clip)
+//                    }
+//                    
+//                    let info = self.infoLabel!
+//                    info.text = "Clip captured!"
+//                    info.alpha = 1.0
+//                    info.isHidden = false
+//                    UIView.animate(withDuration: 2.0, delay: 1.0, options: [], animations: { 
+//                        info.alpha = 0.0
+//                    }) { (finished) in
+//                        if (finished) {
+//                            info.isHidden = true
+//                        }
+//                    }
+                    let storyboard = UIStoryboard(name: "Main", bundle: nil)
+                    let videoEditorVC = storyboard.instantiateViewController(withIdentifier: "VideoEditor") as! VideoEditorViewController
+                    videoEditorVC.clip = self.clip
+//                    videoEditorVC.modalPresentationStyle = .formSheet
+                    self.present(videoEditorVC, animated: true, completion: nil)
                 }
                 
                 self.recordProgress.isHidden = true

@@ -22,7 +22,6 @@ class VideoTimelineView : UIView {
     
     var totalRegion = Region(0, 0)
     var visibleRegion = VisibleRange(0, 0)
-    var currentFrame = 22
     
     var pixelsPerFrame : CGFloat      { return bounds.width / visibleRegion.size }
     var effectiveBounds : CGSize      { return CGSize(width: pixelsPerFrame * CGFloat(totalRegion.size), height: bounds.height) }
@@ -123,16 +122,7 @@ class VideoEditorViewController: UIViewController, AssetEditorViewDelegate {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        let project = Project(id: UUID())
-        let uuid = UUID()
-        
-        clip = Clip(id: uuid, project: project)
-        let clipUrl = Bundle.main.url(forResource: "leaves", withExtension: "svc")!
-        let clipData = try! Data(contentsOf: clipUrl)
-        deserializeClip(clip, clipData)
-        
         videoTimelineView.clip = clip
-        
         clipImageView.image = createImageForClip(clip, frame: 0)
         
         assetEditorView.delegate = self
@@ -215,9 +205,9 @@ class VideoEditorViewController: UIViewController, AssetEditorViewDelegate {
     }
     
     @IBAction func saveButtonTapped(_ sender: Any) {
-//        if playing {
-//            stopSound(playingSoundId)
-//        }
+        if playing {
+            playing = false
+        }
 //        sound.markers = assetEditorView.markers
 //        sound.trimmedRegion = assetEditorView.trimmedRange
 //        sound.thumbnail = generateThumbnailForSound(sound)
@@ -228,27 +218,18 @@ class VideoEditorViewController: UIViewController, AssetEditorViewDelegate {
     }
     
     @IBAction func rerecordButtonTapped(_ sender: Any) {
-//        if playing {
-//            stopSound(playingSoundId)
-//        }
-//        sound = Sound(bytesPerSample: 2)
-//        audioView.sound = sound
-//        
-//        assetEditorView.markers = []
-//        assetEditorView.totalRange = EditorRange(0, 0)
-//        assetEditorView.trimmedRange = EditorRange(0, 0)
-//        assetEditorView.visibleRange = EditorRange(0, 0)
-//        assetEditorView.showMarkers = false
-//        assetEditorView.showPlayhead = false
-//        assetEditorView.isUserInteractionEnabled = false
-//        
-//        markerSelected = false
-//        recordButton.isHidden = false
-//        playPauseButton.isHidden = true
-//        addMarkerButton.isHidden = true
-//        deleteMarkerButton.isHidden = true
-//        rerecordButton.isHidden = true
-//        saveButton.isHidden = true
+        if playing {
+            playing = false
+        }
+        
+        let alert = UIAlertController(title: "Save Video?", message: "Do you want to save this video clip before recording again?", preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "Save and Record Again", style: .default, handler: { (_) in
+//            self.save()
+        }))
+        alert.addAction(UIAlertAction(title: "Discard and Record Again", style: .default, handler: { (_) in
+        }))
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
+        self.present(alert, animated: true, completion: nil)
     }
     
     func totalRange(for: AssetEditorView) -> EditorRange {
