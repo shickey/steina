@@ -66,9 +66,11 @@ protocol VideoCaptureViewControllerDelegate {
     func videoCaptureViewControllerDidCreateClip(videoCaptureViewController: VideoCaptureViewController, clip: Clip)
 }
 
-class VideoCaptureViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDelegate, DrawMaskViewDelegate {
+class VideoCaptureViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDelegate, DrawMaskViewDelegate, VideoEditorViewControllerDelegate {
     
     var delegate : VideoCaptureViewControllerDelegate? = nil
+    
+    var firstAppearance = true // Flag so that we can go right back to rerecording when dismissing the video editor
     
     var project : Project! = nil
     
@@ -102,8 +104,6 @@ class VideoCaptureViewController: UIViewController, AVCaptureVideoDataOutputSamp
         
         drawMaskView.delegate = self
         
-        project = Project(id: UUID())
-        
         switch AVCaptureDevice.authorizationStatus(for: .video) {
         case .authorized: // The user has previously granted access to the camera.
             self.setupCaptureSession()
@@ -126,24 +126,32 @@ class VideoCaptureViewController: UIViewController, AVCaptureVideoDataOutputSamp
     
     override func viewWillAppear(_ animated: Bool) {
         updateOrientation()
-        infoLabel.text = "Draw your video shape"
-        infoLabel.alpha = 1.0
-        infoLabel.isHidden = false
-        recordButton.isHidden = true
-        recordProgress.isHidden = true
+        if firstAppearance || maskData == nil {
+            infoLabel.text = "Draw your video shape"
+            infoLabel.alpha = 1.0
+            infoLabel.isHidden = false
+            recordButton.isHidden = true
+            recordProgress.isHidden = true
+        }
+        else {
+            recordProgress.isHidden = true
+            recordButton.isHidden = false
+        }
     }
     
     override func viewDidAppear(_ animated: Bool) {
-        UIView.animate(withDuration: 5.0, delay: 1.0, options: [], animations: { 
-            self.infoLabel.alpha = 0.0
-        }) { (_) in
-            self.infoLabel.isHidden = true
+        if firstAppearance || maskData == nil {
+            UIView.animate(withDuration: 5.0, delay: 1.0, options: [], animations: { 
+                self.infoLabel.alpha = 0.0
+            }) { (_) in
+                self.infoLabel.isHidden = true
+            }
         }
+        firstAppearance = false
     }
     
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
     }
     
     override var shouldAutorotate: Bool {
@@ -240,7 +248,7 @@ class VideoCaptureViewController: UIViewController, AVCaptureVideoDataOutputSamp
         }
         
         if recording { return } // Don't update the orientation while recording so that we can store it
-        // alongside the rest of the clip info
+                                // alongside the rest of the clip info
         
         
         var newRecordingOrientation : ClipOrientation = .portrait
@@ -311,29 +319,10 @@ class VideoCaptureViewController: UIViewController, AVCaptureVideoDataOutputSamp
                     }
                 }
                 else {
-//                    addClipToProject(self.clip, self.project)
-//                    self.clip.thumbnail = generateThumbnailForClip(self.clip)
-//                    saveClip(self.clip)
-//                    
-//                    if let d = self.delegate {
-//                        d.videoCaptureViewControllerDidCreateClip(videoCaptureViewController: self, clip: self.clip)
-//                    }
-//                    
-//                    let info = self.infoLabel!
-//                    info.text = "Clip captured!"
-//                    info.alpha = 1.0
-//                    info.isHidden = false
-//                    UIView.animate(withDuration: 2.0, delay: 1.0, options: [], animations: { 
-//                        info.alpha = 0.0
-//                    }) { (finished) in
-//                        if (finished) {
-//                            info.isHidden = true
-//                        }
-//                    }
                     let storyboard = UIStoryboard(name: "Main", bundle: nil)
                     let videoEditorVC = storyboard.instantiateViewController(withIdentifier: "VideoEditor") as! VideoEditorViewController
+                    videoEditorVC.delegate = self
                     videoEditorVC.clip = self.clip
-//                    videoEditorVC.modalPresentationStyle = .formSheet
                     self.present(videoEditorVC, animated: true, completion: nil)
                 }
                 
@@ -499,6 +488,24 @@ class VideoCaptureViewController: UIViewController, AVCaptureVideoDataOutputSamp
     
     func captureOutput(_ output: AVCaptureOutput, didDrop sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
         print("frame dropped")
+    }
+    
+    /*******************************************************************************
+     *
+     * VideoEditorViewControllerDelegate 
+     *
+     *******************************************************************************/
+    
+    func videoEditorSavedClip(editor: VideoEditorViewController, clip: Clip) {
+        addClipToProject(clip, project)
+        clip.thumbnail = generateThumbnailForClip(clip)
+        saveClip(clip)
+
+        if let del = delegate {
+            del.videoCaptureViewControllerDidCreateClip(videoCaptureViewController: self, clip: clip)
+        }
+        
+        self.presentingViewController!.dismiss(animated: true, completion: nil)
     }
     
 }

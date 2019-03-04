@@ -74,19 +74,25 @@ class VideoTimelineView : UIView {
     
 }
 
+protocol VideoEditorViewControllerDelegate {
+    func videoEditorSavedClip(editor: VideoEditorViewController, clip: Clip)
+}
+
 class VideoEditorViewController: UIViewController, AssetEditorViewDelegate {
+    
+    var delegate : VideoEditorViewControllerDelegate? = nil
     
     var clip : Clip! = nil
     
     var markerSelected = false {
         didSet {
             if markerSelected {
-                addMarkerButton.isEnabled = false
-                deleteMarkerButton.isEnabled = true
+                let deleteMarkerImage = UIImage(named: "editor-delete-marker")!
+                addDeleteMarkerButton.setImage(deleteMarkerImage, for: .normal) 
             }
             else {
-                addMarkerButton.isEnabled = true
-                deleteMarkerButton.isEnabled = false
+                let addMarkerImage = UIImage(named: "editor-add-marker")!
+                addDeleteMarkerButton.setImage(addMarkerImage, for: .normal)
             }
         }
     }
@@ -114,9 +120,7 @@ class VideoEditorViewController: UIViewController, AssetEditorViewDelegate {
     @IBOutlet weak var assetEditorView: AssetEditorView!
     @IBOutlet weak var closeButton: UIButton!
     @IBOutlet weak var playPauseButton: UIButton!
-    @IBOutlet weak var deleteMarkerButton: UIButton!
-    @IBOutlet weak var addMarkerButton: UIButton!
-    @IBOutlet weak var rerecordButton: UIButton!
+    @IBOutlet weak var addDeleteMarkerButton: UIButton!
     @IBOutlet weak var saveButton: UIButton!
 
     override func viewDidLoad() {
@@ -170,12 +174,15 @@ class VideoEditorViewController: UIViewController, AssetEditorViewDelegate {
     }
     
     @IBAction func closeButtonTapped(_ sender: Any) {
-//        let alert = UIAlertController(title: "Discard video?", message: "Are you sure you want to discard this video clip?", preferredStyle: .alert)
-//        alert.addAction(UIAlertAction(title: "Discard and Exit", style: .default, handler: { (_) in
-//            self.presentingViewController!.dismiss(animated: true, completion: nil)
-//        }))
-//        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
-//        self.present(alert, animated: true, completion: nil)
+        let alert = UIAlertController(title: "Discard Clip?", message: "Do you want to discard this video clip?", preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "Discard and Exit", style: .default, handler: { (_) in
+            self.presentingViewController!.presentingViewController!.dismiss(animated: true, completion: nil)
+        }))
+        alert.addAction(UIAlertAction(title: "Discard and Rerecord", style: .default, handler: { (_) in
+            self.presentingViewController!.dismiss(animated: true, completion: nil)
+        }))
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
+        self.present(alert, animated: true, completion: nil)
     }
     
     @IBAction func playPauseButtonTapped(_ sender: Any) {
@@ -194,13 +201,12 @@ class VideoEditorViewController: UIViewController, AssetEditorViewDelegate {
         }
     }
     
-    @IBAction func addMarkerButtonTapped(_ sender: Any) {
-        assetEditorView.createMarkerAtPlayhead()
-    }
-    
-    @IBAction func deleteMarkerButtonTapped(_ sender: Any) {
+    @IBAction func addRemoveMarkerButtonTapped(_ sender: Any) {
         if markerSelected {
             assetEditorView.deleteSelectedMarker()
+        }
+        else {
+            assetEditorView.createMarkerAtPlayhead()
         }
     }
     
@@ -211,25 +217,9 @@ class VideoEditorViewController: UIViewController, AssetEditorViewDelegate {
 //        sound.markers = assetEditorView.markers
 //        sound.trimmedRegion = assetEditorView.trimmedRange
 //        sound.thumbnail = generateThumbnailForSound(sound)
-//        if let d = delegate {
-//            d.audioCaptureViewControllerDidCreateSound(audioView.sound!)
-//        }
-//        self.presentingViewController!.dismiss(animated: true, completion: nil)
-    }
-    
-    @IBAction func rerecordButtonTapped(_ sender: Any) {
-        if playing {
-            playing = false
+        if let del = delegate {
+            del.videoEditorSavedClip(editor: self, clip: clip)
         }
-        
-        let alert = UIAlertController(title: "Save Video?", message: "Do you want to save this video clip before recording again?", preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "Save and Record Again", style: .default, handler: { (_) in
-//            self.save()
-        }))
-        alert.addAction(UIAlertAction(title: "Discard and Record Again", style: .default, handler: { (_) in
-        }))
-        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
-        self.present(alert, animated: true, completion: nil)
     }
     
     func totalRange(for: AssetEditorView) -> EditorRange {
@@ -237,7 +227,6 @@ class VideoEditorViewController: UIViewController, AssetEditorViewDelegate {
     }
     
     func assetEditorTappedPlayButton(editor: AssetEditorView, range: EditorRange) {
-        rerecordButton.isEnabled = false
         playPauseButton.isEnabled = false
         saveButton.isEnabled = false
         closeButton.isEnabled = false
@@ -253,7 +242,6 @@ class VideoEditorViewController: UIViewController, AssetEditorViewDelegate {
         playLooped = false
         currentPlayingRegion = nil
         
-        rerecordButton.isEnabled = true
         playPauseButton.isEnabled = true
         saveButton.isEnabled = true
         closeButton.isEnabled = true
@@ -278,21 +266,17 @@ class VideoEditorViewController: UIViewController, AssetEditorViewDelegate {
     }
     
     func assetEditorBeganDraggingMarkerOrTrimmer(editor: AssetEditorView) {
-        rerecordButton.isEnabled = false
         playPauseButton.isEnabled = false
         saveButton.isEnabled = false
         closeButton.isEnabled = false
-        addMarkerButton.isEnabled = false
-        deleteMarkerButton.isEnabled = false
+        addDeleteMarkerButton.isEnabled = false
     }
     
     func assetEditorStoppedDraggingMarkerOrTrimmer(editor: AssetEditorView) {
-        rerecordButton.isEnabled = true
         playPauseButton.isEnabled = true
         saveButton.isEnabled = true
         closeButton.isEnabled = true
-        addMarkerButton.isEnabled = markerSelected ? false : true
-        deleteMarkerButton.isEnabled = markerSelected ? true : false
+        addDeleteMarkerButton.isEnabled = true
     }
 
 }

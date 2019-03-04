@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="14460.31" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="vvR-aU-9rN">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="14460.31" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="pn9-sj-NkA">
     <device id="ipad9_7" orientation="portrait">
         <adaptation id="fullscreen"/>
     </device>
@@ -562,28 +562,10 @@
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="EUX-rw-ZrT" userLabel="Buttons Container">
-                                <rect key="frame" x="0.0" y="800" width="768" height="224"/>
+                                <rect key="frame" x="0.0" y="840" width="768" height="184"/>
                                 <subviews>
-                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="5hk-kw-a1L">
-                                        <rect key="frame" x="28" y="116" width="80" height="80"/>
-                                        <state key="normal" image="editor-rerecord">
-                                            <color key="titleColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                                        </state>
-                                        <connections>
-                                            <action selector="rerecordButtonTapped:" destination="cBN-XD-K8W" eventType="touchUpInside" id="Oge-KI-0UG"/>
-                                        </connections>
-                                    </button>
-                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="zpE-yo-zjE">
-                                        <rect key="frame" x="470" y="72" width="80" height="80"/>
-                                        <state key="normal" image="editor-add-marker">
-                                            <color key="titleColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                                        </state>
-                                        <connections>
-                                            <action selector="addMarkerButtonTapped:" destination="cBN-XD-K8W" eventType="touchUpInside" id="onH-Wa-IQj"/>
-                                        </connections>
-                                    </button>
                                     <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="jwN-xu-dfS">
-                                        <rect key="frame" x="660" y="116" width="80" height="80"/>
+                                        <rect key="frame" x="480" y="52" width="80" height="80"/>
                                         <state key="normal" image="editor-save">
                                             <color key="titleColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                         </state>
@@ -592,7 +574,7 @@
                                         </connections>
                                     </button>
                                     <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Wfp-GG-fDf" userLabel="Play/Pause Button">
-                                        <rect key="frame" x="328" y="56" width="112" height="112"/>
+                                        <rect key="frame" x="328" y="36" width="112" height="112"/>
                                         <state key="normal" image="editor-play">
                                             <color key="titleColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                         </state>
@@ -600,32 +582,28 @@
                                             <action selector="playPauseButtonTapped:" destination="cBN-XD-K8W" eventType="touchUpInside" id="oKC-7p-eyc"/>
                                         </connections>
                                     </button>
-                                    <button opaque="NO" contentMode="scaleToFill" enabled="NO" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="sYH-Ac-QBU" userLabel="Delete Marker Button">
-                                        <rect key="frame" x="218" y="72" width="80" height="80"/>
-                                        <state key="normal" image="editor-delete-marker">
+                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="zpE-yo-zjE">
+                                        <rect key="frame" x="208" y="52" width="80" height="80"/>
+                                        <state key="normal" image="editor-add-marker">
                                             <color key="titleColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                         </state>
                                         <connections>
-                                            <action selector="deleteMarkerButtonTapped:" destination="cBN-XD-K8W" eventType="touchUpInside" id="4qf-6b-DXG"/>
+                                            <action selector="addRemoveMarkerButtonTapped:" destination="cBN-XD-K8W" eventType="touchUpInside" id="pzX-LU-Vwq"/>
                                         </connections>
                                     </button>
                                 </subviews>
                                 <constraints>
-                                    <constraint firstItem="zpE-yo-zjE" firstAttribute="centerY" secondItem="sYH-Ac-QBU" secondAttribute="centerY" id="0D6-wm-gGf"/>
-                                    <constraint firstAttribute="bottom" secondItem="jwN-xu-dfS" secondAttribute="bottom" constant="28" id="Fc9-df-RMq"/>
-                                    <constraint firstItem="Wfp-GG-fDf" firstAttribute="centerY" secondItem="sYH-Ac-QBU" secondAttribute="centerY" id="KZV-va-ANG"/>
-                                    <constraint firstItem="zpE-yo-zjE" firstAttribute="leading" secondItem="Wfp-GG-fDf" secondAttribute="trailing" constant="30" id="WCM-7L-bzo"/>
+                                    <constraint firstItem="jwN-xu-dfS" firstAttribute="centerY" secondItem="zpE-yo-zjE" secondAttribute="centerY" id="3gu-lr-eac"/>
+                                    <constraint firstItem="Wfp-GG-fDf" firstAttribute="centerY" secondItem="zpE-yo-zjE" secondAttribute="centerY" id="3ua-Oi-N80"/>
                                     <constraint firstItem="Wfp-GG-fDf" firstAttribute="centerY" secondItem="EUX-rw-ZrT" secondAttribute="centerY" id="csA-Sd-36C"/>
-                                    <constraint firstItem="5hk-kw-a1L" firstAttribute="leading" secondItem="EUX-rw-ZrT" secondAttribute="leading" constant="28" id="dAC-9j-ib2"/>
-                                    <constraint firstItem="Wfp-GG-fDf" firstAttribute="leading" secondItem="sYH-Ac-QBU" secondAttribute="trailing" constant="30" id="h6b-oO-qFl"/>
-                                    <constraint firstAttribute="height" constant="224" id="hxq-sb-KOn"/>
+                                    <constraint firstItem="Wfp-GG-fDf" firstAttribute="leading" secondItem="zpE-yo-zjE" secondAttribute="trailing" constant="40" id="hT3-gw-5bH"/>
+                                    <constraint firstAttribute="height" constant="184" id="hxq-sb-KOn"/>
                                     <constraint firstItem="Wfp-GG-fDf" firstAttribute="centerX" secondItem="EUX-rw-ZrT" secondAttribute="centerX" id="j7s-MZ-qBr"/>
-                                    <constraint firstAttribute="trailing" secondItem="jwN-xu-dfS" secondAttribute="trailing" constant="28" id="jaC-sN-11o"/>
-                                    <constraint firstAttribute="bottom" secondItem="5hk-kw-a1L" secondAttribute="bottom" constant="28" id="wzX-cU-I9a"/>
+                                    <constraint firstItem="jwN-xu-dfS" firstAttribute="leading" secondItem="Wfp-GG-fDf" secondAttribute="trailing" constant="40" id="lcD-bh-2wV"/>
                                 </constraints>
                             </view>
                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="s8U-0N-Vu3" userLabel="Timeline Container">
-                                <rect key="frame" x="0.0" y="624" width="768" height="176"/>
+                                <rect key="frame" x="0.0" y="664" width="768" height="176"/>
                                 <subviews>
                                     <view contentMode="scaleToFill" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="dIj-um-six" customClass="VideoTimelineView" customModule="Steina" customModuleProvider="target">
                                         <rect key="frame" x="28" y="40" width="712" height="96"/>
@@ -644,13 +622,13 @@
                                 </constraints>
                             </view>
                             <imageView userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="snL-fR-LrX">
-                                <rect key="frame" x="0.0" y="84" width="768" height="540"/>
+                                <rect key="frame" x="0.0" y="84" width="768" height="580"/>
                             </imageView>
                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="DOd-Fn-HG5" userLabel="Top Bar">
                                 <rect key="frame" x="0.0" y="0.0" width="768" height="84"/>
                                 <subviews>
                                     <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Kl3-yA-rTt" userLabel="Close Button">
-                                        <rect key="frame" x="8" y="14" width="56" height="56"/>
+                                        <rect key="frame" x="14" y="14" width="56" height="56"/>
                                         <state key="normal" image="editor-close"/>
                                         <connections>
                                             <action selector="closeButtonTapped:" destination="cBN-XD-K8W" eventType="touchUpInside" id="8a9-v4-E2H"/>
@@ -661,7 +639,7 @@
                                 <constraints>
                                     <constraint firstItem="Kl3-yA-rTt" firstAttribute="centerY" secondItem="DOd-Fn-HG5" secondAttribute="centerY" id="d08-pU-YCJ"/>
                                     <constraint firstAttribute="height" constant="84" id="jrs-yz-5W0"/>
-                                    <constraint firstItem="Kl3-yA-rTt" firstAttribute="leading" secondItem="DOd-Fn-HG5" secondAttribute="leading" constant="8" id="zWs-WE-877"/>
+                                    <constraint firstItem="Kl3-yA-rTt" firstAttribute="leading" secondItem="DOd-Fn-HG5" secondAttribute="leading" constant="14" id="zWs-WE-877"/>
                                 </constraints>
                             </view>
                         </subviews>
@@ -686,13 +664,11 @@
                         <viewLayoutGuide key="safeArea" id="hSO-eu-vvf"/>
                     </view>
                     <connections>
-                        <outlet property="addMarkerButton" destination="zpE-yo-zjE" id="ifg-92-qlu"/>
+                        <outlet property="addDeleteMarkerButton" destination="zpE-yo-zjE" id="7vX-ub-VYU"/>
                         <outlet property="assetEditorView" destination="t0j-hI-VSt" id="1qN-di-QBZ"/>
                         <outlet property="clipImageView" destination="snL-fR-LrX" id="bcb-Ol-gPH"/>
                         <outlet property="closeButton" destination="Kl3-yA-rTt" id="Nn8-uy-pxw"/>
-                        <outlet property="deleteMarkerButton" destination="sYH-Ac-QBU" id="nK0-Qj-J7f"/>
                         <outlet property="playPauseButton" destination="Wfp-GG-fDf" id="o1O-9Q-hHH"/>
-                        <outlet property="rerecordButton" destination="5hk-kw-a1L" id="mEW-zc-XBw"/>
                         <outlet property="saveButton" destination="jwN-xu-dfS" id="PQJ-x9-pk9"/>
                         <outlet property="videoTimelineView" destination="dIj-um-six" id="XDp-21-mam"/>
                     </connections>
