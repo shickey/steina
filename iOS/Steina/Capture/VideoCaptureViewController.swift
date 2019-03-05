@@ -319,6 +319,7 @@ class VideoCaptureViewController: UIViewController, AVCaptureVideoDataOutputSamp
                     }
                 }
                 else {
+                    self.clip.trimmedRegion = Region<Int>(0, Int(self.clip.frames) - 1)
                     let storyboard = UIStoryboard(name: "Main", bundle: nil)
                     let videoEditorVC = storyboard.instantiateViewController(withIdentifier: "VideoEditor") as! VideoEditorViewController
                     videoEditorVC.delegate = self
@@ -496,9 +497,11 @@ class VideoCaptureViewController: UIViewController, AVCaptureVideoDataOutputSamp
      *
      *******************************************************************************/
     
-    func videoEditorSavedClip(editor: VideoEditorViewController, clip: Clip) {
-        addClipToProject(clip, project)
+    func videoEditorRequestedSave(editor: VideoEditorViewController, clip: Clip, markers: [Marker], trimmedRegion: EditorRange) {
+        clip.markers = markers
+        clip.trimmedRegion = trimmedRegion
         clip.thumbnail = generateThumbnailForClip(clip)
+        addClipToProject(clip, project)
         saveClip(clip)
 
         if let del = delegate {
@@ -506,6 +509,14 @@ class VideoCaptureViewController: UIViewController, AVCaptureVideoDataOutputSamp
         }
         
         self.presentingViewController!.dismiss(animated: true, completion: nil)
+    }
+    
+    func videoEditorRequestedDiscard(editor: VideoEditorViewController) {
+        self.presentingViewController!.dismiss(animated: true, completion: nil)
+    }
+    
+    func videoEditorRequestedRerecord(editor: VideoEditorViewController) {
+        self.dismiss(animated: true, completion: nil)
     }
     
 }

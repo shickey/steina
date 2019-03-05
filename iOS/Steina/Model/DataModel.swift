@@ -84,6 +84,10 @@ class Clip {
     // Thumbnail
     var thumbnail : UIImage! = nil
     
+    // Markers and Trimming
+    var markers : [Int] = []
+    var trimmedRegion : Region = Region(0, 0)
+    
     init(id clipId: UUID, project clipProject: Project) {
         id = clipId
         project = clipProject
@@ -233,7 +237,7 @@ func deserializeClip(_ clip: Clip, _ data: Data) {
 }
 
 func generateThumbnailForClip(_ clip: Clip) -> UIImage {
-    return createImageForClip(clip, frame: 0)
+    return createImageForClip(clip, frame: clip.trimmedRegion.start)
 }
 
 func createClipInProject(_ project: Project) -> Clip {
@@ -254,12 +258,14 @@ func saveClip(_ clip: Clip) {
     try! clipData.write(to: clip.assetUrl)
 }
 
-func loadClip(_ id: String, _ project: Project) {
+@discardableResult
+func loadClip(_ id: String, _ project: Project) -> Clip {
     let uuid = UUID(uuidString: id)!
     let clip = Clip(id: uuid, project: project)
     let clipData = try! Data(contentsOf: clip.assetUrl)
     deserializeClip(clip, clipData)
     addClipToProject(clip, project)
+    return clip
 }
 
 func createImageForClip(_ clip: Clip, frame: Int, inverted : Bool = false) -> UIImage {
@@ -511,9 +517,21 @@ func loadProjectAssets(_ project: Project) {
         let projectJson = try JSONSerialization.jsonObject(with: projectJsonData, options: [])
         let jsonDict = projectJson as! NSDictionary
         let videoTargets = jsonDict["videoTargets"] as! NSDictionary
-        for (videoTargetId, _) in videoTargets {
+        for (videoTargetId, videoTargetAny) in videoTargets {
             let videoTargetIdStr = videoTargetId as! String
-            loadClip(videoTargetIdStr, project) 
+            let videoTarget = videoTargetAny as! Dictionary<String, Any>
+            let clip = loadClip(videoTargetIdStr, project)
+            if let nsMarkers = videoTarget["markers"] as? [NSNumber] {
+                let markers = nsMarkers.map({ $0.intValue })
+                clip.markers = markers
+            }
+            if let nsTrimStart = videoTarget["trimStart"] as? NSNumber, let nsTrimEnd = videoTarget["trimEnd"] as? NSNumber {
+                let region = Region(nsTrimStart.intValue, nsTrimEnd.intValue)
+                clip.trimmedRegion = region
+            }
+            else {
+                clip.trimmedRegion = Region<Int>(0, Int(clip.frames))
+            }
         }
         let audioTargets = jsonDict["audioTargets"] as! NSDictionary
         for (audioTargetId, audioTargetAny) in audioTargets {

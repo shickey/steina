@@ -157,15 +157,16 @@
               vm.runtime._step();
             }
 
-            function createVideoTarget(id, fps, frames) {
-              vm.createVideoTarget(id, {
-                fps,
-                frames
-              })
+            function createVideoTarget(id, videoInfo) {
+              vm.createVideoTarget(id, videoInfo)
             }
 
             function createAudioTarget(id, audioInfo) {
               vm.createAudioTarget(id, audioInfo);
+            }
+
+            function updateVideoTargetInfo(id, videoInfo) {
+              vm.updateVideoTargetInfo(id, videoInfo);
             }
 
             function deleteTarget(id) {
@@ -281,6 +282,7 @@
               tick,
               createVideoTarget,
               createAudioTarget,
+              updateVideoTargetInfo,
               deleteTarget,
               duplicateTarget,
               getVideoTargets,

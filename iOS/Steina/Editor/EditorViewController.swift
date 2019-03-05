@@ -40,7 +40,8 @@ class EditorViewController: UIViewController,
                             MetalViewDelegate,
                             ClipsCollectionViewControllerDelegate, 
                             VideoCaptureViewControllerDelegate,
-                            AudioCaptureViewControllerDelegate {
+                            AudioCaptureViewControllerDelegate,
+                            VideoEditorViewControllerDelegate {  // Only used for editing clips, not when creating them in the first place
     
     var project : Project! = nil
     var selectedAssetId : AssetId? = nil
@@ -309,6 +310,19 @@ class EditorViewController: UIViewController,
         }
     }
     
+    @IBAction func editButtonTapped(_ sender: Any) {
+        if let assetId = selectedAssetId {
+            if project.clipIds.contains(assetId) {
+                let videoClip = project.clips[assetId]
+                let storyboard = UIStoryboard(name: "Main", bundle: nil)
+                let videoEditorVC = storyboard.instantiateViewController(withIdentifier: "VideoEditor") as! VideoEditorViewController
+                videoEditorVC.delegate = self
+                videoEditorVC.clip = videoClip
+                videoEditorVC.canRerecord = false
+                self.present(videoEditorVC, animated: true, completion: nil)
+            }
+        }
+    }
     
     /**********************************************************************
      *
@@ -802,7 +816,10 @@ class EditorViewController: UIViewController,
      **********************************************************************/
     
     func videoCaptureViewControllerDidCreateClip(videoCaptureViewController: VideoCaptureViewController, clip: Clip) {
-        runJavascript("Steina.createVideoTarget(\"\(clip.id.uuidString)\", 30, \(clip.frames));")
+        let markersString = "[\(clip.markers.map({ String($0) }).joined(separator: ","))]"
+        let trimStart = clip.trimmedRegion.start
+        let trimEnd = clip.trimmedRegion.end
+        runJavascript("Steina.createVideoTarget(\"\(clip.id.uuidString)\", {fps: 30, frames: \(clip.frames), markers: \(markersString), trimStart: \(trimStart), trimEnd: \(trimEnd) });")
         updateHelpAnimations()
         saveProject()
     }
@@ -829,5 +846,33 @@ class EditorViewController: UIViewController,
         updateHelpAnimations()
         saveProject()
     }
+    
+    /**********************************************************************
+     *
+     * VideoEditorViewControllerDelegate
+     *
+     **********************************************************************/
+    
+    func videoEditorRequestedSave(editor: VideoEditorViewController, clip: Clip, markers: [Marker], trimmedRegion: EditorRange) {
+        clip.markers = markers
+        clip.trimmedRegion = trimmedRegion
+        clip.thumbnail = generateThumbnailForClip(clip)
+        
+        let markersString = "[\(clip.markers.map({ String($0) }).joined(separator: ","))]"
+        let trimStart = clip.trimmedRegion.start
+        let trimEnd = clip.trimmedRegion.end
+        runJavascript("Steina.updateVideoTargetInfo(\"\(clip.id.uuidString)\", {markers: \(markersString), trimStart: \(trimStart), trimEnd: \(trimEnd) })")
+        saveProject()
+        self.dismiss(animated: true, completion: nil)
+    }
+    
+    func videoEditorRequestedDiscard(editor: VideoEditorViewController) {
+        self.dismiss(animated: true, completion: nil)
+    }
+    
+    func videoEditorRequestedRerecord(editor: VideoEditorViewController) {
+        assert(false, "Video editor tried to send rerecord request to project editor")
+    }
+    
     
 }

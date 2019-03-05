@@ -75,7 +75,9 @@ class VideoTimelineView : UIView {
 }
 
 protocol VideoEditorViewControllerDelegate {
-    func videoEditorSavedClip(editor: VideoEditorViewController, clip: Clip)
+    func videoEditorRequestedSave(editor: VideoEditorViewController, clip: Clip, markers: [Marker], trimmedRegion: EditorRange)
+    func videoEditorRequestedDiscard(editor: VideoEditorViewController)
+    func videoEditorRequestedRerecord(editor: VideoEditorViewController)
 }
 
 class VideoEditorViewController: UIViewController, AssetEditorViewDelegate {
@@ -83,6 +85,8 @@ class VideoEditorViewController: UIViewController, AssetEditorViewDelegate {
     var delegate : VideoEditorViewControllerDelegate? = nil
     
     var clip : Clip! = nil
+    
+    var canRerecord = true
     
     var markerSelected = false {
         didSet {
@@ -127,9 +131,14 @@ class VideoEditorViewController: UIViewController, AssetEditorViewDelegate {
         super.viewDidLoad()
         
         videoTimelineView.clip = clip
-        clipImageView.image = createImageForClip(clip, frame: 0)
         
         assetEditorView.delegate = self
+        assetEditorView.markers = clip.markers
+        assetEditorView.trimmedRange = clip.trimmedRegion
+        assetEditorView.updatePlayhead(clip.trimmedRegion.start)
+        clipImageView.image = createImageForClip(clip, frame: assetEditorView.playhead)
+        
+        currentPlayingFrame = clip.trimmedRegion.start
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -174,15 +183,31 @@ class VideoEditorViewController: UIViewController, AssetEditorViewDelegate {
     }
     
     @IBAction func closeButtonTapped(_ sender: Any) {
-        let alert = UIAlertController(title: "Discard Clip?", message: "Do you want to discard this video clip?", preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "Discard and Exit", style: .default, handler: { (_) in
-            self.presentingViewController!.presentingViewController!.dismiss(animated: true, completion: nil)
-        }))
-        alert.addAction(UIAlertAction(title: "Discard and Rerecord", style: .default, handler: { (_) in
-            self.presentingViewController!.dismiss(animated: true, completion: nil)
-        }))
-        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
-        self.present(alert, animated: true, completion: nil)
+        if canRerecord {
+            let alert = UIAlertController(title: "Discard Clip?", message: "Do you want to discard this video clip?", preferredStyle: .alert)
+            alert.addAction(UIAlertAction(title: "Discard and Exit", style: .default, handler: { (_) in
+                if let del = self.delegate {
+                    del.videoEditorRequestedDiscard(editor: self)
+                }
+            }))
+            alert.addAction(UIAlertAction(title: "Discard and Rerecord", style: .default, handler: { (_) in
+                if let del = self.delegate {
+                    del.videoEditorRequestedRerecord(editor: self)
+                }
+            }))
+            alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
+            self.present(alert, animated: true, completion: nil)
+        }
+        else {
+            let alert = UIAlertController(title: "Discard Changes?", message: "Do you want to discard changes to this video clip?", preferredStyle: .alert)
+            alert.addAction(UIAlertAction(title: "Discard Changes", style: .default, handler: { (_) in
+                if let del = self.delegate {
+                    del.videoEditorRequestedDiscard(editor: self)
+                }
+            }))
+            alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
+            self.present(alert, animated: true, completion: nil)
+        }
     }
     
     @IBAction func playPauseButtonTapped(_ sender: Any) {
@@ -214,11 +239,8 @@ class VideoEditorViewController: UIViewController, AssetEditorViewDelegate {
         if playing {
             playing = false
         }
-//        sound.markers = assetEditorView.markers
-//        sound.trimmedRegion = assetEditorView.trimmedRange
-//        sound.thumbnail = generateThumbnailForSound(sound)
         if let del = delegate {
-            del.videoEditorSavedClip(editor: self, clip: clip)
+            del.videoEditorRequestedSave(editor: self, clip: clip, markers: assetEditorView.markers, trimmedRegion: assetEditorView.trimmedRange)
         }
     }
     
