@@ -305,27 +305,12 @@ class VideoCaptureViewController: UIViewController, AVCaptureVideoDataOutputSamp
             // belongs to the main thread
             DispatchQueue.main.async {
                 
-                if self.framesWritten < MIN_FRAMES {
-                    let info = self.infoLabel!
-                    info.text = "Hold to record"
-                    info.alpha = 1.0
-                    info.isHidden = false
-                    UIView.animate(withDuration: 2.0, delay: 1.0, options: [], animations: { 
-                        info.alpha = 0.0
-                    }) { (finished) in
-                        if (finished) {
-                            info.isHidden = true
-                        }
-                    }
-                }
-                else {
-                    self.clip.trimmedRegion = Region<Int>(0, Int(self.clip.frames) - 1)
-                    let storyboard = UIStoryboard(name: "Main", bundle: nil)
-                    let videoEditorVC = storyboard.instantiateViewController(withIdentifier: "VideoEditor") as! VideoEditorViewController
-                    videoEditorVC.delegate = self
-                    videoEditorVC.clip = self.clip
-                    self.present(videoEditorVC, animated: true, completion: nil)
-                }
+                self.clip.trimmedRegion = Region<Int>(0, Int(self.clip.frames) - 1)
+                let storyboard = UIStoryboard(name: "Main", bundle: nil)
+                let videoEditorVC = storyboard.instantiateViewController(withIdentifier: "VideoEditor") as! VideoEditorViewController
+                videoEditorVC.delegate = self
+                videoEditorVC.clip = self.clip
+                self.present(videoEditorVC, animated: true, completion: nil)
                 
                 self.recordProgress.isHidden = true
                 self.closeButton.isHidden = false
@@ -340,15 +325,11 @@ class VideoCaptureViewController: UIViewController, AVCaptureVideoDataOutputSamp
     }
     
     @IBAction func recordPressed(_ sender: Any) {
-        startRecording()
-    }
-    
-    @IBAction func recordReleased(_ sender: Any) {
-        // If we reached the max number of frames,
-        // we might not be recording anymore, so
-        // there might be nothing to do
         if recording {
             stopRecording()
+        }
+        else {
+            startRecording()
         }
     }
     

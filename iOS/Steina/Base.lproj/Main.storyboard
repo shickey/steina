@@ -494,9 +494,7 @@
                                         <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMinY="YES" flexibleMaxY="YES"/>
                                         <state key="normal" image="record"/>
                                         <connections>
-                                            <action selector="recordPressed:" destination="vvR-aU-9rN" eventType="touchDown" id="CH2-0b-A4F"/>
-                                            <action selector="recordReleased:" destination="vvR-aU-9rN" eventType="touchUpOutside" id="dCa-09-tsh"/>
-                                            <action selector="recordReleased:" destination="vvR-aU-9rN" eventType="touchUpInside" id="mdS-xr-4de"/>
+                                            <action selector="recordPressed:" destination="vvR-aU-9rN" eventType="touchUpInside" id="y0D-dX-hc8"/>
                                         </connections>
                                     </button>
                                     <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Gm8-6q-9ZZ">
