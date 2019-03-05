@@ -579,7 +579,10 @@ func duplicateProjectAsset(_ project: Project, _ assetId: AssetId, _ newAssetId:
         let oldUrl = clip!.assetUrl
         let newUrl = oldUrl.deletingLastPathComponent().appendingPathComponent("\(newAssetId).svc")
         try! FileManager.default.copyItem(at: oldUrl, to: newUrl)
-        loadClip(newAssetId, project)
+        let newClip = loadClip(newAssetId, project)
+        newClip.trimmedRegion = clip!.trimmedRegion
+        newClip.markers = clip!.markers
+        newClip.thumbnail = generateThumbnailForClip(newClip)
     }
     else if let _ = project.soundIds.firstIndex(of: assetId) {
         let sound = project.sounds[assetId]
