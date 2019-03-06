@@ -53,7 +53,7 @@ class EditorViewController: UIViewController,
     var previousRenderedIds : [ClipId] = []
     var renderedIds : [ClipId] = []
     var renderingQueue : DispatchQueue = DispatchQueue(label: "edu.mit.media.llk.Bricoleur.Render", qos: .default, attributes: .concurrent, autoreleaseFrequency: DispatchQueue.AutoreleaseFrequency.workItem, target: nil)
-    let renderDispatchGroup = DispatchGroup()
+    var renderDispatchGroup = DispatchGroup()
     let unprojection = orthographicUnprojection(left: -320.0, right: 320.0, top: 240.0, bottom: -240.0, near: 1.0, far: -1.0)
     
     var webView: UIWebView! = nil
@@ -497,6 +497,7 @@ class EditorViewController: UIViewController,
                 DEBUGBeginTimedBlock("GPU Kickoff")
                 render(numEntitiesToRender)
                 DEBUGEndTimedBlock("GPU Kickoff")
+                
             }
             
         }

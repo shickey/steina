@@ -23,23 +23,41 @@
     <category name="Events" id="Events" colour="#FFD500" secondaryColour="#CC9900">
       <block type="event_whenflagclicked"></block>
       <block type="steina_whenTapped"></block>
-      <block type="steina_whenPlayedToEnd"></block>
-      <block type="steina_whenPlayedToBeginning"></block>
+      <!-- <block type="steina_whenPlayedToEnd"></block>
+      <block type="steina_whenPlayedToBeginning"></block> -->
+      <block type="steina_whenReached">
+        <value name="MARKER">
+          <shadow type="steina_menu_markers" />
+        </value>
+      </block>
     </category>
 
     <category name="Video" id="Video" colour="#FF6680" secondaryColour="#FF4D6A">
 
       <block type="steina_playEntireVideoUntilDone"></block>
 
-      <block type="steina_setPlayRate">
-        <value name="RATE">
-          <shadow type="math_number">
-            <field name="NUM">100</field>
-          </shadow>
+      <block type="steina_playVideoFromAToB">
+        <value name="MARKER_A">
+          <shadow type="steina_menu_markers" />
+        </value>
+        <value name="MARKER_B">
+          <shadow type="steina_menu_markers" />
         </value>
       </block>
 
-      <block type="steina_startPlaying"></block>
+      <block type="steina_playForwardReverseUntilDone">
+        <value name="DIRECTION">
+          <shadow type="steina_menu_directions" />
+        </value>
+      </block>
+
+      <block type="steina_startPlayingForwardReverse">
+        <value name="DIRECTION">
+          <shadow type="steina_menu_directions" />
+        </value>
+      </block>
+
+      <!-- <block type="steina_startPlaying"></block> -->
 
       <block type="steina_stopPlaying"></block>
 
@@ -51,21 +69,34 @@
         </value>
       </block>
 
-      <block type="steina_playNFrames">
+      <block type="steina_setPlayRate">
+        <value name="RATE">
+          <shadow type="math_number">
+            <field name="NUM">100</field>
+          </shadow>
+        </value>
+      </block>
+
+      <block type="steina_isTapped"></block>
+
+      <!-- <block type="steina_playNFrames">
         <value name="FRAMES">
           <shadow type="math_number">
             <field name="NUM">30</field>
           </shadow>
         </value>
-      </block>
+      </block> -->
 
-      <block type="steina_playForwardUntilDone"></block>
+      <!-- <block type="steina_playForwardUntilDone"></block>
 
-      <block type="steina_playBackwardUntilDone"></block>
+      <block type="steina_playBackwardUntilDone"></block> -->
 
-      <block type="steina_nextFrame"></block>
+      <!-- <block type="steina_nextFrame"></block>
 
-      <block type="steina_previousFrame"></block>
+      <block type="steina_previousFrame"></block> -->
+    </category>
+
+    <category name="Effects" id="Effects" colour="#FF6680" secondaryColour="#FF4D6A">
 
       <block type="steina_changeEffectBy">
         <value name="EFFECT">
