@@ -306,6 +306,18 @@
                                             <action selector="shareButtonTapped:" destination="BYZ-38-t0r" eventType="touchUpInside" id="9wl-Nc-MGW"/>
                                         </connections>
                                     </button>
+                                    <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" image="top-bar-button" translatesAutoresizingMaskIntoConstraints="NO" id="gcu-64-FNq" userLabel="Fullscreen Background">
+                                        <rect key="frame" x="566" y="14" width="52" height="52"/>
+                                        <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxY="YES"/>
+                                    </imageView>
+                                    <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="tEP-cx-Em5" userLabel="Fullscreen">
+                                        <rect key="frame" x="566" y="14" width="52" height="52"/>
+                                        <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxY="YES"/>
+                                        <state key="normal" image="fullscreen"/>
+                                        <connections>
+                                            <action selector="fullscreenButtonTapped:" destination="BYZ-38-t0r" eventType="touchUpInside" id="w5E-wV-oYu"/>
+                                        </connections>
+                                    </button>
                                 </subviews>
                                 <color key="backgroundColor" red="0.15686274509803921" green="0.2196078431372549" blue="0.33725490196078434" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                             </view>
@@ -408,6 +420,8 @@
                     <connections>
                         <outlet property="assetsView" destination="OfW-2I-pZz" id="yFx-FN-yi7"/>
                         <outlet property="cameraButton" destination="cHo-ls-Imi" id="taJ-yO-j8h"/>
+                        <outlet property="fullscreenButton" destination="tEP-cx-Em5" id="6p5-dq-ebL"/>
+                        <outlet property="fullscreenButtonBackground" destination="gcu-64-FNq" id="mWk-M3-5W5"/>
                         <outlet property="greenFlagButton" destination="Otc-3E-WcH" id="Udt-RK-oSL"/>
                         <outlet property="helpArrowBottom" destination="Ote-QJ-qXr" id="yOG-RQ-vdT"/>
                         <outlet property="helpArrowTop" destination="cRf-fx-GQh" id="6ju-Aw-3qG"/>
@@ -444,7 +458,7 @@
                             <inset key="sectionInset" minX="5" minY="5" maxX="5" maxY="5"/>
                         </collectionViewFlowLayout>
                         <cells>
-                            <collectionViewCell opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" reuseIdentifier="ClipCell" id="yhg-ai-5RJ" customClass="ClipsCollectionViewCell" customModule="Steina" customModuleProvider="target">
+                            <collectionViewCell opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" misplaced="YES" reuseIdentifier="ClipCell" id="yhg-ai-5RJ" customClass="ClipsCollectionViewCell" customModule="Steina" customModuleProvider="target">
                                 <rect key="frame" x="5" y="5" width="100" height="75"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxX="YES" flexibleMinY="YES" flexibleMaxY="YES"/>
                                 <view key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" insetsLayoutMarginsFromSafeArea="NO">
@@ -690,6 +704,7 @@
         <image name="editor-play" width="112" height="112"/>
         <image name="editor-record" width="112" height="112"/>
         <image name="editor-save" width="80" height="80"/>
+        <image name="fullscreen" width="31" height="32"/>
         <image name="greenflag" width="33" height="36"/>
         <image name="greenflag-button" width="110" height="52"/>
         <image name="left-arrow" width="288" height="192"/>

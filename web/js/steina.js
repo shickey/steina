@@ -157,6 +157,12 @@
               vm.runtime._step();
             }
 
+            function updateMotionValues(roll, pitch, heading) {
+              vm.runtime.motion.roll = +(roll);
+              vm.runtime.motion.pitch = +(pitch);
+              vm.runtime.motion.heading = +(heading);
+            }
+
             function createVideoTarget(id, videoInfo) {
               vm.createVideoTarget(id, videoInfo)
             }
@@ -280,6 +286,7 @@
 
             window.Steina = {
               tick,
+              updateMotionValues,
               createVideoTarget,
               createAudioTarget,
               updateVideoTargetInfo,

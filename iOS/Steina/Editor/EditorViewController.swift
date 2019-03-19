@@ -10,6 +10,7 @@ import UIKit
 import WebKit
 import Dispatch
 import simd
+import CoreMotion
 
 struct MetalViewTouchState {
     enum VideoTargetState {
@@ -59,10 +60,16 @@ class EditorViewController: UIViewController,
     var webView: UIWebView! = nil
     var clipsCollectionVC : ClipsCollectionViewController? = nil
     
+    var fullscreen = false
+    var transitioningFullscreen = false
+    
     // Audio
     var nextRenderTimestamp = 0.0
     var lastTargetTimestamp = 0.0
     let mixingBuffer = Data(count: MemoryLayout<Float>.size * 4800) // We allocate enough for 3 frames of audio and hard cap it there
+    
+    // Motion
+    let motion = CMMotionManager.init()
     
     @IBOutlet weak var metalView: MetalView!
     @IBOutlet weak var webViewContainer: UIView!
@@ -77,6 +84,8 @@ class EditorViewController: UIViewController,
     @IBOutlet weak var projectsButtonBackground: UIImageView!
     @IBOutlet weak var shareButton: UIButton!
     @IBOutlet weak var shareButtonBackground: UIImageView!
+    @IBOutlet weak var fullscreenButton: UIButton!
+    @IBOutlet weak var fullscreenButtonBackground: UIImageView!
     @IBOutlet weak var stopGreenFlagButtonBackground: UIImageView!
     @IBOutlet weak var rotateHelpIcon: UIView!
     @IBOutlet weak var helpArrowTop: UIImageView!
@@ -108,6 +117,11 @@ class EditorViewController: UIViewController,
         
         initMetal(metalView)
         
+        // Init device motion
+        if motion.isDeviceMotionAvailable {
+            motion.deviceMotionUpdateInterval = 1.0 / 60.0 // Twice as fast as frame tick
+        }
+        
         // Init webview and load editor
         webView = UIWebView(frame: self.webViewContainer.bounds)
         webView.delegate = self
@@ -125,6 +139,9 @@ class EditorViewController: UIViewController,
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         arrangeViewsForSize(view.bounds.size)
+        if motion.isDeviceMotionAvailable {
+            motion.startDeviceMotionUpdates(using: .xMagneticNorthZVertical)
+        }
         changeAudioOutputSource(.project)
         if ready {
             onReady()
@@ -134,9 +151,16 @@ class EditorViewController: UIViewController,
     override func viewWillDisappear(_ animated: Bool) {
         runJavascript("vm.stopAll()")
         stopDisplayLink()
+        if motion.isDeviceMotionActive {
+            motion.stopDeviceMotionUpdates()
+        }
         clearAudioBuffer()
         saveProject()
         super.viewWillDisappear(animated)
+    }
+    
+    override var shouldAutorotate: Bool { 
+        return transitioningFullscreen
     }
     
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
@@ -170,6 +194,8 @@ class EditorViewController: UIViewController,
             self.projectsButtonBackground.alpha = 1.0
             self.shareButton.alpha = 1.0
             self.shareButtonBackground.alpha = 1.0
+            self.fullscreenButtonBackground.alpha = 1.0
+            self.fullscreenButton.setImage(UIImage(named: "fullscreen"), for: .normal)
             self.stopGreenFlagButtonBackground.alpha = 1.0
             self.webViewContainer.alpha = 1.0
             self.assetsView.alpha = 1.0
@@ -186,6 +212,8 @@ class EditorViewController: UIViewController,
             self.projectsButtonBackground.alpha = 0.0
             self.shareButton.alpha = 0.0
             self.shareButtonBackground.alpha = 0.0
+            self.fullscreenButtonBackground.alpha = 0.0
+            self.fullscreenButton.setImage(UIImage(named: "fullscreen-light"), for: .normal)
             self.stopGreenFlagButtonBackground.alpha = 0.0
             self.webViewContainer.alpha = 0.0
             self.assetsView.alpha = 0.0
@@ -279,6 +307,21 @@ class EditorViewController: UIViewController,
         self.present(sharingVC, animated: true, completion: nil)
     }
     
+    @IBAction func fullscreenButtonTapped(_ sender: Any) {
+        fullscreen = !fullscreen
+        transitioningFullscreen = true
+        if fullscreen {
+            let orientation = UIInterfaceOrientation.landscapeLeft.rawValue
+            UIDevice.current.setValue(orientation, forKey: "orientation")
+        }
+        else {
+            let orientation = UIInterfaceOrientation.portrait.rawValue
+            UIDevice.current.setValue(orientation, forKey: "orientation")
+        }
+        UIViewController.attemptRotationToDeviceOrientation()
+        transitioningFullscreen = false
+    }
+    
     @IBAction func greenFlagButtonTapped(_ sender: Any) {
         runJavascript("vm.greenFlag()")
     }
@@ -364,8 +407,17 @@ class EditorViewController: UIViewController,
         renderedIds = []
         
         self.renderDispatchGroup.wait()
+        
+        // Get motion values, taking into account current screen orientation
+        let roll = radiansToDegrees(CGFloat(fullscreen ? -motion.deviceMotion!.attitude.pitch : motion.deviceMotion!.attitude.roll))
+        let pitch = radiansToDegrees(CGFloat(fullscreen ? -motion.deviceMotion!.attitude.roll : -motion.deviceMotion!.attitude.pitch))
+        var heading = motion.deviceMotion!.heading - 90.0 // 0.0 orients toward west on the device, we want 0.0 to be north
+        if heading < 0.0 {
+            heading += 360.0
+        }
+        
         DEBUGBeginTimedBlock("JS")
-        let renderingStateJson = runJavascript("Steina.tick(\(dt * 1000.0)); Steina.getRenderingState()")!
+        let renderingStateJson = runJavascript("Steina.updateMotionValues(\(roll), \(pitch), \(heading)); Steina.tick(\(dt * 1000.0)); Steina.getRenderingState()")!
         DEBUGEndTimedBlock("JS")
         
         if renderingStateJson != "" {
