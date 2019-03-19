@@ -159,7 +159,13 @@ func initMetal(_ hostView: MetalView) {
 //    captureScope.label = "Steina Debug Scope"
     
     // Set up JPEG decompressors
-    let numDecompressors = ProcessInfo.processInfo.activeProcessorCount
+//    let numDecompressors = ProcessInfo.processInfo.activeProcessorCount
+    
+    // @TODO: This is kind of a hack just to make sure we have a ton of compressors
+    //        available to avoid a deadlock in the case where the renderingQueue
+    //        tries to concurrently push more render frames than there are compressors.
+    //        Eventually it'd be good to actually sort out the threading.
+    let numDecompressors = 10;
     decompressorSemaphore = DispatchSemaphore(value: numDecompressors)
     for _ in 0..<numDecompressors {
         decompressors.insert(tjInitDecompress())
