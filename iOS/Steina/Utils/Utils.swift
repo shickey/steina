@@ -33,6 +33,11 @@ func clamp<T>(_ val: T, _ min: T, _ max: T) -> T where T:Numeric, T:Comparable {
 }
 
 @inline(__always)
+func lerp(_ from: Float, _ to: Float, _ factor: Float) -> Float {
+    return from + ((to - from) * factor)
+}
+
+@inline(__always)
 func largestPowerOfTwoLessThanOrEqualTo(_ n: UInt) -> Int {
     var power = 0
     var found = false

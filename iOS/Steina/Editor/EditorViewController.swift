@@ -328,6 +328,7 @@ class EditorViewController: UIViewController,
     
     @IBAction func stopButtonTapped(_ sender: Any) {
         stopAndSave()
+        try! audioBuffer.samples.write(to: project.projectFolderUrl.appendingPathComponent("AUDIO.BIN"))
     }
     
     @IBAction func trashButtonTapped(_ sender: Any) {
@@ -411,7 +412,8 @@ class EditorViewController: UIViewController,
         // Get motion values, taking into account current screen orientation
         let roll = radiansToDegrees(CGFloat(fullscreen ? -motion.deviceMotion!.attitude.pitch : motion.deviceMotion!.attitude.roll))
         let pitch = radiansToDegrees(CGFloat(fullscreen ? -motion.deviceMotion!.attitude.roll : -motion.deviceMotion!.attitude.pitch))
-        var heading = motion.deviceMotion!.heading - 90.0 // 0.0 orients toward west on the device, we want 0.0 to be north
+        var heading = fullscreen ? motion.deviceMotion!.heading - 180.0 : motion.deviceMotion!.heading - 90.0 // The device uses the x axis as it's reference vector
+                                                                                                              // so we rotate here so that pointing toward north is 0.0 degrees
         if heading < 0.0 {
             heading += 360.0
         }
@@ -442,21 +444,62 @@ class EditorViewController: UIViewController,
                 for (_, sound) in playingSounds {
                     // Get properties
                     let soundAssetId   = (sound["audioTargetId"] as! String)
-                    let start          = Int(floor((sound["prevPlayhead"] as! NSNumber).floatValue))
-                    let end            = Int(ceil((sound["playhead"] as! NSNumber).floatValue))
+                    let start          = (sound["prevPlayhead"] as! NSNumber).floatValue
+                    let end            = (sound["playhead"] as! NSNumber).floatValue
+                    let playRate       = (sound["playbackRate"] as! NSNumber).floatValue // Percentage
+                    
+                    let scaleFactor = playRate / Float(100.0)
+                    if scaleFactor == 0 {
+                        continue
+                    }
+                    let samplesToWrite = min(Int(ceil(abs(end - start) / scaleFactor)), 4800)
                     
                     // Get samples
-                    let totalSamples = min(end - start, 4800);
                     let asset = self.project.sounds[soundAssetId]!
-                    let samples = fetchSamples(asset, start, end)
+                    let samples = start < end ? fetchSamples(asset, Int(floor(start)), Int(ceil(end))) : fetchSamples(asset, Int(floor(end)), Int(ceil(start)))
+                    let numSamplesFetched = start < end ? Int(ceil(end)) - Int(floor(start)) : Int(ceil(start)) - Int(floor(end))   
                     
                     let target = audioTargets[soundAssetId]!
                     let volume = (target["volume"] as! NSNumber).floatValue / Float(100.0)
                     
                     // Mix into buffer
-                    let rawSamples = samples.bytes.bindMemory(to: Int16.self, capacity: totalSamples)
-                    for i in 0..<totalSamples {
-                        rawMixingBuffer[i] += Float(rawSamples[i]) * volume
+                    let rawSamples = samples.bytes.bindMemory(to: Int16.self, capacity: numSamplesFetched)
+                    if start < end {
+                        // Forward playing sound
+                        for i in 0..<samplesToWrite {
+                            let sampleOffset = Float(i) * scaleFactor
+                            let startIdx = Int(sampleOffset)
+                            let lerpFactor = sampleOffset - Float(startIdx)
+                            
+                            if startIdx < numSamplesFetched - 1 {
+                                let sampleValue = lerp(Float(rawSamples[startIdx]), Float(rawSamples[startIdx + 1]), lerpFactor)
+                                rawMixingBuffer[i] += sampleValue * volume
+                            }
+                            else {
+                                rawMixingBuffer[i] += Float(rawSamples[startIdx]) * volume
+                            }
+                            
+                        }
+                    }
+                    else {
+                        // Backward playing sound
+                        for i in 0..<samplesToWrite {
+                            let sampleOffset = Float(numSamplesFetched - 1) - (Float(i) * scaleFactor)
+                            let startIdx = Int(sampleOffset)
+                            let lerpFactor = sampleOffset - Float(startIdx)
+                            
+                            if startIdx > 0 {
+                                let sampleValue = lerp(Float(rawSamples[startIdx]), Float(rawSamples[startIdx - 1]), lerpFactor)
+                                if (Float(S16(sampleValue)) / Float(S16.max)) > 0.9 {
+                                    print("big number")
+                                }
+                                rawMixingBuffer[i] += sampleValue * volume
+                            }
+                            else {
+                                rawMixingBuffer[i] += Float(rawSamples[startIdx]) * volume
+                            }
+                            
+                        }
                     }
                 }
                 

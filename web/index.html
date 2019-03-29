@@ -77,7 +77,21 @@
         </value>
       </block>
 
+      <block type="steina_changePlayRateBy">
+        <value name="RATE">
+          <shadow type="math_number">
+            <field name="NUM">10</field>
+          </shadow>
+        </value>
+      </block>
+
       <block type="steina_isTapped"></block>
+
+      <block type="steina_getCurrentFrame"></block>
+
+      <block type="steina_getTotalFrames"></block>
+
+      <block type="steina_getPlayRate"></block>
 
       <!-- <block type="steina_playNFrames">
         <value name="FRAMES">
@@ -122,11 +136,6 @@
 
       <block type="steina_clearVideoEffects"></block>
 
-      <block type="steina_getCurrentFrame"></block>
-
-      <block type="steina_getTotalFrames"></block>
-
-      <block type="steina_getPlayRate"></block>
     </category>
 
     <category name="Device" id="Device" colour="#FF6680" secondaryColour="#FF4D6A">
@@ -491,6 +500,25 @@
         </value>
       </block>
       <block type="steina_getVolume"></block>
+
+      <block type="steina_setPlayRate">
+        <value name="RATE">
+          <shadow type="math_number">
+            <field name="NUM">100</field>
+          </shadow>
+        </value>
+      </block>
+
+      <block type="steina_changePlayRateBy">
+        <value name="RATE">
+          <shadow type="math_number">
+            <field name="NUM">10</field>
+          </shadow>
+        </value>
+      </block>
+
+      <block type="steina_getPlayRate"></block>
+
     </category>
 
     <category name="Device" id="Device" colour="#FF6680" secondaryColour="#FF4D6A">
