@@ -410,12 +410,17 @@ class EditorViewController: UIViewController,
         self.renderDispatchGroup.wait()
         
         // Get motion values, taking into account current screen orientation
-        let roll = radiansToDegrees(CGFloat(fullscreen ? -motion.deviceMotion!.attitude.pitch : motion.deviceMotion!.attitude.roll))
-        let pitch = radiansToDegrees(CGFloat(fullscreen ? -motion.deviceMotion!.attitude.roll : -motion.deviceMotion!.attitude.pitch))
-        var heading = fullscreen ? motion.deviceMotion!.heading - 180.0 : motion.deviceMotion!.heading - 90.0 // The device uses the x axis as it's reference vector
-                                                                                                              // so we rotate here so that pointing toward north is 0.0 degrees
-        if heading < 0.0 {
-            heading += 360.0
+        var roll : CGFloat = 0
+        var pitch : CGFloat = 0
+        var heading : CGFloat = 0
+        if let deviceMotion = motion.deviceMotion {
+            roll = radiansToDegrees(CGFloat(fullscreen ? -deviceMotion.attitude.pitch : deviceMotion.attitude.roll))
+            pitch = radiansToDegrees(CGFloat(fullscreen ? -deviceMotion.attitude.roll : -deviceMotion.attitude.pitch))
+            heading = fullscreen ? CGFloat(deviceMotion.heading) - 180.0 : CGFloat(deviceMotion.heading) - 90.0 // The device uses the x axis as it's reference vector
+            // so we rotate here so that pointing toward north is 0.0 degrees
+            if heading < 0.0 {
+                heading += 360.0
+            }
         }
         
         DEBUGBeginTimedBlock("JS")
