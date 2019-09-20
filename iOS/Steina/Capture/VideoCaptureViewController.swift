@@ -127,7 +127,6 @@ class VideoCaptureViewController: UIViewController, AVCaptureVideoDataOutputSamp
     override func viewWillAppear(_ animated: Bool) {
         updateOrientation()
         if firstAppearance || maskData == nil {
-            infoLabel.text = "Draw your video shape"
             infoLabel.alpha = 1.0
             infoLabel.isHidden = false
             recordButton.isHidden = true

@@ -53,6 +53,8 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		A302753623317AE600C4F0EE /* it */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = it; path = it.lproj/Main.strings; sourceTree = "<group>"; };
+		A302753723317AE600C4F0EE /* it */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = it; path = it.lproj/LaunchScreen.strings; sourceTree = "<group>"; };
 		A32EED0922022F850025B3E5 /* AssetEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssetEditorView.swift; sourceTree = "<group>"; };
 		A34478DD2139C68400545288 /* AudioCaptureViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioCaptureViewController.swift; sourceTree = "<group>"; };
 		A344790521402C4A00545288 /* Audio.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Audio.swift; sourceTree = "<group>"; };
@@ -481,6 +483,7 @@
 			isa = PBXVariantGroup;
 			children = (
 				A398F79C20A346BB00C60946 /* Base */,
+				A302753623317AE600C4F0EE /* it */,
 			);
 			name = Main.storyboard;
 			sourceTree = "<group>";
@@ -489,6 +492,7 @@
 			isa = PBXVariantGroup;
 			children = (
 				A398F7A420A346BC00C60946 /* Base */,
+				A302753723317AE600C4F0EE /* it */,
 			);
 			name = LaunchScreen.storyboard;
 			sourceTree = "<group>";
@@ -500,6 +504,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
@@ -562,6 +567,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";

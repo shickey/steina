@@ -226,7 +226,8 @@ class EditorViewController: UIViewController,
     
     func onScratchLoaded() {
         let projectJson = loadProjectJson(project)
-        let js = "Steina.loadProject('\(projectJson)')"
+        let locale = Bundle.main.preferredLocalizations[0]
+        let js = "Steina.setLocale('\(locale)');Steina.loadProject('\(projectJson)')"
         runJavascript(js)
         self.ready = true
         self.onReady()

@@ -75,11 +75,18 @@
             window.videoToolbox = videoToolbox;
             window.audioToolbox = audioToolbox;
 
-            vm.addListener('EXTENSION_ADDED', (blocksInfo) => {
-                // Generate the proper blocks and refresh the toolbox
-                Blockly.defineBlocksWithJsonArray(blocksInfo.map(blockInfo => blockInfo.json));
-                workspace.updateToolbox(videoToolbox);
-            });
+            function updateBlocksInfo(blocksInfo) {
+              // Generate the proper blocks and refresh the toolbox
+              var flyout = workspace.getFlyout();
+              Blockly.defineBlocksWithJsonArray(blocksInfo.map(blockInfo => blockInfo.json));
+              flyout.setRecyclingEnabled(false);
+              workspace.updateToolbox(videoToolbox);
+              vm.refreshWorkspace();
+              flyout.setRecyclingEnabled(true);
+            }
+
+            vm.addListener('EXTENSION_ADDED', updateBlocksInfo);
+            vm.addListener('BLOCKSINFO_UPDATE', updateBlocksInfo);
 
             vm.extensionManager.loadExtensionURL('steina');
 
@@ -284,6 +291,20 @@
               target.tapped = true;
             }
 
+            function setLocale(locale) {
+              var flyout = workspace.getFlyout();
+              var target = vm.editingTarget;
+              var nextToolbox = target.hasOwnProperty('fps') ? videoToolbox : audioToolbox;
+              var translations = Blockly.ScratchMsgs.locales[locale];
+
+              flyout.setRecyclingEnabled(false);
+              Blockly.ScratchMsgs.setLocale(locale);
+              vm.setLocale(locale, translations);
+              vm.refreshWorkspace();
+              workspace.updateToolbox(nextToolbox);
+              flyout.setRecyclingEnabled(true);
+            }
+
             window.Steina = {
               tick,
               updateMotionValues,
@@ -302,7 +323,8 @@
               updateDraggingVideo,
               endDraggingVideo,
               getDraggingVideoTransform,
-              tapVideo
+              tapVideo,
+              setLocale
             }
 
             if (window.steinaMsg) {
